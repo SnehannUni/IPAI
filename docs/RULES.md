@@ -91,7 +91,7 @@ The picture shows *what* happens; the texts must explain *why* and *what it mean
 If mainly **what you see** changes (menu, form, page), show the screen first, not the technology.
 
 - **First view `kind: "compare"`:** two zones "Today" (`tone: "bug"`) and "Planned" (`tone: "fix"`) side by side, each with a `screen` box (e.g. `widget: "menu"`) and what it leads to. Every step shows the same moment on both sides.
-- **A concrete person with a goal** in the `headline` ("Anna only works in ReKo …"). Differences as numbers in the badge ("2 clicks, scrolling" vs. "1 click").
+- **A concrete person with a goal** in the `headline` ("Anna only works in the reports area …"). Differences as numbers in the badge ("2 clicks, scrolling" vs. "1 click").
 - **Real labels** (menu items, buttons), no invented role names. Show clicks with `cursor` and the result with `active`.
 - **Technology afterwards**, in views of their own (`kind: "normal"`, label "Tech"). The other rules apply there.
 - 4–6 steps per comparison; only moments you can see on the screen.

@@ -32,7 +32,7 @@ No dependencies, just Node ≥ 20.
 | `src/build.mjs`, `bin/flowviz.mjs` | Builds a self-contained HTML file, command line |
 | `examples/` | Templates: normal flow with a failure case, bug + fix |
 | `.claude/skills/flow-diagram/` | Skill that lets Claude Code generate diagrams on its own |
-| `flows/` | Generated specs: 10 real postmortems (Cloudflare, CrowdStrike, GitHub, Facebook, Roblox, Slack, Knight Capital, Sentry) created by agents without prior knowledge, plus two feature plans. They also serve as regression tests |
+| `flows/` | Generated specs: 10 real postmortems (Cloudflare, CrowdStrike, GitHub, Facebook, Roblox, Slack, Knight Capital, Sentry) created by agents without prior knowledge. They also serve as regression tests |
 | `test/` | Validator and build tests, plus a run of the viewer through every step of every spec |
 | `prototypes/` | The first hand-built drafts |
 

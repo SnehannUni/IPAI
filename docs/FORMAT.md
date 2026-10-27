@@ -5,7 +5,7 @@ A flow spec is a JSON file (`*.flow.json`). `flowviz build` turns it into a self
 Templates:
 - `examples/chat-rabbitmq.flow.json`: normal flow with a failure case
 - `examples/k8s-bugfix.flow.json`: bug and solution
-- `flows/`: ten real postmortems, two feature plans
+- `flows/`: ten real postmortems
 
 **Text** is everywhere either a string or `{"simple": "everyday language", "tech": "technical terms"}`. As soon as a text has `tech`, the viewer shows the Simple/Technical switch. The validator always checks **both** variants.
 

@@ -16,9 +16,6 @@ You describe the flow as a **flow spec** (JSON). The `flowviz` tool checks it an
      - `knight-capital-2012` (meter as progress)
      - `cloudflare-leapsecond-2017` (red badge with a value)
      - `github-partition-2018` (two checklists)
-   - feature plans:
-     - `flows/feature-doc-comparison-sources.flow.json` (today vs. planned)
-     - `flows/feature-sidebar-app-drill-in.flow.json` (UI before/after)
 2. **Plan before writing JSON:**
    - Which 4–8 roles exist? Which type is each (trigger, step, storage, external service, result, screen)?
    - Grid: in which zone, column and row does each sit?
