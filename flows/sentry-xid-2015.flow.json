@@ -1,14 +1,14 @@
 {
-  "title": "Sentry 2015: Die Datenbank gehen die Nummern aus",
+  "title": "Sentry 2015: The database runs out of numbers",
   "subtitle": {
-    "simple": "Warum Sentry einen Tag lang keine neuen Fehler speichern konnte.",
-    "tech": "PostgreSQL Transaction-ID-Wraparound, 20.7.2015."
+    "simple": "Why Sentry could not store any new errors for a whole day.",
+    "tech": "PostgreSQL transaction ID wraparound, July 20, 2015."
   },
   "zones": [
     {
-      "id": "du",
+      "id": "you",
       "label": {
-        "simple": "DU",
+        "simple": "YOU",
         "tech": "CLIENT"
       }
     },
@@ -16,7 +16,7 @@
       "id": "sentry",
       "label": {
         "simple": "SENTRY",
-        "tech": "SENTRY-BACKEND"
+        "tech": "SENTRY BACKEND"
       }
     }
   ],
@@ -24,31 +24,31 @@
     {
       "id": "app",
       "type": "trigger",
-      "zone": "du",
+      "zone": "you",
       "col": 0,
       "row": 1,
       "label": {
-        "simple": "Deine App",
-        "tech": "App mit Sentry-SDK"
+        "simple": "Your app",
+        "tech": "App with Sentry SDK"
       },
       "sub": {
-        "simple": "meldet Abstürze",
-        "tech": "sendet Events"
+        "simple": "reports crashes",
+        "tech": "sends events"
       }
     },
     {
       "id": "ui",
       "type": "result",
-      "zone": "du",
+      "zone": "you",
       "col": 0,
       "row": 2,
       "label": {
-        "simple": "Deine Übersicht",
-        "tech": "Sentry-Web-UI"
+        "simple": "Your overview",
+        "tech": "Sentry web UI"
       },
       "sub": {
-        "simple": "zeigt gemeldete Fehler",
-        "tech": "Issue-Stream"
+        "simple": "shows reported errors",
+        "tech": "issue stream"
       }
     },
     {
@@ -58,15 +58,15 @@
       "col": 0,
       "row": 1,
       "label": {
-        "simple": "Warteliste",
-        "tech": "Event-Queue"
+        "simple": "Waiting list",
+        "tech": "Event queue"
       },
       "sub": {
-        "simple": "nimmt Meldungen an",
-        "tech": "Puffer vor der DB"
+        "simple": "takes in reports",
+        "tech": "buffer before the DB"
       },
       "initial": {
-        "status": "leer"
+        "status": "empty"
       }
     },
     {
@@ -76,12 +76,12 @@
       "col": 1,
       "row": 1,
       "label": {
-        "simple": "Bearbeiter",
+        "simple": "Processor",
         "tech": "Worker"
       },
       "sub": {
-        "simple": "speichert Meldungen",
-        "tech": "schreibt Events in die DB"
+        "simple": "saves reports",
+        "tech": "writes events to the DB"
       }
     },
     {
@@ -92,16 +92,16 @@
       "row": 1,
       "widget": "meter",
       "label": {
-        "simple": "Datenbank",
+        "simple": "Database",
         "tech": "PostgreSQL"
       },
       "sub": {
-        "simple": "merkt sich alle Fehler",
-        "tech": "Haupt-DB"
+        "simple": "remembers all errors",
+        "tech": "main DB"
       },
       "meterLabel": {
-        "simple": "Nummern weg",
-        "tech": "XID-Alter"
+        "simple": "Numbers used",
+        "tech": "XID age"
       },
       "initial": {
         "meter": 70
@@ -115,31 +115,31 @@
       "row": 0,
       "widget": "checklist",
       "label": {
-        "simple": "Aufräumer",
+        "simple": "Cleaner",
         "tech": "Autovacuum"
       },
       "sub": {
-        "simple": "gibt alte Nummern frei",
+        "simple": "frees up old numbers",
         "tech": "VACUUM FREEZE"
       },
       "items": [
         {
-          "simple": "kleine Tabellen",
-          "tech": "kleine Relationen"
+          "simple": "small tables",
+          "tech": "small relations"
         },
         {
-          "simple": "große Tabellen",
-          "tech": "Event-Tabellen"
+          "simple": "large tables",
+          "tech": "event tables"
         },
         {
-          "simple": "Riesen-Tabelle",
-          "tech": "Event→Rollup-Mapping"
+          "simple": "giant table",
+          "tech": "event→rollup mapping"
         }
       ],
       "initial": {
         "badge": {
-          "simple": "3 Helfer",
-          "tech": "3 Worker"
+          "simple": "3 helpers",
+          "tech": "3 workers"
         }
       }
     }
@@ -150,7 +150,7 @@
       "from": "app",
       "to": "queue",
       "verb": {
-        "simple": "meldet",
+        "simple": "reports",
         "tech": "POST"
       }
     },
@@ -159,7 +159,7 @@
       "from": "queue",
       "to": "worker",
       "verb": {
-        "simple": "gibt weiter",
+        "simple": "passes on",
         "tech": "consume"
       },
       "async": true
@@ -169,7 +169,7 @@
       "from": "worker",
       "to": "db",
       "verb": {
-        "simple": "speichert",
+        "simple": "saves",
         "tech": "INSERT"
       }
     },
@@ -178,7 +178,7 @@
       "from": "db",
       "to": "worker",
       "verb": {
-        "simple": "lehnt ab",
+        "simple": "refuses",
         "tech": "ERROR"
       },
       "views": [
@@ -190,7 +190,7 @@
       "from": "vacuum",
       "to": "db",
       "verb": {
-        "simple": "gibt frei",
+        "simple": "frees up",
         "tech": "FREEZE"
       },
       "async": true
@@ -200,7 +200,7 @@
       "from": "db",
       "to": "ui",
       "verb": {
-        "simple": "zeigt an",
+        "simple": "shows",
         "tech": "SELECT"
       }
     }
@@ -211,25 +211,25 @@
       "kind": "bug",
       "label": "Bug",
       "headline": {
-        "simple": "Problem: Sentry nimmt einen Tag lang keine neuen Fehler an. Warum?",
-        "tech": "Bug: PostgreSQL verweigert Writes wegen drohendem XID-Wraparound."
+        "simple": "Problem: Sentry accepts no new errors for a whole day. Why?",
+        "tech": "Bug: PostgreSQL refuses writes due to imminent XID wraparound."
       },
       "chain": [
         {
-          "simple": "Viele Speicherungen verbrauchen Nummern",
-          "tech": "hohe Write-Last verbraucht XIDs"
+          "simple": "Many saves use up numbers",
+          "tech": "high write load consumes XIDs"
         },
         {
-          "simple": "Aufräumer hängt an Riesen-Tabelle",
-          "tech": "Autovacuum zu langsam"
+          "simple": "Cleaner stuck on giant table",
+          "tech": "autovacuum too slow"
         },
         {
-          "simple": "Nummern fast weg – Datenbank sperrt",
-          "tech": "Wraparound-Schutz: keine Writes"
+          "simple": "Numbers almost gone – database locks",
+          "tech": "wraparound protection: no writes"
         },
         {
-          "simple": "Neue Fehler gehen verloren",
-          "tech": "Events gestaut und verworfen"
+          "simple": "New errors get lost",
+          "tech": "events backed up and dropped"
         }
       ],
       "steps": [
@@ -238,19 +238,19 @@
             "aq"
           ],
           "packet": {
-            "simple": "Fehler",
+            "simple": "Error",
             "tech": "Event"
           },
           "text": {
-            "simple": "Deine App meldet einen Fehler an Sentry, und die Meldung landet in der Warteliste.",
-            "tech": "Das SDK schickt ein Event; es landet in der Queue."
+            "simple": "Your app reports an error to Sentry, and the report lands in the waiting list.",
+            "tech": "The SDK sends an event; it lands in the queue."
           },
           "set": {
             "queue": {
               "slots": 1,
               "status": {
-                "simple": "1 Meldung",
-                "tech": "1 Event"
+                "simple": "1 report",
+                "tech": "1 event"
               }
             }
           }
@@ -261,13 +261,13 @@
             "wd"
           ],
           "text": {
-            "simple": "Der Bearbeiter speichert sie, und jede Speicherung verbraucht eine Nummer aus einem Vorrat von rund 2 Milliarden.",
-            "tech": "Der Worker schreibt das Event; jede schreibende Transaktion bekommt eine Transaktions-ID (XID), Limit etwa 2 Mrd."
+            "simple": "The processor saves it, and every save uses up one number from a supply of about 2 billion.",
+            "tech": "The worker writes the event; every writing transaction gets a transaction ID (XID), limit about 2 billion."
           },
           "set": {
             "queue": {
               "slots": 0,
-              "status": "leer"
+              "status": "empty"
             },
             "db": {
               "meter": 72
@@ -279,14 +279,14 @@
             "du"
           ],
           "text": {
-            "simple": "Du siehst den neuen Fehler in deiner Übersicht.",
-            "tech": "Das Event erscheint im Issue-Stream."
+            "simple": "You see the new error in your overview.",
+            "tech": "The event appears in the issue stream."
           },
           "set": {
             "ui": {
               "status": {
-                "simple": "1 neuer Fehler",
-                "tech": "1 neues Event"
+                "simple": "1 new error",
+                "tech": "1 new event"
               },
               "tone": "ok"
             }
@@ -295,8 +295,8 @@
         {
           "focus": "vacuum",
           "text": {
-            "simple": "Im Hintergrund arbeitet ein Aufräumer, der alte Nummern freigibt, aber erst, wenn er alle Tabellen geschafft hat.",
-            "tech": "Autovacuum friert alte Zeilen ein; das XID-Alter sinkt erst, wenn auch die älteste Tabelle erledigt ist."
+            "simple": "In the background, a cleaner frees up old numbers, but only once it has finished all tables.",
+            "tech": "Autovacuum freezes old rows; the XID age only drops once the oldest table is done too."
           }
         },
         {
@@ -304,8 +304,8 @@
             "vd"
           ],
           "text": {
-            "simple": "Die kleinen und großen Tabellen schafft er, an der Riesen-Tabelle arbeitet er noch.",
-            "tech": "Die meisten Relationen sind gevacuumt, die große Mapping-Tabelle noch nicht."
+            "simple": "It finishes the small and large tables, but is still working on the giant table.",
+            "tech": "Most relations are vacuumed, the large mapping table is not yet."
           },
           "set": {
             "vacuum": {
@@ -324,12 +324,12 @@
           ],
           "chain": 0,
           "packet": {
-            "simple": "viele Fehler",
-            "tech": "viele Events"
+            "simple": "many errors",
+            "tech": "many events"
           },
           "text": {
-            "simple": "Gleichzeitig speichert Sentry ständig neue Meldungen, und jede verbraucht eine weitere Nummer.",
-            "tech": "Sentry ist sehr schreiblastig: Die XIDs werden schneller verbraucht, als Autovacuum sie einfriert."
+            "simple": "Meanwhile, Sentry keeps saving new reports, and each one uses up another number.",
+            "tech": "Sentry is very write-heavy: XIDs are consumed faster than autovacuum freezes them."
           },
           "set": {
             "db": {
@@ -342,8 +342,8 @@
           "error": true,
           "chain": 1,
           "text": {
-            "simple": "Der Aufräumer bleibt an der Riesen-Tabelle hängen und wird nicht rechtzeitig fertig.",
-            "tech": "Zu hohes freeze_max_age, nur 3 Worker, starkes Cost-Delay: Der Vacuum der Mapping-Tabelle wird nicht fertig."
+            "simple": "The cleaner gets stuck on the giant table and does not finish in time.",
+            "tech": "freeze_max_age too high, only 3 workers, heavy cost delay: the vacuum of the mapping table never finishes."
           },
           "set": {
             "vacuum": {
@@ -351,8 +351,8 @@
                 "2": "fail"
               },
               "badge": {
-                "simple": "zu langsam",
-                "tech": "hängt"
+                "simple": "too slow",
+                "tech": "stuck"
               }
             },
             "db": {
@@ -368,15 +368,15 @@
           "error": true,
           "chain": 2,
           "text": {
-            "simple": "Bei nur noch einer Million freien Nummern sperrt sich die Datenbank selbst, damit keine Daten kaputtgehen.",
-            "tech": "Weniger als 1 Mio. XIDs übrig: PostgreSQL verweigert alle Writes, um Wraparound und Datenverlust zu verhindern."
+            "simple": "With only one million free numbers left, the database locks itself so that no data gets corrupted.",
+            "tech": "Fewer than 1 million XIDs left: PostgreSQL refuses all writes to prevent wraparound and data loss."
           },
           "set": {
             "db": {
               "meter": 100,
               "state": "dead",
               "status": {
-                "simple": "gesperrt",
+                "simple": "locked",
                 "tech": "read-only"
               },
               "tone": "bad"
@@ -389,19 +389,19 @@
           ],
           "error": true,
           "packet": {
-            "simple": "Fehler",
+            "simple": "Error",
             "tech": "Event"
           },
           "text": {
-            "simple": "Neue Meldungen kommen weiter an und stauen sich in der Warteliste.",
-            "tech": "Events laufen weiter ein; Queue und Puffer füllen sich."
+            "simple": "New reports keep arriving and pile up in the waiting list.",
+            "tech": "Events keep coming in; queue and buffers fill up."
           },
           "set": {
             "queue": {
               "slots": 5,
               "status": {
-                "simple": "Stau",
-                "tech": "Backlog wächst"
+                "simple": "backed up",
+                "tech": "backlog grows"
               },
               "tone": "bad"
             }
@@ -415,19 +415,19 @@
           "chain": 3,
           "labels": {
             "du": {
-              "simple": "nichts Neues",
-              "tech": "nur alte Daten"
+              "simple": "nothing new",
+              "tech": "stale data only"
             }
           },
           "text": {
-            "simple": "Stundenlang zeigt deine Übersicht keine neuen Fehler, und die gestauten Meldungen werden am Ende weggeworfen.",
-            "tech": "Ausfall über den US-Arbeitstag; der Event-Backlog wird verworfen."
+            "simple": "For hours your overview shows no new errors, and the backed-up reports are thrown away in the end.",
+            "tech": "Outage across the US workday; the event backlog is dropped."
           },
           "set": {
             "ui": {
               "status": {
-                "simple": "keine neuen Fehler",
-                "tech": "keine neuen Events"
+                "simple": "no new errors",
+                "tech": "no new events"
               },
               "tone": "bad",
               "state": "dead"
@@ -435,8 +435,8 @@
             "queue": {
               "slots": 0,
               "status": {
-                "simple": "weggeworfen",
-                "tech": "verworfen"
+                "simple": "thrown away",
+                "tech": "dropped"
               },
               "tone": "bad"
             }
@@ -447,35 +447,35 @@
     {
       "id": "fix",
       "kind": "fix",
-      "label": "Lösung",
+      "label": "Solution",
       "headline": {
-        "simple": "Lösung: Der Aufräumer fängt früher an, hat mehr Helfer und macht keine Pausen.",
-        "tech": "Fix: Autovacuum aggressiver – freeze_max_age 500 Mio., 6 Worker, cost_delay 0, neue Hardware."
+        "simple": "Solution: The cleaner starts earlier, has more helpers and takes no breaks.",
+        "tech": "Fix: more aggressive autovacuum – freeze_max_age 500 million, 6 workers, cost_delay 0, new hardware."
       },
       "chain": [
         {
-          "simple": "Viele Speicherungen verbrauchen Nummern",
-          "tech": "hohe Write-Last verbraucht XIDs"
+          "simple": "Many saves use up numbers",
+          "tech": "high write load consumes XIDs"
         },
         {
-          "simple": "Aufräumer schafft alle Tabellen",
-          "tech": "Autovacuum hält Schritt"
+          "simple": "Cleaner finishes all tables",
+          "tech": "autovacuum keeps up"
         },
         {
-          "simple": "Nummern bleiben weit unter der Grenze",
-          "tech": "XID-Alter niedrig"
+          "simple": "Numbers stay far below the limit",
+          "tech": "XID age low"
         },
         {
-          "simple": "Alle Fehler kommen an",
-          "tech": "keine verlorenen Events"
+          "simple": "All errors arrive",
+          "tech": "no lost events"
         }
       ],
       "mark": {
         "nodes": {
-          "vacuum": "geändert"
+          "vacuum": "changed"
         },
         "edges": {
-          "vd": "geändert"
+          "vd": "changed"
         }
       },
       "steps": [
@@ -484,19 +484,19 @@
             "aq"
           ],
           "packet": {
-            "simple": "Fehler",
+            "simple": "Error",
             "tech": "Event"
           },
           "text": {
-            "simple": "Deine App meldet einen Fehler an Sentry, und die Meldung landet in der Warteliste.",
-            "tech": "Das SDK schickt ein Event; es landet in der Queue."
+            "simple": "Your app reports an error to Sentry, and the report lands in the waiting list.",
+            "tech": "The SDK sends an event; it lands in the queue."
           },
           "set": {
             "queue": {
               "slots": 1,
               "status": {
-                "simple": "1 Meldung",
-                "tech": "1 Event"
+                "simple": "1 report",
+                "tech": "1 event"
               }
             }
           }
@@ -507,13 +507,13 @@
             "wd"
           ],
           "text": {
-            "simple": "Der Bearbeiter speichert sie, und jede Speicherung verbraucht eine Nummer aus einem Vorrat von rund 2 Milliarden.",
-            "tech": "Der Worker schreibt das Event; jede schreibende Transaktion bekommt eine Transaktions-ID (XID), Limit etwa 2 Mrd."
+            "simple": "The processor saves it, and every save uses up one number from a supply of about 2 billion.",
+            "tech": "The worker writes the event; every writing transaction gets a transaction ID (XID), limit about 2 billion."
           },
           "set": {
             "queue": {
               "slots": 0,
-              "status": "leer"
+              "status": "empty"
             },
             "db": {
               "meter": 72
@@ -525,14 +525,14 @@
             "du"
           ],
           "text": {
-            "simple": "Du siehst den neuen Fehler in deiner Übersicht.",
-            "tech": "Das Event erscheint im Issue-Stream."
+            "simple": "You see the new error in your overview.",
+            "tech": "The event appears in the issue stream."
           },
           "set": {
             "ui": {
               "status": {
-                "simple": "1 neuer Fehler",
-                "tech": "1 neues Event"
+                "simple": "1 new error",
+                "tech": "1 new event"
               },
               "tone": "ok"
             }
@@ -540,16 +540,16 @@
         },
         {
           "focus": "vacuum",
-          "tag": "geändert",
+          "tag": "changed",
           "text": {
-            "simple": "Der Aufräumer ist neu eingestellt: Er fängt früher an, hat doppelt so viele Helfer und macht keine Pausen.",
-            "tech": "autovacuum_freeze_max_age 500 Mio., max_workers 6, naptime 15 s, cost_delay 0; dazu stärkere Hardware."
+            "simple": "The cleaner has new settings: it starts earlier, has twice as many helpers and takes no breaks.",
+            "tech": "autovacuum_freeze_max_age 500 million, max_workers 6, naptime 15 s, cost_delay 0; plus stronger hardware."
           },
           "set": {
             "vacuum": {
               "badge": {
-                "simple": "6 Helfer",
-                "tech": "6 Worker"
+                "simple": "6 helpers",
+                "tech": "6 workers"
               }
             }
           }
@@ -563,12 +563,12 @@
           "chain": 0,
           "tag": "test",
           "packet": {
-            "simple": "viele Fehler",
-            "tech": "viele Events"
+            "simple": "many errors",
+            "tech": "many events"
           },
           "text": {
-            "simple": "Härtetest: Wieder speichert Sentry ständig neue Meldungen, und jede verbraucht eine Nummer.",
-            "tech": "Gleiche hohe Write-Last wie am 20.7.: Die XIDs werden schnell verbraucht."
+            "simple": "Stress test: again Sentry keeps saving new reports, and each one uses up a number.",
+            "tech": "Same high write load as on July 20: XIDs are consumed quickly."
           },
           "set": {
             "db": {
@@ -581,10 +581,10 @@
             "vd"
           ],
           "chain": 1,
-          "tag": "geändert",
+          "tag": "changed",
           "text": {
-            "simple": "Der Aufräumer schafft jetzt auch die Riesen-Tabelle rechtzeitig und gibt die alten Nummern frei.",
-            "tech": "Der Vacuum der Mapping-Tabelle wird fertig; relfrozenxid rückt vor, das XID-Alter sinkt."
+            "simple": "Now the cleaner finishes the giant table in time too and frees up the old numbers.",
+            "tech": "The vacuum of the mapping table finishes; relfrozenxid advances, the XID age drops."
           },
           "set": {
             "vacuum": {
@@ -606,15 +606,15 @@
           ],
           "chain": 2,
           "text": {
-            "simple": "Die Datenbank nimmt weiter alles an, und die Nummern bleiben weit unter der Grenze.",
-            "tech": "Writes laufen weiter; das XID-Alter bleibt weit unter dem Schutz-Limit."
+            "simple": "The database keeps accepting everything, and the numbers stay far below the limit.",
+            "tech": "Writes keep running; the XID age stays far below the protection limit."
           },
           "set": {
             "db": {
               "meter": 32,
               "status": {
-                "simple": "offen",
-                "tech": "Writes ok"
+                "simple": "open",
+                "tech": "writes ok"
               },
               "tone": "ok"
             }
@@ -626,14 +626,14 @@
           ],
           "chain": 3,
           "text": {
-            "simple": "Ergebnis: Jeder gemeldete Fehler erscheint in deiner Übersicht.",
-            "tech": "Ergebnis: kein Ausfall, kein verworfener Backlog."
+            "simple": "Result: every reported error shows up in your overview.",
+            "tech": "Result: no outage, no dropped backlog."
           },
           "set": {
             "ui": {
               "status": {
-                "simple": "alle Fehler da",
-                "tech": "alle Events da"
+                "simple": "all errors there",
+                "tech": "all events there"
               },
               "tone": "ok",
               "state": "good"

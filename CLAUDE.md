@@ -1,25 +1,25 @@
 # CLAUDE.md
 
-Dieses Repo enthält **flowviz**: Ein LLM beschreibt einen Ablauf als JSON (Flow-Spec), das Tool prüft ihn und baut eine animierte, für Laien verständliche HTML-Darstellung.
+This repo contains **flowviz**: an LLM describes a flow as JSON (flow spec), the tool checks it and builds an animated HTML diagram that laypeople can understand.
 
-## Wenn ein Ablauf, Plan, Datenfluss oder Bug dargestellt werden soll
+## When a flow, plan, data flow or bug should be visualized
 
-Den Skill `flow-diagram` benutzen (`.claude/skills/flow-diagram/SKILL.md`). Kurzfassung:
-1. `docs/REGELN.md` und `docs/FORMAT.md` lesen, passendes Beispiel aus `examples/` als Vorlage nehmen.
-2. Spec nach `flows/<thema>.flow.json` schreiben.
-3. `node bin/flowviz.mjs validate flows/<thema>.flow.json`, bis 0 Fehler und 0 Regelhinweise gemeldet werden.
-4. `node bin/flowviz.mjs build flows/<thema>.flow.json -o out/<thema>.html` und das Ergebnis zeigen.
+Use the `flow-diagram` skill (`.claude/skills/flow-diagram/SKILL.md`). In short:
+1. Read `docs/RULES.md` and `docs/FORMAT.md`, take a matching example from `examples/` or `flows/` as a template.
+2. Write the spec to `flows/<topic>.flow.json`.
+3. Run `node bin/flowviz.mjs validate flows/<topic>.flow.json` until it reports 0 errors and 0 rule hints.
+4. Run `node bin/flowviz.mjs build flows/<topic>.flow.json -o out/<topic>.html` and show the result.
 
-## Befehle
+## Commands
 
-- `npm test`: Validator- und Build-Tests (`node --test`)
-- `npm run validate`: alle Beispiele prüfen
-- `npm run build:examples`: Beispiele nach `out/` bauen
+- `npm test`: validator, build and viewer tests (`node --test`)
+- `npm run validate`: check all examples
+- `npm run build:examples`: build the examples into `out/`
 
-## Konventionen
+## Conventions
 
-- Keine npm-Abhängigkeiten. Der Viewer ist eine einzige HTML-Datei ohne externe Ressourcen.
-- Design: weiß und schlicht, fast monochrom. Farbe nur als Signal: Typ-Punkte, rot = Fehler, grün = neu, blau = geändert. Kein Glow, keine Emojis.
-- Texte sind deutsch. Jeder Text gibt es als `{simple, tech}`.
-- Neue Regeln: in `docs/REGELN.md` beschreiben, in `src/validate.mjs` mit derselben Kennung prüfen und in `test/` absichern.
-- `src/layout.mjs` wird beim Build in den Viewer eingesetzt (`export` wird entfernt). Dort nur browser-taugliches JavaScript ohne Imports.
+- No npm dependencies. The viewer is a single HTML file without external resources.
+- Design: white and plain, nearly monochrome. Colour only as a signal: type dots, red = error, green = new, blue = changed. No glow, no emojis.
+- All texts are in English. Every text exists as `{simple, tech}`.
+- New rules: describe them in `docs/RULES.md`, check them in `src/validate.mjs` with the same ID and cover them in `test/`.
+- `src/layout.mjs` is inlined into the viewer at build time (`export` is stripped). Only browser-compatible JavaScript without imports there.

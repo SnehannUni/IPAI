@@ -1,138 +1,755 @@
 {
-  "title": "Knight Capital 2012: 460 Millionen Dollar in 45 Minuten",
+  "title": "Knight Capital 2012: $460 million in 45 minutes",
   "subtitle": {
-    "simple": "Ein vergessener Rechner und ein alter Schalter.",
-    "tech": "Unvollständiges Deployment, wiederverwendetes Flag, toter Power-Peg-Code."
+    "simple": "A forgotten computer and an old switch.",
+    "tech": "Incomplete deployment, reused flag, dead Power Peg code."
   },
   "zones": [
-    {"id": "kunden", "label": {"simple": "KUNDEN", "tech": "BROKER-KUNDEN"}},
-    {"id": "knight", "label": {"simple": "KNIGHT CAPITAL", "tech": "KNIGHT – SMARS"}},
-    {"id": "boerse", "label": {"simple": "BÖRSE", "tech": "HANDELSPLÄTZE"}}
+    {
+      "id": "customers",
+      "label": {
+        "simple": "CUSTOMERS",
+        "tech": "BROKER CLIENTS"
+      }
+    },
+    {
+      "id": "knight",
+      "label": {
+        "simple": "KNIGHT CAPITAL",
+        "tech": "KNIGHT – SMARS"
+      }
+    },
+    {
+      "id": "exchange",
+      "label": {
+        "simple": "STOCK EXCHANGE",
+        "tech": "TRADING VENUES"
+      }
+    }
   ],
   "nodes": [
-    {"id": "kunde", "type": "trigger", "zone": "kunden", "col": 0, "row": 1,
-     "label": {"simple": "Kunden-Aufträge", "tech": "Parent-Orders"},
-     "sub": {"simple": "wollen Aktien handeln", "tech": "RLP-fähige Retail-Orders"},
-     "initial": {"status": {"simple": "212 Aufträge", "tech": "212 Parent-Orders"}}},
-    {"id": "srv17", "type": "step", "zone": "knight", "col": 0, "row": 0, "widget": "meter",
-     "label": {"simple": "Rechner 1–7", "tech": "SMARS-Server 1–7"},
-     "sub": {"simple": "handeln für die Kunden", "tech": "Order-Router"},
-     "meterLabel": {"simple": "erledigt", "tech": "Fill"},
-     "initial": {"badge": {"simple": "alte Version", "tech": "alter Code"}}},
-    {"id": "team", "type": "trigger", "zone": "knight", "col": 0, "row": 1, "widget": "checklist",
-     "label": {"simple": "Technik-Team", "tech": "Deployment"},
-     "sub": {"simple": "spielt neue Programme ein", "tech": "manuelles Rollout"},
-     "items": [
-       {"simple": "Rechner 1–7 neu", "tech": "Server 1–7: RLP-Code"},
-       {"simple": "Rechner 8 neu", "tech": "Server 8: RLP-Code"},
-       {"simple": "Zweite Person prüft", "tech": "Review / Versions-Check"}
-     ]},
-    {"id": "srv8", "type": "step", "zone": "knight", "col": 0, "row": 2, "widget": "meter",
-     "label": {"simple": "Rechner 8", "tech": "SMARS-Server 8"},
-     "sub": {"simple": "handelt für die Kunden", "tech": "Order-Router"},
-     "meterLabel": {"simple": "erledigt", "tech": "Fill"},
-     "initial": {"badge": {"simple": "alte Version", "tech": "alter Code"}}},
-    {"id": "kasse", "type": "result", "zone": "knight", "col": 0, "row": 3,
-     "label": {"simple": "Knights Kasse", "tech": "Eigenbestand"},
-     "sub": {"simple": "zahlt für alle Käufe", "tech": "Positionen und P&L"},
-     "initial": {"status": {"simple": "alles im Plan", "tech": "flat"}}},
-    {"id": "boerse", "type": "external", "zone": "boerse", "col": 0, "row": 0, "rows": 3,
-     "label": {"simple": "Börse", "tech": "NYSE und andere"},
-     "sub": {"simple": "führt Aufträge aus", "tech": "Execution Venues"}}
-  ],
-  "edges": [
-    {"id": "ts7", "from": "team", "to": "srv17", "verb": {"simple": "spielt neu ein", "tech": "deploy"}},
-    {"id": "ts8", "from": "team", "to": "srv8", "verb": {"simple": "spielt neu ein", "tech": "deploy"}, "views": ["fix"]},
-    {"id": "s8t", "from": "srv8", "to": "team", "verb": {"simple": "meldet Version", "tech": "Versions-Check"}, "views": ["fix"]},
-    {"id": "ks7", "from": "kunde", "to": "srv17", "verb": {"simple": "schickt Auftrag", "tech": "Parent-Order"}},
-    {"id": "ks8", "from": "kunde", "to": "srv8", "verb": {"simple": "schickt Auftrag", "tech": "Parent-Order"}},
-    {"id": "s7b", "from": "srv17", "to": "boerse", "verb": {"simple": "handelt", "tech": "Child-Order"}},
-    {"id": "bs7", "from": "boerse", "to": "srv17", "verb": {"simple": "bestätigt", "tech": "Execution"}},
-    {"id": "s8b", "from": "srv8", "to": "boerse", "verb": {"simple": "handelt", "tech": "Child-Order"}},
-    {"id": "bs8", "from": "boerse", "to": "srv8", "verb": {"simple": "bestätigt", "tech": "Execution"}},
-    {"id": "bk", "from": "boerse", "to": "kasse", "verb": {"simple": "rechnet ab", "tech": "Settlement"}, "views": ["bug"]}
-  ],
-  "views": [
     {
-      "id": "bug", "kind": "bug", "label": "Bug",
-      "headline": {"simple": "Problem: Knight verliert in 45 Minuten 460 Millionen Dollar. Warum?", "tech": "Bug: SMARS flutet am 1.8.2012 die Börse mit Child-Orders."},
-      "chain": [
-        {"simple": "Update nur auf 7 von 8 Rechnern", "tech": "Deployment auf 7/8 Servern"},
-        {"simple": "Alter Schalter weckt altes Programm", "tech": "Flag aktiviert Power Peg"},
-        {"simple": "Programm zählt nicht mit – handelt endlos", "tech": "kein Mengenzähler → Order-Flut"},
-        {"simple": "460 Mio. $ Verlust", "tech": "Verlust 460 Mio. $"}
-      ],
-      "steps": [
-        {"edges": ["ts7"],
-         "text": {"simple": "Das Technik-Team spielt ein neues Programm ein, Rechner für Rechner.", "tech": "Ab dem 27.7. wird der neue RLP-Code von Hand auf die SMARS-Server kopiert."},
-         "set": {"team": {"check": {"0": "done"}}, "srv17": {"badge": {"simple": "neue Version", "tech": "RLP-Code"}}}},
-        {"focus": ["team", "srv8"], "chain": 0,
-         "text": {"simple": "Rechner 8 wird vergessen, und niemand prüft nach: Dort liegt noch das alte Programm.", "tech": "Server 8 bekommt den Code nicht; ein Review durch einen zweiten Techniker ist nicht vorgesehen."},
-         "set": {"team": {"check": {"1": "fail", "2": "fail"}}, "srv8": {"status": {"simple": "altes „Power Peg“ noch da", "tech": "Power-Peg-Code vorhanden"}, "tone": "bad"}}},
-        {"edges": ["ks7"], "packet": {"simple": "Schalter: an", "tech": "Flag = 1"},
-         "text": {"simple": "Am 1. August schicken Kunden Aufträge mit einem Schalter, der das neue Programm einschaltet.", "tech": "1.8., Handelsbeginn: Parent-Orders mit dem wiederverwendeten Flag starten auf Server 1–7 die RLP-Logik."},
-         "set": {"srv17": {"meter": 0}}},
-        {"edges": ["s7b", "bs7"],
-         "text": {"simple": "Rechner 1–7 handeln genau die bestellte Menge und hören nach der Bestätigung auf.", "tech": "Child-Orders werden ausgeführt; nach vollständigem Fill stoppt der Router."},
-         "set": {"srv17": {"meter": 100, "status": {"simple": "fertig", "tech": "filled"}, "tone": "ok"}}},
-        {"edges": ["ks8"], "error": true, "chain": 1, "packet": {"simple": "Schalter: an", "tech": "Flag = 1"},
-         "text": {"simple": "Auch Rechner 8 bekommt Aufträge, doch bei ihm schaltet derselbe Schalter das alte Programm „Power Peg“ ein.", "tech": "Auf Server 8 aktiviert dasselbe Flag den seit 2003 ungenutzten Power-Peg-Code."},
-         "set": {"srv8": {"meter": 0, "status": null, "badge": {"simple": "„Power Peg“ an", "tech": "Power Peg aktiv"}}}},
-        {"edges": ["s8b", "bs8"], "error": true,
-         "text": {"simple": "Rechner 8 handelt und die Börse bestätigt, aber das alte Programm zählt nicht mehr mit.", "tech": "Executions kommen zurück, doch der Mengenzähler von Power Peg wurde 2005 verschoben und greift nicht."},
-         "set": {"srv8": {"meter": 100}}},
-        {"edges": ["s8b", "bs8", "s8b", "bs8"], "error": true, "chain": 2,
-         "text": {"simple": "Rechner 8 merkt nicht, dass der Auftrag erledigt ist, und schickt immer neue Aufträge hinterher.", "tech": "Ohne Stopp-Bedingung sendet der Server für jede Parent-Order fortlaufend neue Child-Orders."},
-         "set": {"srv8": {"meter": 400}}},
-        {"edges": ["ts7"], "error": true, "labels": {"ts7": {"simple": "nimmt zurück", "tech": "Rollback"}},
-         "text": {"simple": "Das Team sucht den Fehler und nimmt das neue Programm von Rechner 1–7 zurück, was alles schlimmer macht.", "tech": "Rollback des RLP-Codes auf Server 1–7: Dort aktiviert das Flag nun ebenfalls Power Peg."},
-         "set": {"srv17": {"badge": {"simple": "„Power Peg“ an", "tech": "Power Peg aktiv"}, "status": null}}},
-        {"focus": ["srv17", "srv8", "boerse"], "error": true,
-         "text": {"simple": "45 Minuten lang schicken die Rechner Millionen Aufträge an die Börse, bis Knight sie abschaltet.", "tech": "In rund 45 Minuten: über 4 Mio. Executions in 154 Aktien, 397 Mio. Stück."},
-         "set": {"srv17": {"meter": 900, "state": "dead"}, "srv8": {"meter": 2000, "state": "dead"}, "boerse": {"status": {"simple": "4 Mio. Geschäfte", "tech": "4 Mio. Executions"}, "tone": "bad"}}},
-        {"edges": ["bk"], "error": true, "chain": 3,
-         "text": {"simple": "Knight muss für alle Geschäfte zahlen, besitzt ungewollt Aktien für Milliarden und verliert 460 Millionen Dollar.", "tech": "Ungewollte Netto-Positionen: 3,5 Mrd. $ long, 3,15 Mrd. $ short; realisierter Verlust 460 Mio. $."},
-         "set": {"kasse": {"status": {"simple": "−460 Mio. $", "tech": "P&L −460 Mio. $"}, "tone": "bad", "state": "dead"}}}
+      "id": "customer",
+      "type": "trigger",
+      "zone": "customers",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Customer orders",
+        "tech": "Parent orders"
+      },
+      "sub": {
+        "simple": "want to trade stocks",
+        "tech": "RLP-eligible retail orders"
+      },
+      "initial": {
+        "status": {
+          "simple": "212 orders",
+          "tech": "212 parent orders"
+        }
+      }
+    },
+    {
+      "id": "srv17",
+      "type": "step",
+      "zone": "knight",
+      "col": 0,
+      "row": 0,
+      "widget": "meter",
+      "label": {
+        "simple": "Computers 1–7",
+        "tech": "SMARS servers 1–7"
+      },
+      "sub": {
+        "simple": "trade for customers",
+        "tech": "order router"
+      },
+      "meterLabel": {
+        "simple": "done",
+        "tech": "fill"
+      },
+      "initial": {
+        "badge": {
+          "simple": "old version",
+          "tech": "old code"
+        }
+      }
+    },
+    {
+      "id": "team",
+      "type": "trigger",
+      "zone": "knight",
+      "col": 0,
+      "row": 1,
+      "widget": "checklist",
+      "label": {
+        "simple": "Tech team",
+        "tech": "Deployment"
+      },
+      "sub": {
+        "simple": "installs new software",
+        "tech": "manual rollout"
+      },
+      "items": [
+        {
+          "simple": "Computers 1–7 updated",
+          "tech": "Servers 1–7: RLP code"
+        },
+        {
+          "simple": "Computer 8 updated",
+          "tech": "Server 8: RLP code"
+        },
+        {
+          "simple": "Second person checks",
+          "tech": "Review / version check"
+        }
       ]
     },
     {
-      "id": "fix", "kind": "fix", "label": "Lösung",
-      "headline": {"simple": "Lösung: Vor dem Start prüft eine zweite Kontrolle, ob alle 8 Rechner das neue Programm haben.", "tech": "Fix: Automatischer Versions-Check aller Server und Vier-Augen-Freigabe vor Handelsbeginn."},
+      "id": "srv8",
+      "type": "step",
+      "zone": "knight",
+      "col": 0,
+      "row": 2,
+      "widget": "meter",
+      "label": {
+        "simple": "Computer 8",
+        "tech": "SMARS server 8"
+      },
+      "sub": {
+        "simple": "trades for customers",
+        "tech": "order router"
+      },
+      "meterLabel": {
+        "simple": "done",
+        "tech": "fill"
+      },
+      "initial": {
+        "badge": {
+          "simple": "old version",
+          "tech": "old code"
+        }
+      }
+    },
+    {
+      "id": "cash",
+      "type": "result",
+      "zone": "knight",
+      "col": 0,
+      "row": 3,
+      "label": {
+        "simple": "Knight's cash",
+        "tech": "Proprietary book"
+      },
+      "sub": {
+        "simple": "pays for all purchases",
+        "tech": "positions and P&L"
+      },
+      "initial": {
+        "status": {
+          "simple": "all on track",
+          "tech": "flat"
+        }
+      }
+    },
+    {
+      "id": "exchange",
+      "type": "external",
+      "zone": "exchange",
+      "col": 0,
+      "row": 0,
+      "rows": 3,
+      "label": {
+        "simple": "Stock exchange",
+        "tech": "NYSE and others"
+      },
+      "sub": {
+        "simple": "executes orders",
+        "tech": "execution venues"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "ts7",
+      "from": "team",
+      "to": "srv17",
+      "verb": {
+        "simple": "installs",
+        "tech": "deploy"
+      }
+    },
+    {
+      "id": "ts8",
+      "from": "team",
+      "to": "srv8",
+      "verb": {
+        "simple": "installs",
+        "tech": "deploy"
+      },
+      "views": [
+        "fix"
+      ]
+    },
+    {
+      "id": "s8t",
+      "from": "srv8",
+      "to": "team",
+      "verb": {
+        "simple": "reports version",
+        "tech": "version check"
+      },
+      "views": [
+        "fix"
+      ]
+    },
+    {
+      "id": "ks7",
+      "from": "customer",
+      "to": "srv17",
+      "verb": {
+        "simple": "sends order",
+        "tech": "parent order"
+      }
+    },
+    {
+      "id": "ks8",
+      "from": "customer",
+      "to": "srv8",
+      "verb": {
+        "simple": "sends order",
+        "tech": "parent order"
+      }
+    },
+    {
+      "id": "s7b",
+      "from": "srv17",
+      "to": "exchange",
+      "verb": {
+        "simple": "trades",
+        "tech": "child order"
+      }
+    },
+    {
+      "id": "bs7",
+      "from": "exchange",
+      "to": "srv17",
+      "verb": {
+        "simple": "confirms",
+        "tech": "execution"
+      }
+    },
+    {
+      "id": "s8b",
+      "from": "srv8",
+      "to": "exchange",
+      "verb": {
+        "simple": "trades",
+        "tech": "child order"
+      }
+    },
+    {
+      "id": "bs8",
+      "from": "exchange",
+      "to": "srv8",
+      "verb": {
+        "simple": "confirms",
+        "tech": "execution"
+      }
+    },
+    {
+      "id": "bk",
+      "from": "exchange",
+      "to": "cash",
+      "verb": {
+        "simple": "bills",
+        "tech": "settlement"
+      },
+      "views": [
+        "bug"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "bug",
+      "kind": "bug",
+      "label": "Bug",
+      "headline": {
+        "simple": "Problem: Knight loses $460 million in 45 minutes. Why?",
+        "tech": "Bug: on Aug 1, 2012, SMARS floods the exchange with child orders."
+      },
       "chain": [
-        {"simple": "Rechner 8 wieder vergessen", "tech": "Deployment auf 7/8 Servern"},
-        {"simple": "Abgleich findet ihn", "tech": "Versions-Check schlägt an"},
-        {"simple": "Alle 8 handeln richtig", "tech": "RLP-Code auf 8/8"},
-        {"simple": "Kein Verlust", "tech": "keine Fehl-Orders"}
+        {
+          "simple": "Update on only 7 of 8 computers",
+          "tech": "Deployment on 7/8 servers"
+        },
+        {
+          "simple": "Old switch wakes old program",
+          "tech": "Flag activates Power Peg"
+        },
+        {
+          "simple": "Program stops counting – trades endlessly",
+          "tech": "No quantity counter → order flood"
+        },
+        {
+          "simple": "$460M loss",
+          "tech": "Loss of $460M"
+        }
       ],
-      "mark": {"nodes": {"team": "geändert"}, "edges": {"s8t": "neu", "ts8": "neu"}},
       "steps": [
-        {"edges": ["ts7"],
-         "text": {"simple": "Das Technik-Team spielt ein neues Programm ein, Rechner für Rechner.", "tech": "Ab dem 27.7. wird der neue RLP-Code von Hand auf die SMARS-Server kopiert."},
-         "set": {"team": {"check": {"0": "done"}}, "srv17": {"badge": {"simple": "neue Version", "tech": "RLP-Code"}}}},
-        {"focus": ["team", "srv8"], "chain": 0, "tag": "test",
-         "text": {"simple": "Härtetest: Rechner 8 wird wieder vergessen und hat noch das alte Programm.", "tech": "Derselbe Fehler beim Rollout: Server 8 bleibt auf dem alten Code."},
-         "set": {"team": {"check": {"1": "fail"}}, "srv8": {"status": {"simple": "altes „Power Peg“ noch da", "tech": "Power-Peg-Code vorhanden"}, "tone": "bad"}}},
-        {"edges": ["s8t"], "chain": 1, "tag": "neu",
-         "text": {"simple": "Neu: Vor dem Börsenstart meldet jeder Rechner seine Version, und Rechner 8 fällt sofort auf.", "tech": "Neu: Vor Handelsbeginn gleicht ein Check die Code-Version aller 8 Server ab; Abweichung blockiert den Start."},
-         "set": {"team": {"check": {"2": "done"}}, "srv8": {"status": {"simple": "meldet: alte Version", "tech": "Version: alt"}, "tone": "bad"}}},
-        {"edges": ["ts8"], "tag": "neu",
-         "text": {"simple": "Das Team spielt das neue Programm auch auf Rechner 8 ein.", "tech": "Server 8 erhält den RLP-Code; ein zweiter Techniker gibt das Rollout frei."},
-         "set": {"team": {"check": {"1": "ok"}}, "srv8": {"badge": {"simple": "neue Version", "tech": "RLP-Code"}, "status": null}}},
-        {"edges": ["ks7"], "packet": {"simple": "Schalter: an", "tech": "Flag = 1"},
-         "text": {"simple": "Am 1. August schicken Kunden Aufträge mit einem Schalter, der das neue Programm einschaltet.", "tech": "1.8., Handelsbeginn: Parent-Orders mit dem wiederverwendeten Flag starten auf Server 1–7 die RLP-Logik."},
-         "set": {"srv17": {"meter": 0}}},
-        {"edges": ["s7b", "bs7"],
-         "text": {"simple": "Rechner 1–7 handeln genau die bestellte Menge und hören nach der Bestätigung auf.", "tech": "Child-Orders werden ausgeführt; nach vollständigem Fill stoppt der Router."},
-         "set": {"srv17": {"meter": 100, "status": {"simple": "fertig", "tech": "filled"}, "tone": "ok"}}},
-        {"edges": ["ks8"], "tag": "geändert", "packet": {"simple": "Schalter: an", "tech": "Flag = 1"},
-         "text": {"simple": "Auch Rechner 8 bekommt Aufträge, und jetzt startet der Schalter auch bei ihm das neue Programm.", "tech": "Auf Server 8 aktiviert das Flag nun ebenfalls die RLP-Logik statt Power Peg."},
-         "set": {"srv8": {"meter": 0}}},
-        {"edges": ["s8b", "bs8"], "chain": 2,
-         "text": {"simple": "Rechner 8 handelt genau die bestellte Menge und hört nach der Bestätigung auf.", "tech": "Executions werden gezählt; nach vollständigem Fill stoppt der Router."},
-         "set": {"srv8": {"meter": 100, "status": {"simple": "fertig", "tech": "filled"}, "tone": "ok"}}},
-        {"focus": "kasse", "chain": 3,
-         "text": {"simple": "Ergebnis: Knight handelt nur, was die Kunden bestellt haben, und verliert nichts.", "tech": "Ergebnis: keine Fehl-Orders, keine ungewollten Positionen."},
-         "set": {"kasse": {"status": {"simple": "kein Verlust", "tech": "keine Fehl-Positionen"}, "tone": "ok", "state": "good"}}}
+        {
+          "edges": [
+            "ts7"
+          ],
+          "text": {
+            "simple": "The tech team installs a new program, one computer at a time.",
+            "tech": "From July 27, the new RLP code is copied by hand onto the SMARS servers."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "0": "done"
+              }
+            },
+            "srv17": {
+              "badge": {
+                "simple": "new version",
+                "tech": "RLP code"
+              }
+            }
+          }
+        },
+        {
+          "focus": [
+            "team",
+            "srv8"
+          ],
+          "chain": 0,
+          "text": {
+            "simple": "Computer 8 is forgotten, and nobody double-checks: it still has the old program.",
+            "tech": "Server 8 does not get the code; no review by a second engineer is required."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "1": "fail",
+                "2": "fail"
+              }
+            },
+            "srv8": {
+              "status": {
+                "simple": "old “Power Peg” still there",
+                "tech": "Power Peg code present"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ks7"
+          ],
+          "packet": {
+            "simple": "switch: on",
+            "tech": "flag = 1"
+          },
+          "text": {
+            "simple": "On August 1, customers send orders with a switch that turns on the new program.",
+            "tech": "Aug 1, market open: parent orders with the reused flag start the RLP logic on servers 1–7."
+          },
+          "set": {
+            "srv17": {
+              "meter": 0
+            }
+          }
+        },
+        {
+          "edges": [
+            "s7b",
+            "bs7"
+          ],
+          "text": {
+            "simple": "Computers 1–7 trade exactly the ordered amount and stop after the confirmation.",
+            "tech": "Child orders are executed; once fully filled, the router stops."
+          },
+          "set": {
+            "srv17": {
+              "meter": 100,
+              "status": {
+                "simple": "done",
+                "tech": "filled"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ks8"
+          ],
+          "error": true,
+          "chain": 1,
+          "packet": {
+            "simple": "switch: on",
+            "tech": "flag = 1"
+          },
+          "text": {
+            "simple": "Computer 8 also gets orders, but there the same switch turns on the old “Power Peg” program.",
+            "tech": "On server 8, the same flag activates the Power Peg code, unused since 2003."
+          },
+          "set": {
+            "srv8": {
+              "meter": 0,
+              "status": null,
+              "badge": {
+                "simple": "“Power Peg” on",
+                "tech": "Power Peg active"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "s8b",
+            "bs8"
+          ],
+          "error": true,
+          "text": {
+            "simple": "Computer 8 trades and the exchange confirms, but the old program no longer keeps count.",
+            "tech": "Executions come back, but Power Peg's quantity counter was moved in 2005 and no longer applies."
+          },
+          "set": {
+            "srv8": {
+              "meter": 100
+            }
+          }
+        },
+        {
+          "edges": [
+            "s8b",
+            "bs8",
+            "s8b",
+            "bs8"
+          ],
+          "error": true,
+          "chain": 2,
+          "text": {
+            "simple": "Computer 8 does not notice the order is done and keeps sending new orders.",
+            "tech": "Without a stop condition, the server keeps sending new child orders for every parent order."
+          },
+          "set": {
+            "srv8": {
+              "meter": 400
+            }
+          }
+        },
+        {
+          "edges": [
+            "ts7"
+          ],
+          "error": true,
+          "labels": {
+            "ts7": {
+              "simple": "rolls back",
+              "tech": "rollback"
+            }
+          },
+          "text": {
+            "simple": "The team hunts for the bug and removes the new program from computers 1–7, which makes everything worse.",
+            "tech": "Rollback of the RLP code on servers 1–7: there, too, the flag now activates Power Peg."
+          },
+          "set": {
+            "srv17": {
+              "badge": {
+                "simple": "“Power Peg” on",
+                "tech": "Power Peg active"
+              },
+              "status": null
+            }
+          }
+        },
+        {
+          "focus": [
+            "srv17",
+            "srv8",
+            "exchange"
+          ],
+          "error": true,
+          "text": {
+            "simple": "For 45 minutes the computers send millions of orders to the exchange, until Knight shuts them down.",
+            "tech": "In about 45 minutes: over 4 million executions in 154 stocks, 397 million shares."
+          },
+          "set": {
+            "srv17": {
+              "meter": 900,
+              "state": "dead"
+            },
+            "srv8": {
+              "meter": 2000,
+              "state": "dead"
+            },
+            "exchange": {
+              "status": {
+                "simple": "4 million trades",
+                "tech": "4M executions"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "bk"
+          ],
+          "error": true,
+          "chain": 3,
+          "text": {
+            "simple": "Knight must pay for every trade, ends up owning billions in unwanted stock and loses $460 million.",
+            "tech": "Unwanted net positions: $3.5B long, $3.15B short; realized loss of $460M."
+          },
+          "set": {
+            "cash": {
+              "status": {
+                "simple": "−$460M",
+                "tech": "P&L −$460M"
+              },
+              "tone": "bad",
+              "state": "dead"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "kind": "fix",
+      "label": "Solution",
+      "headline": {
+        "simple": "Solution: Before trading starts, a second check confirms all 8 computers have the new program.",
+        "tech": "Fix: automated version check of all servers and four-eyes approval before market open."
+      },
+      "chain": [
+        {
+          "simple": "Computer 8 forgotten again",
+          "tech": "Deployment on 7/8 servers"
+        },
+        {
+          "simple": "Check finds it",
+          "tech": "Version check fires"
+        },
+        {
+          "simple": "All 8 trade correctly",
+          "tech": "RLP code on 8/8"
+        },
+        {
+          "simple": "No loss",
+          "tech": "No erroneous orders"
+        }
+      ],
+      "mark": {
+        "nodes": {
+          "team": "changed"
+        },
+        "edges": {
+          "s8t": "new",
+          "ts8": "new"
+        }
+      },
+      "steps": [
+        {
+          "edges": [
+            "ts7"
+          ],
+          "text": {
+            "simple": "The tech team installs a new program, one computer at a time.",
+            "tech": "From July 27, the new RLP code is copied by hand onto the SMARS servers."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "0": "done"
+              }
+            },
+            "srv17": {
+              "badge": {
+                "simple": "new version",
+                "tech": "RLP code"
+              }
+            }
+          }
+        },
+        {
+          "focus": [
+            "team",
+            "srv8"
+          ],
+          "chain": 0,
+          "tag": "test",
+          "text": {
+            "simple": "Stress test: computer 8 is forgotten again and still has the old program.",
+            "tech": "The same rollout mistake: server 8 stays on the old code."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "1": "fail"
+              }
+            },
+            "srv8": {
+              "status": {
+                "simple": "old “Power Peg” still there",
+                "tech": "Power Peg code present"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "s8t"
+          ],
+          "chain": 1,
+          "tag": "new",
+          "text": {
+            "simple": "New: before trading starts, every computer reports its version, and computer 8 stands out at once.",
+            "tech": "New: before market open, a check compares the code version on all 8 servers; a mismatch blocks the start."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "2": "done"
+              }
+            },
+            "srv8": {
+              "status": {
+                "simple": "reports: old version",
+                "tech": "version: old"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ts8"
+          ],
+          "tag": "new",
+          "text": {
+            "simple": "The team installs the new program on computer 8 as well.",
+            "tech": "Server 8 receives the RLP code; a second engineer approves the rollout."
+          },
+          "set": {
+            "team": {
+              "check": {
+                "1": "ok"
+              }
+            },
+            "srv8": {
+              "badge": {
+                "simple": "new version",
+                "tech": "RLP code"
+              },
+              "status": null
+            }
+          }
+        },
+        {
+          "edges": [
+            "ks7"
+          ],
+          "packet": {
+            "simple": "switch: on",
+            "tech": "flag = 1"
+          },
+          "text": {
+            "simple": "On August 1, customers send orders with a switch that turns on the new program.",
+            "tech": "Aug 1, market open: parent orders with the reused flag start the RLP logic on servers 1–7."
+          },
+          "set": {
+            "srv17": {
+              "meter": 0
+            }
+          }
+        },
+        {
+          "edges": [
+            "s7b",
+            "bs7"
+          ],
+          "text": {
+            "simple": "Computers 1–7 trade exactly the ordered amount and stop after the confirmation.",
+            "tech": "Child orders are executed; once fully filled, the router stops."
+          },
+          "set": {
+            "srv17": {
+              "meter": 100,
+              "status": {
+                "simple": "done",
+                "tech": "filled"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ks8"
+          ],
+          "tag": "changed",
+          "packet": {
+            "simple": "switch: on",
+            "tech": "flag = 1"
+          },
+          "text": {
+            "simple": "Computer 8 also gets orders, and now the switch starts the new program there too.",
+            "tech": "On server 8, the flag now also activates the RLP logic instead of Power Peg."
+          },
+          "set": {
+            "srv8": {
+              "meter": 0
+            }
+          }
+        },
+        {
+          "edges": [
+            "s8b",
+            "bs8"
+          ],
+          "chain": 2,
+          "text": {
+            "simple": "Computer 8 trades exactly the ordered amount and stops after the confirmation.",
+            "tech": "Executions are counted; once fully filled, the router stops."
+          },
+          "set": {
+            "srv8": {
+              "meter": 100,
+              "status": {
+                "simple": "done",
+                "tech": "filled"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": "cash",
+          "chain": 3,
+          "text": {
+            "simple": "Result: Knight only trades what customers ordered and loses nothing.",
+            "tech": "Result: no erroneous orders, no unwanted positions."
+          },
+          "set": {
+            "cash": {
+              "status": {
+                "simple": "no loss",
+                "tech": "no erroneous positions"
+              },
+              "tone": "ok",
+              "state": "good"
+            }
+          }
+        }
       ]
     }
   ]

@@ -11,82 +11,82 @@ const clone = x => structuredClone(x);
 const hasRule = (warnings, id) => warnings.some(w => w.startsWith(id + ' '));
 
 for (const name of examples) {
-  test(`${name}: keine Fehler, keine Regelhinweise`, () => {
+  test(`${name}: no errors, no rule hints`, () => {
     const {errors, warnings} = validateSpec(load(name));
     assert.deepEqual(errors, []);
     assert.deepEqual(warnings, []);
   });
 
-  test(`${name}: Build ist eigenständig und lauffähig`, () => {
+  test(`${name}: build is self-contained and runnable`, () => {
     const html = buildHtml(load(name));
-    assert.ok(!html.includes('__FLOW_SPEC__') && !html.includes('/*__LAYOUT__*/'), 'Platzhalter ersetzt');
-    assert.ok(!/<script[^>]+src=|<link[^>]+href=/.test(html), 'keine externen Dateien');
+    assert.ok(!html.includes('__FLOW_SPEC__') && !html.includes('/*__LAYOUT__*/'), 'placeholders replaced');
+    assert.ok(!/<script[^>]+src=|<link[^>]+href=/.test(html), 'no external files');
     const json = html.match(/<script type="application\/json" id="flow-spec">([\s\S]*?)<\/script>/)[1];
     assert.deepEqual(JSON.parse(json), load(name));
-    const code = html.match(/<script>\n([\s\S]*?)<\/script>/)[1];
-    assert.doesNotThrow(() => new vm.Script(code), 'Viewer-Skript ist gültiges JavaScript');
+    const code = html.match(/<script>\r?\n([\s\S]*?)<\/script>/)[1];
+    assert.doesNotThrow(() => new vm.Script(code), 'viewer script is valid JavaScript');
   });
 }
 
-test('Build entschärft </script> in Texten', () => {
+test('build escapes </script> in texts', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   spec.title = 'a</script><b>';
   const html = buildHtml(spec);
   assert.ok(html.includes('a<\\/script><b>'));
 });
 
-test('Fehler: unbekannter Pfeil im Schritt', () => {
+test('error: unknown arrow in a step', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   spec.views[0].steps[0].edges = ['gibtsnicht'];
   assert.ok(validateSpec(spec).errors.some(e => e.includes('gibtsnicht')));
 });
 
-test('Fehler: zwei Kästchen auf demselben Platz', () => {
+test('error: two boxes in the same cell', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   spec.nodes.find(n => n.id === 'kube').row = 0;
-  assert.ok(validateSpec(spec).errors.some(e => e.includes('demselben Platz')));
+  assert.ok(validateSpec(spec).errors.some(e => e.includes('same cell')));
 });
 
-test('R4: Pfeil durch ein Kästchen wird erkannt', () => {
+test('R4: arrow through a box is detected', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
-  delete spec.edges.find(e => e.id === 'wy').route;   // läuft dann quer durch die Warteliste
+  delete spec.edges.find(e => e.id === 'wy').route;   // then runs straight through the queue
   const {warnings} = validateSpec(spec);
   assert.ok(warnings.some(w => w.startsWith('R4') && w.includes('queue')), warnings.join('\n'));
 });
 
-test('R7: zu langer Schritt-Text', () => {
+test('R7: step text too long', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
-  spec.views[0].steps[0].text = {simple: 'wort '.repeat(30), tech: 'x'};
+  spec.views[0].steps[0].text = {simple: 'word '.repeat(30), tech: 'x'};
   assert.ok(hasRule(validateSpec(spec).warnings, 'R7'));
 });
 
-test('R10: Sprung – Kästchen handelt, ohne eingeführt zu sein', () => {
+test('R10: jump – a box acts without being introduced', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
-  spec.views[0].steps.splice(4, 1);   // Schritt "Update kommt" (focus kube) entfernen
+  spec.views[0].steps.splice(4, 1);   // remove the step "update arrives" (focus kube)
   spec.views[0].steps.forEach(s => { if (s.chain != null) s.chain = Math.max(0, s.chain - 1); });
   assert.ok(hasRule(validateSpec(spec).warnings, 'R10'));
 });
 
-test('R12: Bug ohne Ursachenkette', () => {
+test('R12: bug without a cause chain', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   delete spec.views[0].chain;
   spec.views[0].steps.forEach(s => delete s.chain);
   assert.ok(hasRule(validateSpec(spec).warnings, 'R12'));
 });
 
-test('R13: Lösung ohne markierte Änderung', () => {
+test('R13: solution without a marked change', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   spec.views[1].steps.forEach(s => delete s.tag);
   assert.ok(hasRule(validateSpec(spec).warnings, 'R13'));
 });
 
-test('R3: zu langes Etikett wird erkannt (Platz im Kästchen)', () => {
+test('R3: badge too long is detected (space in the box)', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
-  spec.views[0].steps[5].set.worker.badge = {simple: 'gestoppt mitten in der Arbeit', tech: 'killed'};
+  spec.views[0].steps[5].set.worker.badge = {simple: 'stopped in the middle of work', tech: 'killed'};
   assert.ok(validateSpec(spec).warnings.some(w => w.startsWith('R3') && w.includes('badge')));
 });
 
-test('R4: Pfeile, die aufeinander liegen, werden erkannt', () => {
+test('R4: arrows lying on top of each other are detected', () => {
   const tiny = {
     title: 't',
     nodes: [
@@ -98,31 +98,31 @@ test('R4: Pfeile, die aufeinander liegen, werden erkannt', () => {
     views: [{id: 'v', steps: [{edges: ['ab'], text: 'a'}, {edges: ['ac'], text: 'b'}]}],
   };
   const {warnings} = validateSpec(tiny);
-  assert.ok(warnings.some(w => w.startsWith('R4') && w.includes('liegt auf')), warnings.join('\n'));
+  assert.ok(warnings.some(w => w.startsWith('R4') && w.includes('lies on')), warnings.join('\n'));
 });
 
-test('R2: Pfeil in einer Ansicht sichtbar, aber dort ungenutzt', () => {
+test('R2: arrow visible in a view but unused there', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   delete spec.edges.find(e => e.id === 'wq').showUnused;
   assert.ok(validateSpec(spec).warnings.some(w => w.startsWith('R2') && w.includes('"wq"')));
 });
 
-test('R14: Lösung endet ohne gutes Ergebnis', () => {
+test('R14: solution ends without a good result', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   delete spec.views[1].steps.at(-1).set;
   assert.ok(hasRule(validateSpec(spec).warnings, 'R14'));
 });
 
-test('R7: Abkürzungen zählen nicht als Satzende', () => {
+test('R7: abbreviations do not count as sentence ends', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
-  spec.views[0].steps[0].text = {simple: 'Verlust von 460 Mio. Dollar am 1.8.2012. Danach ist Schluss.', tech: 'Ca. 4 Mio. Orders, z. B. in 154 Aktien.'};
+  spec.views[0].steps[0].text = {simple: 'A loss of $3.5 bn. on Aug. 1, 2012. Then it was over.', tech: 'Approx. 4 M orders, e.g. in 154 stocks, i.e. vs. the plan.'};
   assert.ok(!hasRule(validateSpec(spec).warnings, 'R7'));
-  spec.views[0].steps[0].text = {simple: 'Eins. Zwei. Drei.', tech: 'x'};
+  spec.views[0].steps[0].text = {simple: 'One. Two. Three.', tech: 'x'};
   assert.ok(hasRule(validateSpec(spec).warnings, 'R7'));
 });
 
-test('Meldungen nennen Schritte ab 1 ("Schritt 3")', () => {
+test('messages count steps from 1 ("step 3")', () => {
   const spec = clone(load('k8s-bugfix.flow.json'));
   spec.views[0].steps[2].edges = ['gibtsnicht'];
-  assert.ok(validateSpec(spec).errors.some(e => e.includes('Schritt 3')));
+  assert.ok(validateSpec(spec).errors.some(e => e.includes('step 3')));
 });

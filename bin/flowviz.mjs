@@ -4,12 +4,12 @@ import {basename, dirname} from 'node:path';
 import {validateSpec} from '../src/validate.mjs';
 import {buildHtml} from '../src/build.mjs';
 
-const USAGE = `flowviz – animierte Ablauf-Diagramme aus einer Flow-Spec
+const USAGE = `flowviz – animated flow diagrams from a flow spec
 
-  flowviz validate <datei.flow.json> …        Fehler und Regelverstöße anzeigen
-  flowviz build <datei.flow.json> [-o out.html] HTML bauen (bricht bei Fehlern ab)
+  flowviz validate <file.flow.json> …         show errors and rule violations
+  flowviz build <file.flow.json> [-o out.html] build HTML (stops on errors)
 
-Regeln: docs/REGELN.md · Format: docs/FORMAT.md`;
+Rules: docs/RULES.md · Format: docs/FORMAT.md`;
 
 function load(file) {
   try { return JSON.parse(readFileSync(file, 'utf8')); }
@@ -17,10 +17,10 @@ function load(file) {
 }
 
 function report(file, {errors, warnings}) {
-  for (const e of errors) console.error(`  Fehler   ${e}`);
-  for (const w of warnings) console.warn(`  Regel    ${w}`);
+  for (const e of errors) console.error(`  error    ${e}`);
+  for (const w of warnings) console.warn(`  rule     ${w}`);
   const status = errors.length ? '✗' : '✓';
-  console.log(`${status} ${basename(file)}: ${errors.length} Fehler, ${warnings.length} Regelhinweise`);
+  console.log(`${status} ${basename(file)}: ${errors.length} errors, ${warnings.length} rule hints`);
 }
 
 const [cmd, ...args] = process.argv.slice(2);

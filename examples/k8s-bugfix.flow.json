@@ -1,25 +1,25 @@
 {
-  "title": "Bugfix: Doppelte Antworten im Chat",
+  "title": "Bugfix: Duplicate answers in the chat",
   "zones": [
     {
       "id": "frontend",
       "label": {
-        "simple": "DU",
+        "simple": "YOU",
         "tech": "FRONTEND"
       }
     },
     {
       "id": "cluster",
       "label": {
-        "simple": "UNSER SYSTEM",
-        "tech": "KUBERNETES-CLUSTER"
+        "simple": "OUR SYSTEM",
+        "tech": "KUBERNETES CLUSTER"
       }
     },
     {
       "id": "external",
       "label": {
-        "simple": "ANDERE FIRMEN",
-        "tech": "EXTERN"
+        "simple": "OTHER COMPANIES",
+        "tech": "EXTERNAL"
       }
     }
   ],
@@ -33,12 +33,12 @@
       "rows": 2,
       "widget": "chat",
       "label": {
-        "simple": "Du",
+        "simple": "You",
         "tech": "Browser"
       },
       "sub": {
-        "simple": "dein Chatfenster",
-        "tech": "Chat-UI"
+        "simple": "your chat window",
+        "tech": "Chat UI"
       }
     },
     {
@@ -48,15 +48,15 @@
       "col": 0,
       "row": 0,
       "label": {
-        "simple": "Warteliste",
+        "simple": "Waiting list",
         "tech": "RabbitMQ"
       },
       "sub": {
-        "simple": "merkt sich offene Fragen",
+        "simple": "keeps open questions",
         "tech": "chat.requests"
       },
       "initial": {
-        "status": "leer"
+        "status": "empty"
       }
     },
     {
@@ -67,29 +67,29 @@
       "row": 0,
       "widget": "checklist",
       "label": {
-        "simple": "Bearbeiter",
-        "tech": "Worker-Pod"
+        "simple": "Worker",
+        "tech": "Worker pod"
       },
       "sub": {
-        "simple": "arbeitet seine Liste ab",
+        "simple": "works through its list",
         "tech": "consumer"
       },
       "items": [
         {
-          "simple": "Frage holen",
-          "tech": "Job konsumieren"
+          "simple": "Fetch question",
+          "tech": "Consume job"
         },
         {
-          "simple": "Claude fragen",
-          "tech": "LLM-Call"
+          "simple": "Ask Claude",
+          "tech": "LLM call"
         },
         {
-          "simple": "Antwort schicken",
-          "tech": "Ergebnis pushen"
+          "simple": "Send answer",
+          "tech": "Push result"
         },
         {
-          "simple": "„Erledigt“ melden",
-          "tech": "Ack senden"
+          "simple": "Report “done”",
+          "tech": "Send ack"
         }
       ],
       "initial": {
@@ -107,13 +107,13 @@
       "row": 1,
       "label": "Kubernetes",
       "sub": {
-        "simple": "tauscht Bearbeiter aus",
-        "tech": "Deployment-Controller"
+        "simple": "swaps out workers",
+        "tech": "Deployment controller"
       },
       "initial": {
         "status": {
-          "simple": "nichts zu tun",
-          "tech": "stabil"
+          "simple": "nothing to do",
+          "tech": "stable"
         }
       }
     },
@@ -128,7 +128,7 @@
         "tech": "Anthropic API"
       },
       "sub": {
-        "simple": "KI",
+        "simple": "AI",
         "tech": "Messages API"
       }
     }
@@ -139,7 +139,7 @@
       "from": "you",
       "to": "queue",
       "verb": {
-        "simple": "fragt",
+        "simple": "asks",
         "tech": "POST"
       }
     },
@@ -148,7 +148,7 @@
       "from": "queue",
       "to": "worker",
       "verb": {
-        "simple": "gibt weiter",
+        "simple": "passes on",
         "tech": "deliver"
       },
       "async": true
@@ -158,7 +158,7 @@
       "from": "worker",
       "to": "queue",
       "verb": {
-        "simple": "„erledigt“",
+        "simple": "“done”",
         "tech": "ack"
       },
       "showUnused": true
@@ -168,7 +168,7 @@
       "from": "worker",
       "to": "claude",
       "verb": {
-        "simple": "fragt",
+        "simple": "asks",
         "tech": "request"
       }
     },
@@ -177,7 +177,7 @@
       "from": "claude",
       "to": "worker",
       "verb": {
-        "simple": "antwortet",
+        "simple": "answers",
         "tech": "response"
       }
     },
@@ -186,7 +186,7 @@
       "from": "worker",
       "to": "you",
       "verb": {
-        "simple": "bringt Antwort",
+        "simple": "delivers answer",
         "tech": "push"
       },
       "async": true,
@@ -197,7 +197,7 @@
       "from": "kube",
       "to": "worker",
       "verb": {
-        "simple": "stoppt sofort",
+        "simple": "stops at once",
         "tech": "SIGKILL"
       }
     }
@@ -208,25 +208,25 @@
       "kind": "bug",
       "label": "Bug",
       "headline": {
-        "simple": "Problem: Die Antwort kommt manchmal doppelt. Warum?",
-        "tech": "Bug: Duplikate beim Client nach Deployments."
+        "simple": "Problem: Sometimes the answer shows up twice. Why?",
+        "tech": "Bug: Duplicates on the client after deployments."
       },
       "chain": [
         {
-          "simple": "Update kommt",
-          "tech": "Rolling Update"
+          "simple": "Update arrives",
+          "tech": "Rolling update"
         },
         {
-          "simple": "Bearbeiter wird mitten in der Arbeit gestoppt",
-          "tech": "Pod wird sofort beendet"
+          "simple": "Worker is stopped mid-task",
+          "tech": "Pod is killed immediately"
         },
         {
-          "simple": "„Erledigt“ fehlt – Frage kommt nochmal",
-          "tech": "kein Ack → Redelivery"
+          "simple": "“Done” is missing – question comes again",
+          "tech": "no ack → redelivery"
         },
         {
-          "simple": "Antwort doppelt",
-          "tech": "Duplikat"
+          "simple": "Answer twice",
+          "tech": "Duplicate"
         }
       ],
       "steps": [
@@ -235,20 +235,20 @@
             "yq"
           ],
           "text": {
-            "simple": "Du stellst eine Frage.",
-            "tech": "Der Request landet als Job in der Queue."
+            "simple": "You ask a question.",
+            "tech": "The request lands in the queue as a job."
           },
           "set": {
             "you": {
               "say": {
                 "from": "user",
-                "text": "Was ist RabbitMQ?"
+                "text": "What is RabbitMQ?"
               }
             },
             "queue": {
               "slots": 1,
               "status": {
-                "simple": "1 Frage wartet",
+                "simple": "1 question waiting",
                 "tech": "1 ready"
               }
             }
@@ -259,14 +259,14 @@
             "qw"
           ],
           "text": {
-            "simple": "Ein Bearbeiter nimmt die Frage. Die Warteliste merkt sich: noch nicht erledigt.",
-            "tech": "Ein Pod bekommt den Job. Bis zum Ack bleibt er reserviert."
+            "simple": "A worker takes the question. The waiting list notes: not done yet.",
+            "tech": "A pod receives the job. It stays reserved until the ack."
           },
           "set": {
             "queue": {
               "slots": 0,
               "status": {
-                "simple": "wartet auf „erledigt“",
+                "simple": "waiting for “done”",
                 "tech": "1 unacked"
               }
             },
@@ -283,8 +283,8 @@
             "cw"
           ],
           "text": {
-            "simple": "Er fragt Claude und bekommt die Antwort.",
-            "tech": "LLM-Request und Response."
+            "simple": "It asks Claude and gets the answer.",
+            "tech": "LLM request and response."
           },
           "set": {
             "worker": {
@@ -299,14 +299,14 @@
             "wy"
           ],
           "text": {
-            "simple": "Die Antwort kommt bei dir an. Ein Punkt fehlt noch: „erledigt“ melden.",
-            "tech": "Das Ergebnis wird gepusht. Der Ack steht noch aus."
+            "simple": "The answer reaches you. One item is still missing: reporting “done”.",
+            "tech": "The result is pushed. The ack is still pending."
           },
           "set": {
             "you": {
               "say": {
                 "from": "ai",
-                "text": "RabbitMQ ist ein Message-Broker …"
+                "text": "RabbitMQ is a message broker …"
               }
             },
             "worker": {
@@ -320,21 +320,21 @@
           "focus": "kube",
           "chain": 0,
           "text": {
-            "simple": "Genau jetzt spielt das Team ein Update ein. Kubernetes tauscht die Bearbeiter aus.",
-            "tech": "Ein Rolling Update startet. Die alten Pods werden ersetzt."
+            "simple": "Right now the team rolls out an update. Kubernetes swaps out the workers.",
+            "tech": "A rolling update starts. The old pods are replaced."
           },
           "set": {
             "kube": {
               "status": {
-                "simple": "Update auf Version 2 läuft",
+                "simple": "Update to version 2 running",
                 "tech": "Rollout v2"
               },
               "tone": "strong"
             }
           },
           "detail": {
-            "simple": "Bei einem Update werden alle laufenden Bearbeiter durch die neue Version ersetzt. Das passiert mehrmals pro Woche.",
-            "tech": "Der Deployment-Controller ersetzt die Pods schrittweise durch die neue Version."
+            "simple": "During an update, every running worker is replaced by the new version. This happens several times a week.",
+            "tech": "The deployment controller replaces the pods with the new version step by step."
           }
         },
         {
@@ -344,8 +344,8 @@
           "error": true,
           "chain": 1,
           "text": {
-            "simple": "Kubernetes stoppt den Bearbeiter sofort. „Erledigt“ melden schafft er nicht mehr.",
-            "tech": "Der Pod wird ohne Shutdown-Handling beendet. Der Ack wird nie gesendet."
+            "simple": "Kubernetes stops the worker at once. It no longer gets to report “done”.",
+            "tech": "The pod is killed without shutdown handling. The ack is never sent."
           },
           "set": {
             "worker": {
@@ -354,14 +354,14 @@
                 "3": "fail"
               },
               "badge": {
-                "simple": "gestoppt",
+                "simple": "stopped",
                 "tech": "killed"
               }
             }
           },
           "detail": {
-            "simple": "Der Bearbeiter hatte die Antwort schon geschickt, aber den letzten Punkt seiner Liste nicht mehr geschafft. Für die Warteliste sieht es so aus, als wäre gar nichts passiert.",
-            "tech": "Ohne SIGTERM-Handling endet der Prozess sofort. Antwort gepusht, Ack fehlt."
+            "simple": "The worker had already sent the answer but did not get to the last item on its list. To the waiting list, it looks as if nothing happened at all.",
+            "tech": "Without SIGTERM handling the process ends immediately. Answer pushed, ack missing."
           }
         },
         {
@@ -371,8 +371,8 @@
           "error": true,
           "chain": 2,
           "text": {
-            "simple": "Die Warteliste hat nie „erledigt“ gehört. Sie gibt die Frage dem neuen Bearbeiter.",
-            "tech": "Ohne Ack wird der Job redelivered – an den neuen Pod."
+            "simple": "The waiting list never heard “done”. It gives the question to the new worker.",
+            "tech": "Without an ack the job is redelivered – to the new pod."
           },
           "setBefore": {
             "worker": {
@@ -386,7 +386,7 @@
             "queue": {
               "slots": 1,
               "status": {
-                "simple": "1 Frage wartet",
+                "simple": "1 question waiting",
                 "tech": "1 ready"
               }
             }
@@ -400,14 +400,14 @@
             "queue": {
               "slots": 0,
               "status": {
-                "simple": "wartet auf „erledigt“",
+                "simple": "waiting for “done”",
                 "tech": "1 unacked"
               }
             }
           },
           "detail": {
-            "simple": "Die Warteliste will sicherstellen, dass keine Frage verloren geht. Deshalb gibt sie jede unbestätigte Frage noch einmal heraus.",
-            "tech": "At-least-once: Unacked Messages werden nach dem Verbindungsverlust erneut zugestellt."
+            "simple": "The waiting list wants to make sure no question gets lost. So it hands out every unconfirmed question once more.",
+            "tech": "At-least-once: unacked messages are redelivered after the connection is lost."
           }
         },
         {
@@ -417,8 +417,8 @@
           ],
           "error": true,
           "text": {
-            "simple": "Der neue Bearbeiter fragt Claude noch einmal.",
-            "tech": "Zweiter LLM-Call für denselben Job."
+            "simple": "The new worker asks Claude again.",
+            "tech": "Second LLM call for the same job."
           },
           "set": {
             "worker": {
@@ -428,8 +428,8 @@
             }
           },
           "detail": {
-            "simple": "Er weiß nicht, dass die Frage schon beantwortet wurde, und fängt von vorne an.",
-            "tech": "Kein Idempotenz-Check: Der neue Pod verarbeitet den Job vollständig neu."
+            "simple": "It does not know the question was already answered, so it starts from scratch.",
+            "tech": "No idempotency check: the new pod processes the job again in full."
           }
         },
         {
@@ -439,18 +439,18 @@
           "error": true,
           "chain": 3,
           "text": {
-            "simple": "Du bekommst die Antwort ein zweites Mal.",
-            "tech": "Der Client erhält ein Duplikat."
+            "simple": "You get the answer a second time.",
+            "tech": "The client receives a duplicate."
           },
           "set": {
             "you": {
               "say": {
                 "from": "ai",
-                "text": "RabbitMQ ist ein Message-Broker …",
+                "text": "RabbitMQ is a message broker …",
                 "tone": "bad",
                 "note": {
-                  "simple": "doppelt!",
-                  "tech": "Duplikat"
+                  "simple": "twice!",
+                  "tech": "duplicate"
                 }
               }
             },
@@ -461,52 +461,52 @@
             }
           },
           "detail": {
-            "simple": "Für dich sieht es aus, als hätte Claude sich wiederholt. Außerdem wurde Claude zweimal bezahlt.",
-            "tech": "Doppelter LLM-Call und doppelte Nachricht beim Client."
+            "simple": "To you it looks as if Claude repeated itself. On top of that, Claude was paid for twice.",
+            "tech": "Duplicate LLM call and duplicate message on the client."
           }
         }
       ],
       "explain": [
         {
-          "simple": "Manchmal steht die Antwort von Claude zweimal im Chat. Das passiert nicht zufällig, sondern immer dann, wenn das Team gerade ein Update einspielt.",
-          "tech": "Duplikate treten nur während Deployments auf: Ein Worker-Pod wird beendet, nachdem er die Antwort gepusht, aber bevor er den Job geackt hat."
+          "simple": "Sometimes Claude's answer appears twice in the chat. This is not random: it happens whenever the team is rolling out an update.",
+          "tech": "Duplicates only occur during deployments: a worker pod is killed after it has pushed the answer but before it has acked the job."
         },
         {
-          "simple": "Jede Frage wartet in einer Warteliste, bis ein Bearbeiter meldet: „erledigt“. Fehlt diese Meldung, geht die Warteliste davon aus, dass etwas schiefging, und gibt die Frage noch einmal heraus.",
-          "tech": "RabbitMQ hält die Message bis zum Ack zurück. Ohne Ack wird sie nach dem Verbindungsabbruch redelivered – at-least-once-Zustellung."
+          "simple": "Every question waits on a waiting list until a worker reports “done”. If that report is missing, the waiting list assumes something went wrong and hands the question out once more.",
+          "tech": "RabbitMQ holds the message until the ack. Without an ack it is redelivered after the connection drops – at-least-once delivery."
         }
       ]
     },
     {
       "id": "fix",
       "kind": "fix",
-      "label": "Lösung",
+      "label": "Solution",
       "headline": {
-        "simple": "Lösung: Bei einem Update darf der Bearbeiter seine Aufgabe erst fertig machen.",
-        "tech": "Fix: Graceful Shutdown – SIGTERM abfangen, Job abschließen und acken."
+        "simple": "Solution: During an update, the worker may finish its task first.",
+        "tech": "Fix: graceful shutdown – catch SIGTERM, finish the job and ack it."
       },
       "chain": [
         {
-          "simple": "Update kommt",
-          "tech": "Rolling Update"
+          "simple": "Update arrives",
+          "tech": "Rolling update"
         },
         {
-          "simple": "Bearbeiter macht erst fertig",
-          "tech": "SIGTERM + Grace Period"
+          "simple": "Worker finishes first",
+          "tech": "SIGTERM + grace period"
         },
         {
-          "simple": "„Erledigt“ wird gemeldet",
-          "tech": "Ack vor dem Beenden"
+          "simple": "“Done” is reported",
+          "tech": "Ack before exit"
         },
         {
-          "simple": "Nur eine Antwort",
-          "tech": "kein Duplikat"
+          "simple": "Only one answer",
+          "tech": "no duplicate"
         }
       ],
       "mark": {
         "edges": {
-          "kw": "geändert",
-          "wq": "neu"
+          "kw": "changed",
+          "wq": "new"
         }
       },
       "steps": [
@@ -515,20 +515,20 @@
             "yq"
           ],
           "text": {
-            "simple": "Du stellst eine Frage.",
-            "tech": "Der Request landet als Job in der Queue."
+            "simple": "You ask a question.",
+            "tech": "The request lands in the queue as a job."
           },
           "set": {
             "you": {
               "say": {
                 "from": "user",
-                "text": "Was ist RabbitMQ?"
+                "text": "What is RabbitMQ?"
               }
             },
             "queue": {
               "slots": 1,
               "status": {
-                "simple": "1 Frage wartet",
+                "simple": "1 question waiting",
                 "tech": "1 ready"
               }
             }
@@ -539,14 +539,14 @@
             "qw"
           ],
           "text": {
-            "simple": "Ein Bearbeiter nimmt die Frage. Die Warteliste merkt sich: noch nicht erledigt.",
-            "tech": "Ein Pod bekommt den Job. Bis zum Ack bleibt er reserviert."
+            "simple": "A worker takes the question. The waiting list notes: not done yet.",
+            "tech": "A pod receives the job. It stays reserved until the ack."
           },
           "set": {
             "queue": {
               "slots": 0,
               "status": {
-                "simple": "wartet auf „erledigt“",
+                "simple": "waiting for “done”",
                 "tech": "1 unacked"
               }
             },
@@ -563,8 +563,8 @@
             "cw"
           ],
           "text": {
-            "simple": "Er fragt Claude und bekommt die Antwort.",
-            "tech": "LLM-Request und Response."
+            "simple": "It asks Claude and gets the answer.",
+            "tech": "LLM request and response."
           },
           "set": {
             "worker": {
@@ -579,14 +579,14 @@
             "wy"
           ],
           "text": {
-            "simple": "Die Antwort kommt bei dir an. Ein Punkt fehlt noch: „erledigt“ melden.",
-            "tech": "Das Ergebnis wird gepusht. Der Ack steht noch aus."
+            "simple": "The answer reaches you. One item is still missing: reporting “done”.",
+            "tech": "The result is pushed. The ack is still pending."
           },
           "set": {
             "you": {
               "say": {
                 "from": "ai",
-                "text": "RabbitMQ ist ein Message-Broker …"
+                "text": "RabbitMQ is a message broker …"
               }
             },
             "worker": {
@@ -600,21 +600,21 @@
           "focus": "kube",
           "chain": 0,
           "text": {
-            "simple": "Genau jetzt spielt das Team ein Update ein. Kubernetes tauscht die Bearbeiter aus.",
-            "tech": "Ein Rolling Update startet. Die alten Pods werden ersetzt."
+            "simple": "Right now the team rolls out an update. Kubernetes swaps out the workers.",
+            "tech": "A rolling update starts. The old pods are replaced."
           },
           "set": {
             "kube": {
               "status": {
-                "simple": "Update auf Version 2 läuft",
+                "simple": "Update to version 2 running",
                 "tech": "Rollout v2"
               },
               "tone": "strong"
             }
           },
           "detail": {
-            "simple": "Das Update kommt genauso wie vorher. Geändert hat sich nur, wie Kubernetes und der Bearbeiter damit umgehen.",
-            "tech": "Gleicher Rollout wie im Bug-Szenario."
+            "simple": "The update arrives exactly as before. The only change is how Kubernetes and the worker deal with it.",
+            "tech": "Same rollout as in the bug scenario."
           }
         },
         {
@@ -622,28 +622,28 @@
             "kw"
           ],
           "chain": 1,
-          "tag": "geändert",
+          "tag": "changed",
           "labels": {
             "kw": {
-              "simple": "bitte aufhören",
+              "simple": "please stop",
               "tech": "SIGTERM"
             }
           },
           "text": {
-            "simple": "Kubernetes bittet den Bearbeiter aufzuhören – und lässt ihm Zeit, fertig zu werden.",
-            "tech": "SIGTERM statt Kill. Der Pod hat eine Grace Period für den laufenden Job."
+            "simple": "Kubernetes asks the worker to stop – and gives it time to finish.",
+            "tech": "SIGTERM instead of kill. The pod gets a grace period for the running job."
           },
           "set": {
             "worker": {
               "badge": {
-                "simple": "macht fertig …",
+                "simple": "finishing …",
                 "tech": "terminating"
               }
             }
           },
           "detail": {
-            "simple": "Statt sofort abzuschalten, gibt Kubernetes dem Bearbeiter eine Frist. In dieser Zeit nimmt er keine neuen Fragen an, macht aber die laufende fertig.",
-            "tech": "SIGTERM-Handler stoppt den Consumer, beendet den laufenden Job; Grace Period z. B. 60 s."
+            "simple": "Instead of shutting it down at once, Kubernetes gives the worker a deadline. During that time it takes no new questions but finishes the current one.",
+            "tech": "The SIGTERM handler stops the consumer and finishes the running job; grace period e.g. 60 s."
           }
         },
         {
@@ -651,10 +651,10 @@
             "wq"
           ],
           "chain": 2,
-          "tag": "neu",
+          "tag": "new",
           "text": {
-            "simple": "Er meldet der Warteliste: „erledigt“. Die Frage ist abgehakt.",
-            "tech": "Der Worker sendet den Ack. Der Job ist aus der Queue entfernt."
+            "simple": "It tells the waiting list “done”. The question is ticked off.",
+            "tech": "The worker sends the ack. The job is removed from the queue."
           },
           "set": {
             "worker": {
@@ -664,28 +664,28 @@
             },
             "queue": {
               "status": {
-                "simple": "abgehakt",
+                "simple": "ticked off",
                 "tech": "acked"
               },
               "tone": "ok"
             }
           },
           "detail": {
-            "simple": "Jetzt ist die Liste vollständig. Die Warteliste weiß, dass die Frage erledigt ist, und gibt sie nicht noch einmal heraus.",
-            "tech": "Ack vor dem Exit, daher keine Redelivery."
+            "simple": "Now the list is complete. The waiting list knows the question is done and does not hand it out again.",
+            "tech": "Ack before exit, so no redelivery."
           }
         },
         {
           "focus": "worker",
           "text": {
-            "simple": "Erst jetzt hört er auf. Der neue Bearbeiter übernimmt ab der nächsten Frage.",
-            "tech": "Der Pod beendet sich sauber, der neue Pod übernimmt neue Jobs."
+            "simple": "Only now does it stop. The new worker takes over from the next question on.",
+            "tech": "The pod shuts down cleanly; the new pod takes over new jobs."
           },
           "set": {
             "worker": {
               "state": "off",
               "badge": {
-                "simple": "beendet",
+                "simple": "finished",
                 "tech": "terminated"
               }
             }
@@ -695,8 +695,8 @@
           "focus": "you",
           "chain": 3,
           "text": {
-            "simple": "Ergebnis: Du hast genau eine Antwort.",
-            "tech": "Ergebnis: kein Duplikat, nur ein LLM-Call."
+            "simple": "Result: You have exactly one answer.",
+            "tech": "Result: no duplicate, only one LLM call."
           },
           "set": {
             "you": {
@@ -704,19 +704,19 @@
             }
           },
           "detail": {
-            "simple": "Das Update hat stattgefunden, ohne dass du etwas davon gemerkt hast.",
-            "tech": "Zero-Duplicate-Deployment."
+            "simple": "The update happened without you noticing anything.",
+            "tech": "Zero-duplicate deployment."
           }
         }
       ],
       "explain": [
         {
-          "simple": "Bei einem Update stoppt Kubernetes den Bearbeiter nicht mehr sofort. Es bittet ihn aufzuhören und gibt ihm Zeit, seine angefangene Aufgabe zu Ende zu bringen.",
-          "tech": "Graceful Shutdown: SIGTERM abfangen, keine neuen Jobs annehmen, laufenden Job abschließen und acken; terminationGracePeriodSeconds passend setzen."
+          "simple": "During an update, Kubernetes no longer stops the worker at once. It asks it to stop and gives it time to finish the task it has started.",
+          "tech": "Graceful shutdown: catch SIGTERM, accept no new jobs, finish and ack the running job; set terminationGracePeriodSeconds accordingly."
         },
         {
-          "simple": "Der Bearbeiter meldet also noch „erledigt“, bevor er aufhört. Die Warteliste hakt die Frage ab und gibt sie nicht noch einmal heraus.",
-          "tech": "Mit Ack vor dem Exit gibt es keine Redelivery. Als zusätzliches Sicherheitsnetz empfiehlt sich ein Idempotenz-Check per Job-ID."
+          "simple": "So the worker still reports “done” before it stops. The waiting list ticks the question off and does not hand it out again.",
+          "tech": "With the ack before exit there is no redelivery. As an extra safety net, an idempotency check by job ID is recommended."
         }
       ]
     }

@@ -1,14 +1,14 @@
 {
- "title": "Slack-Ausfall am ersten Arbeitstag (4.1.2021)",
+ "title": "Slack outage on the first workday (January 4, 2021)",
  "subtitle": {
-  "simple": "Warum Slack am Montagmorgen nach den Ferien nicht lud.",
-  "tech": "AWS Transit Gateway skaliert zu langsam, Autoscaling scheitert am provision-service."
+  "simple": "Why Slack would not load on Monday morning after the holidays.",
+  "tech": "AWS Transit Gateway scales too slowly, autoscaling fails at the provision-service."
  },
  "zones": [
   {
    "id": "frontend",
    "label": {
-    "simple": "DU",
+    "simple": "YOU",
     "tech": "CLIENT"
    }
   },
@@ -16,7 +16,7 @@
    "id": "slack",
    "label": {
     "simple": "SLACK",
-    "tech": "SLACK-VPC (WEB)"
+    "tech": "SLACK VPC (WEB)"
    }
   },
   {
@@ -29,8 +29,8 @@
   {
    "id": "data",
    "label": {
-    "simple": "SLACK-DATEN",
-    "tech": "SLACK-VPC (BACKEND)"
+    "simple": "SLACK DATA",
+    "tech": "SLACK VPC (BACKEND)"
    }
   }
  ],
@@ -44,12 +44,12 @@
    "rows": 2,
    "widget": "chat",
    "label": {
-    "simple": "Du",
-    "tech": "Slack-Client"
+    "simple": "You",
+    "tech": "Slack client"
    },
    "sub": {
-    "simple": "öffnest Slack",
-    "tech": "Desktop- und Mobile-App"
+    "simple": "open Slack",
+    "tech": "desktop and mobile app"
    }
   },
   {
@@ -60,15 +60,15 @@
    "row": 0,
    "widget": "meter",
    "label": {
-    "simple": "Slack-Server",
-    "tech": "Webapp-Tier"
+    "simple": "Slack servers",
+    "tech": "Webapp tier"
    },
    "sub": {
-    "simple": "beantworten deine App",
-    "tech": "Web-Fleet hinter LB"
+    "simple": "answer your app",
+    "tech": "web fleet behind LB"
    },
    "meterLabel": {
-    "simple": "Last",
+    "simple": "Load",
     "tech": "Threads"
    },
    "initial": {
@@ -82,11 +82,11 @@
    "col": 0,
    "row": 2,
    "label": {
-    "simple": "Planer",
+    "simple": "Planner",
     "tech": "Autoscaling"
    },
    "sub": {
-    "simple": "bestellt bei Bedarf Server",
+    "simple": "orders servers as needed",
     "tech": "Auto Scaling Groups"
    }
   },
@@ -98,15 +98,15 @@
    "row": 1,
    "widget": "meter",
    "label": {
-    "simple": "Einrichter",
+    "simple": "Setup service",
     "tech": "provision-service"
    },
    "sub": {
-    "simple": "macht neue Server startklar",
-    "tech": "konfiguriert Instanzen"
+    "simple": "gets new servers ready",
+    "tech": "configures instances"
    },
    "meterLabel": {
-    "simple": "Last",
+    "simple": "Load",
     "tech": "open files"
    },
    "initial": {
@@ -121,16 +121,16 @@
    "row": 0,
    "widget": "meter",
    "label": {
-    "simple": "Verkehrsknoten",
+    "simple": "Traffic hub",
     "tech": "AWS Transit Gateway"
    },
    "sub": {
-    "simple": "verbindet unsere Netze",
-    "tech": "VPC-zu-VPC-Routing"
+    "simple": "connects our networks",
+    "tech": "VPC-to-VPC routing"
    },
    "meterLabel": {
-    "simple": "Last",
-    "tech": "Pakete/s"
+    "simple": "Load",
+    "tech": "packets/s"
    },
    "initial": {
     "meter": 20
@@ -143,12 +143,12 @@
    "col": 0,
    "row": 0,
    "label": {
-    "simple": "Datenspeicher",
-    "tech": "Backend-Dienste"
+    "simple": "Data storage",
+    "tech": "Backend services"
    },
    "sub": {
-    "simple": "hat deine Nachrichten",
-    "tech": "DBs, Caches, Services"
+    "simple": "holds your messages",
+    "tech": "DBs, caches, services"
    }
   }
  ],
@@ -158,7 +158,7 @@
    "from": "user",
    "to": "web",
    "verb": {
-    "simple": "öffnet",
+    "simple": "opens",
     "tech": "HTTPS"
    }
   },
@@ -167,7 +167,7 @@
    "from": "web",
    "to": "user",
    "verb": {
-    "simple": "zeigt",
+    "simple": "shows",
     "tech": "Response"
    }
   },
@@ -176,7 +176,7 @@
    "from": "web",
    "to": "tgw",
    "verb": {
-    "simple": "fragt an",
+    "simple": "asks",
     "tech": "Request"
    }
   },
@@ -185,7 +185,7 @@
    "from": "tgw",
    "to": "web",
    "verb": {
-    "simple": "liefert",
+    "simple": "delivers",
     "tech": "Response"
    }
   },
@@ -194,8 +194,8 @@
    "from": "tgw",
    "to": "db",
    "verb": {
-    "simple": "leitet weiter",
-    "tech": "routet"
+    "simple": "forwards",
+    "tech": "routes"
    }
   },
   {
@@ -203,7 +203,7 @@
    "from": "db",
    "to": "tgw",
    "verb": {
-    "simple": "antwortet",
+    "simple": "answers",
     "tech": "Response"
    }
   },
@@ -212,7 +212,7 @@
    "from": "scaler",
    "to": "prov",
    "verb": {
-    "simple": "bestellt",
+    "simple": "orders",
     "tech": "Launch"
    }
   },
@@ -221,8 +221,8 @@
    "from": "prov",
    "to": "web",
    "verb": {
-    "simple": "richtet ein",
-    "tech": "provisioniert"
+    "simple": "sets up",
+    "tech": "provisions"
    }
   }
  ],
@@ -232,29 +232,29 @@
    "kind": "bug",
    "label": "Bug",
    "headline": {
-    "simple": "Problem: Am ersten Arbeitstag nach den Ferien lud Slack nicht. Warum?",
-    "tech": "Bug: Paketverlust im Transit Gateway, Autoscaling kann nicht nachliefern."
+    "simple": "Problem: On the first workday after the holidays, Slack would not load. Why?",
+    "tech": "Bug: packet loss in the Transit Gateway, autoscaling cannot keep up."
    },
    "chain": [
     {
-     "simple": "Ansturm am Montagmorgen",
-     "tech": "Lastspitze, kalte Caches"
+     "simple": "Monday morning rush",
+     "tech": "load spike, cold caches"
     },
     {
-     "simple": "Verkehrsknoten wächst zu langsam",
-     "tech": "TGW skaliert nicht, Paketverlust"
+     "simple": "Traffic hub grows too slowly",
+     "tech": "TGW does not scale, packet loss"
     },
     {
-     "simple": "Server warten, 1.200 neue bestellt",
-     "tech": "Webtier gesättigt, Upscale"
+     "simple": "Servers wait, 1,200 new ones ordered",
+     "tech": "web tier saturated, upscale"
     },
     {
-     "simple": "Einrichter am Limit",
+     "simple": "Setup service at its limit",
      "tech": "provision-service: open files"
     },
     {
-     "simple": "Slack lädt nicht",
-     "tech": "Slack nicht erreichbar"
+     "simple": "Slack does not load",
+     "tech": "Slack unreachable"
     }
    ],
    "steps": [
@@ -263,16 +263,16 @@
       "uw"
      ],
      "text": {
-      "simple": "Ein normaler Tag: Du öffnest Slack.",
-      "tech": "Der Client verbindet sich mit dem Webapp-Tier."
+      "simple": "A normal day: you open Slack.",
+      "tech": "The client connects to the webapp tier."
      },
      "set": {
       "user": {
        "say": {
         "from": "user",
         "text": {
-         "simple": "Slack öffnen",
-         "tech": "Client-Start"
+         "simple": "Open Slack",
+         "tech": "Client start"
         }
        }
       }
@@ -286,14 +286,14 @@
       "tw"
      ],
      "text": {
-      "simple": "Der Slack-Server holt deine Nachrichten über den Verkehrsknoten von AWS.",
-      "tech": "Backend-Calls laufen über das Transit Gateway in die Backend-VPC."
+      "simple": "The Slack server fetches your messages through the AWS traffic hub.",
+      "tech": "Backend calls go through the Transit Gateway into the backend VPC."
      },
      "set": {
       "tgw": {
        "status": {
-        "simple": "läuft rund",
-        "tech": "kein Paketverlust"
+        "simple": "running smoothly",
+        "tech": "no packet loss"
        }
       }
      }
@@ -303,15 +303,15 @@
       "wu"
      ],
      "text": {
-      "simple": "Du siehst deine Nachrichten.",
-      "tech": "Der Client erhält seine Daten."
+      "simple": "You see your messages.",
+      "tech": "The client receives its data."
      },
      "set": {
       "user": {
        "say": {
         "from": "ai",
         "text": {
-         "simple": "12 neue Nachrichten",
+         "simple": "12 new messages",
          "tech": "200 OK"
         }
        }
@@ -322,16 +322,16 @@
      "focus": "user",
      "chain": 0,
      "text": {
-      "simple": "Montag, 4. Januar: Nach den Ferien öffnen alle gleichzeitig Slack, und jede App lädt alles neu.",
-      "tech": "Erster Arbeitstag 2021: sprunghafte Last, Clients mit kalten Caches laden viel nach."
+      "simple": "Monday, January 4: after the holidays everyone opens Slack at once, and every app reloads everything.",
+      "tech": "First workday of 2021: sudden load spike, clients with cold caches fetch a lot of data."
      },
      "set": {
       "user": {
        "say": {
         "from": "user",
         "text": {
-         "simple": "Slack öffnen",
-         "tech": "Client-Start"
+         "simple": "Open Slack",
+         "tech": "Client start"
         }
        }
       },
@@ -350,15 +350,15 @@
      "error": true,
      "chain": 1,
      "text": {
-      "simple": "Der Verkehrsknoten von AWS wächst nicht schnell genug mit und verliert Anfragen.",
-      "tech": "Das TGW skaliert nicht schnell genug für die Pakete pro Sekunde. Paketverlust im ganzen Netz."
+      "simple": "The AWS traffic hub does not grow fast enough and loses requests.",
+      "tech": "The TGW does not scale fast enough for the packets per second. Packet loss across the network."
      },
      "set": {
       "tgw": {
        "meter": 150,
        "status": {
-        "simple": "verliert Anfragen",
-        "tech": "Paketverlust"
+        "simple": "losing requests",
+        "tech": "packet loss"
        },
        "tone": "bad"
       }
@@ -369,22 +369,22 @@
      "error": true,
      "chain": 2,
      "text": {
-      "simple": "Die Slack-Server warten vergeblich und laufen voll. Der Planer sieht das und bestellt 1.200 neue Server.",
-      "tech": "Threads blockieren auf Backend-Antworten. Nach kurzem Downscale folgt ein Upscale um 1.200 Instanzen."
+      "simple": "The Slack servers wait in vain and fill up. The planner sees this and orders 1,200 new servers.",
+      "tech": "Threads block on backend responses. A brief downscale is followed by an upscale of 1,200 instances."
      },
      "set": {
       "web": {
        "meter": 140,
        "status": {
-        "simple": "warten nur noch",
-        "tech": "Threads erschöpft"
+        "simple": "only waiting",
+        "tech": "threads exhausted"
        },
        "tone": "bad"
       },
       "scaler": {
        "status": {
-        "simple": "bestellt 1.200 Server",
-        "tech": "+1.200 Instanzen"
+        "simple": "orders 1,200 servers",
+        "tech": "+1,200 instances"
        },
        "tone": "strong"
       }
@@ -397,15 +397,15 @@
      "error": true,
      "chain": 3,
      "text": {
-      "simple": "Der Einrichter soll 1.200 Server auf einmal startklar machen und stößt an seine Grenze.",
-      "tech": "Der provision-service erreicht das Linux-Limit für offene Dateien und eine AWS-Quota."
+      "simple": "The setup service has to get 1,200 servers ready at once and hits its limit.",
+      "tech": "The provision-service hits the Linux open-files limit and an AWS quota."
      },
      "set": {
       "prov": {
        "meter": 160,
        "status": {
-        "simple": "Grenze erreicht",
-        "tech": "Limit erreicht"
+        "simple": "limit reached",
+        "tech": "limit reached"
        },
        "tone": "bad"
       }
@@ -418,13 +418,13 @@
      "error": true,
      "labels": {
       "pw": {
-       "simple": "bleibt hängen",
-       "tech": "scheitert"
+       "simple": "gets stuck",
+       "tech": "fails"
       }
      },
      "text": {
-      "simple": "Die meisten neuen Server werden nie fertig eingerichtet und helfen nicht.",
-      "tech": "Die meisten Instanzen bleiben unprovisioniert und nehmen keinen Traffic an."
+      "simple": "Most new servers are never fully set up and do not help.",
+      "tech": "Most instances stay unprovisioned and take no traffic."
      },
      "set": {
       "prov": {
@@ -433,8 +433,8 @@
       "web": {
        "state": "dead",
        "status": {
-        "simple": "neue Server leer",
-        "tech": "nicht provisioniert"
+        "simple": "new servers empty",
+        "tech": "not provisioned"
        }
       }
      }
@@ -447,26 +447,26 @@
      "chain": 4,
      "labels": {
       "wu": {
-       "simple": "Fehler",
+       "simple": "error",
        "tech": "Error"
       }
      },
      "text": {
-      "simple": "Slack lädt nicht. Du siehst nur eine Fehlermeldung.",
-      "tech": "Der Client erhält Fehler und Timeouts, Slack ist nicht nutzbar."
+      "simple": "Slack does not load. You only see an error message.",
+      "tech": "The client gets errors and timeouts, Slack is unusable."
      },
      "set": {
       "user": {
        "say": {
         "from": "ai",
         "text": {
-         "simple": "Slack lädt nicht …",
-         "tech": "Verbindungsfehler"
+         "simple": "Slack is not loading …",
+         "tech": "Connection error"
         },
         "tone": "bad",
         "note": {
-         "simple": "stundenlang gestört",
-         "tech": "Ausfall ab 6:57 Uhr"
+         "simple": "down for hours",
+         "tech": "outage from 6:57 a.m."
         }
        }
       }
@@ -477,37 +477,37 @@
   {
    "id": "fix",
    "kind": "fix",
-   "label": "Lösung",
+   "label": "Solution",
    "headline": {
-    "simple": "Lösung: Der Verkehrsknoten wird vor dem Ansturm vergrößert, und der Einrichter schafft große Mengen.",
-    "tech": "Fix: TGW vorab hochskaliert, provision-service mit höheren Limits und Lasttests."
+    "simple": "Solution: The traffic hub is enlarged before the rush, and the setup service handles large batches.",
+    "tech": "Fix: TGW scaled up in advance, provision-service with higher limits and load tests."
    },
    "chain": [
     {
-     "simple": "Ansturm am Montagmorgen",
-     "tech": "Lastspitze, kalte Caches"
+     "simple": "Monday morning rush",
+     "tech": "load spike, cold caches"
     },
     {
-     "simple": "Verkehrsknoten ist schon groß genug",
-     "tech": "TGW vorab skaliert"
+     "simple": "Traffic hub is already big enough",
+     "tech": "TGW scaled in advance"
     },
     {
-     "simple": "Server antworten weiter",
-     "tech": "kein Paketverlust"
+     "simple": "Servers keep answering",
+     "tech": "no packet loss"
     },
     {
-     "simple": "Einrichter schafft große Mengen",
-     "tech": "Limits erhöht, lastgetestet"
+     "simple": "Setup service handles large batches",
+     "tech": "limits raised, load-tested"
     },
     {
-     "simple": "Slack läuft",
-     "tech": "kein Ausfall"
+     "simple": "Slack works",
+     "tech": "no outage"
     }
    ],
    "mark": {
     "nodes": {
-     "tgw": "geändert",
-     "prov": "geändert"
+     "tgw": "changed",
+     "prov": "changed"
     }
    },
    "steps": [
@@ -516,16 +516,16 @@
       "uw"
      ],
      "text": {
-      "simple": "Ein normaler Tag: Du öffnest Slack.",
-      "tech": "Der Client verbindet sich mit dem Webapp-Tier."
+      "simple": "A normal day: you open Slack.",
+      "tech": "The client connects to the webapp tier."
      },
      "set": {
       "user": {
        "say": {
         "from": "user",
         "text": {
-         "simple": "Slack öffnen",
-         "tech": "Client-Start"
+         "simple": "Open Slack",
+         "tech": "Client start"
         }
        }
       }
@@ -539,14 +539,14 @@
       "tw"
      ],
      "text": {
-      "simple": "Der Slack-Server holt deine Nachrichten über den Verkehrsknoten von AWS.",
-      "tech": "Backend-Calls laufen über das Transit Gateway in die Backend-VPC."
+      "simple": "The Slack server fetches your messages through the AWS traffic hub.",
+      "tech": "Backend calls go through the Transit Gateway into the backend VPC."
      },
      "set": {
       "tgw": {
        "status": {
-        "simple": "läuft rund",
-        "tech": "kein Paketverlust"
+        "simple": "running smoothly",
+        "tech": "no packet loss"
        }
       }
      }
@@ -556,15 +556,15 @@
       "wu"
      ],
      "text": {
-      "simple": "Du siehst deine Nachrichten.",
-      "tech": "Der Client erhält seine Daten."
+      "simple": "You see your messages.",
+      "tech": "The client receives its data."
      },
      "set": {
       "user": {
        "say": {
         "from": "ai",
         "text": {
-         "simple": "12 neue Nachrichten",
+         "simple": "12 new messages",
          "tech": "200 OK"
         }
        }
@@ -573,16 +573,16 @@
     },
     {
      "focus": "tgw",
-     "tag": "neu",
+     "tag": "new",
      "text": {
-      "simple": "Vor dem Ferienende vergrößert AWS den Verkehrsknoten, weil Slack das vorab bestellt hat.",
-      "tech": "Slack beantragt vor Saisonspitzen ein präventives Upscaling des TGW."
+      "simple": "Before the holidays end, AWS enlarges the traffic hub because Slack ordered it in advance.",
+      "tech": "Before seasonal peaks, Slack requests a preventive upscaling of the TGW."
      },
      "set": {
       "tgw": {
        "status": {
-        "simple": "viel Reserve",
-        "tech": "Kapazität erhöht"
+        "simple": "plenty of room",
+        "tech": "capacity raised"
        },
        "tone": "ok"
       }
@@ -592,16 +592,16 @@
      "focus": "user",
      "chain": 0,
      "text": {
-      "simple": "Montag, 4. Januar: Nach den Ferien öffnen alle gleichzeitig Slack, und jede App lädt alles neu.",
-      "tech": "Erster Arbeitstag 2021: sprunghafte Last, Clients mit kalten Caches laden viel nach."
+      "simple": "Monday, January 4: after the holidays everyone opens Slack at once, and every app reloads everything.",
+      "tech": "First workday of 2021: sudden load spike, clients with cold caches fetch a lot of data."
      },
      "set": {
       "user": {
        "say": {
         "from": "user",
         "text": {
-         "simple": "Slack öffnen",
-         "tech": "Client-Start"
+         "simple": "Open Slack",
+         "tech": "Client start"
         }
        }
       },
@@ -621,17 +621,17 @@
       "tw"
      ],
      "chain": 1,
-     "tag": "geändert",
+     "tag": "changed",
      "text": {
-      "simple": "Der Verkehrsknoten hat genug Platz, alle Anfragen kommen durch.",
-      "tech": "Das TGW verkraftet die Pakete pro Sekunde, kein Paketverlust."
+      "simple": "The traffic hub has enough room, and all requests get through.",
+      "tech": "The TGW handles the packets per second, no packet loss."
      },
      "set": {
       "tgw": {
        "meter": 75,
        "status": {
-        "simple": "hält stand",
-        "tech": "kein Paketverlust"
+        "simple": "holds up",
+        "tech": "no packet loss"
        },
        "tone": "ok"
       }
@@ -643,15 +643,15 @@
      ],
      "chain": 2,
      "text": {
-      "simple": "Die Slack-Server antworten wie immer, und du siehst deine Nachrichten.",
-      "tech": "Das Webapp-Tier liefert normal aus."
+      "simple": "The Slack servers answer as usual, and you see your messages.",
+      "tech": "The webapp tier serves responses normally."
      },
      "set": {
       "user": {
        "say": {
         "from": "ai",
         "text": {
-         "simple": "40 neue Nachrichten",
+         "simple": "40 new messages",
          "tech": "200 OK"
         }
        }
@@ -662,14 +662,14 @@
      "focus": "scaler",
      "tag": "test",
      "text": {
-      "simple": "Härtetest: Der Planer bestellt trotzdem auf einen Schlag 1.200 neue Server.",
-      "tech": "Lasttest: großer Upscale wie am 4. Januar."
+      "simple": "Stress test: the planner still orders 1,200 new servers in one go.",
+      "tech": "Load test: large upscale like on January 4."
      },
      "set": {
       "scaler": {
        "status": {
-        "simple": "bestellt 1.200 Server",
-        "tech": "+1.200 Instanzen"
+        "simple": "orders 1,200 servers",
+        "tech": "+1,200 instances"
        },
        "tone": "strong"
       }
@@ -681,28 +681,28 @@
       "pw"
      ],
      "chain": 3,
-     "tag": "geändert",
+     "tag": "changed",
      "text": {
-      "simple": "Der Einrichter macht alle startklar: Seine Grenze ist höher, und er wird regelmäßig unter Last geprobt.",
-      "tech": "Höhere Datei-Limits und regelmäßige Lasttests des provision-service."
+      "simple": "The setup service gets them all ready: its limit is higher, and it is regularly rehearsed under load.",
+      "tech": "Higher file limits and regular load tests of the provision-service."
      },
      "set": {
       "prov": {
        "status": {
-        "simple": "schafft es",
-        "tech": "provisioniert"
+        "simple": "keeps up",
+        "tech": "provisioned"
        },
        "tone": "ok",
        "badge": {
-        "simple": "geprobt",
-        "tech": "lastgetestet"
+        "simple": "rehearsed",
+        "tech": "load-tested"
        },
        "meter": 70
       },
       "web": {
        "status": {
-        "simple": "mehr Server bereit",
-        "tech": "+1.200 im LB"
+        "simple": "more servers ready",
+        "tech": "+1,200 in LB"
        },
        "tone": "ok"
       }
@@ -712,8 +712,8 @@
      "focus": "user",
      "chain": 4,
      "text": {
-      "simple": "Ergebnis: Slack läuft auch am vollsten Morgen des Jahres.",
-      "tech": "Ergebnis: kein Ausfall trotz Lastspitze."
+      "simple": "Result: Slack works even on the busiest morning of the year.",
+      "tech": "Result: no outage despite the load spike."
      },
      "set": {
       "user": {

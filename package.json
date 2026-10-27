@@ -1,7 +1,7 @@
 {
   "name": "flowviz",
   "version": "0.1.0",
-  "description": "Animierte, abstrakte Ablauf-Diagramme, die ein LLM aus einer JSON-Spec erzeugen kann",
+  "description": "Animated, abstract flow diagrams that an LLM can generate from a JSON spec",
   "type": "module",
   "bin": {
     "flowviz": "bin/flowviz.mjs"

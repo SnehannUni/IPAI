@@ -1,6 +1,6 @@
-// Lässt das Viewer-Skript für jede Ansicht und jeden Schritt einmal laufen (per #view=…&step=…).
-// Statt eines Browsers dient ein nachgiebiges Schein-DOM: Jeder Zugriff liefert wieder ein Schein-Objekt.
-// Das findet Laufzeitfehler in der Logik (Tippfehler, falsche Reihenfolge, Fehler im Zustand) – nicht im Aussehen.
+// Runs the viewer script once for every view and every step (via #view=…&step=…).
+// Instead of a browser a forgiving fake DOM is used: every access returns another fake object.
+// This finds runtime errors in the logic (typos, wrong order, state bugs) – not visual problems.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, readdirSync} from 'node:fs';
@@ -39,9 +39,9 @@ const files = readdirSync(new URL('../examples/', import.meta.url)).map(f => new
 for (const file of files.filter(f => f.pathname.endsWith('.flow.json'))) {
   const spec = JSON.parse(readFileSync(file, 'utf8'));
   const html = buildHtml(spec);
-  const code = html.match(/<script>\n([\s\S]*?)<\/script>/)[1];
+  const code = html.match(/<script>\r?\n([\s\S]*?)<\/script>/)[1];
   const script = new vm.Script(code);
-  test(`Viewer läuft durch alle Schritte: ${file.pathname.split('/').pop()}`, () => {
+  test(`viewer runs through all steps: ${file.pathname.split('/').pop()}`, () => {
     for (const view of spec.views) for (let step = 0; step <= view.steps.length; step++) for (const mode of ['', '&mode=tech']) {
       const context = {
         document: fakeDom(JSON.stringify(spec)),
@@ -51,7 +51,7 @@ for (const file of files.filter(f => f.pathname.endsWith('.flow.json'))) {
         getComputedStyle: () => ({display: 'grid'}),
         requestAnimationFrame: () => 0, setTimeout: () => 0, performance: {now: () => 0}, console,
       };
-      assert.doesNotThrow(() => script.runInNewContext(context), `${view.id} Schritt ${step}${mode}`);
+      assert.doesNotThrow(() => script.runInNewContext(context), `${view.id} step ${step}${mode}`);
     }
   });
 }

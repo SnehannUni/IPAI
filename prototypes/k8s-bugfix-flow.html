@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bugfix: Doppelte Antworten</title>
+<title>Bugfix: Duplicate answers</title>
 <style>
 :root{
   --bg:#ffffff; --soft:#fafafa; --line:#e4e4e7; --line2:#d4d4d8; --text:#18181b; --muted:#71717a; --faint:#a1a1aa;
@@ -28,7 +28,7 @@ button.primary:hover{background:#27272a}
 #view button[data-v="fix"].on{color:var(--ok)}
 .right{margin-left:auto}
 
-/* Kopf: ein Satz + Kette, die sich beim Abspielen füllt */
+/* Header: one sentence + chain that fills up during playback */
 .banner{border-radius:10px;padding:14px 18px;margin-bottom:14px}
 .banner .head{font-size:15px}
 .banner .head b{font-weight:600}
@@ -87,7 +87,7 @@ button.primary:hover{background:#27272a}
 .slot.out{background:transparent;border:1.5px dashed var(--text)}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* Aufgabenliste des Bearbeiters: zeigt, was erledigt ist und was fehlt */
+/* The processor's task list: shows what is done and what is missing */
 .tasks{display:grid;gap:1px;margin-top:6px}
 .task{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--faint);white-space:nowrap}
 .task i{font-style:normal;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line2);display:grid;place-items:center;font-size:9px;line-height:1}
@@ -123,12 +123,12 @@ button.primary:hover{background:#27272a}
 <body>
 <div class="wrap">
   <div class="controls">
-    <div class="seg big" id="view"><button data-v="bug" class="on">Bug</button><button data-v="fix">Lösung</button></div>
+    <div class="seg big" id="view"><button data-v="bug" class="on">Bug</button><button data-v="fix">Solution</button></div>
     <span class="gap"></span>
-    <button class="primary" id="play">Abspielen</button>
-    <button id="prev">Zurück</button>
-    <button id="next">Weiter</button>
-    <div class="seg right" id="mode"><button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button></div>
+    <button class="primary" id="play">Play</button>
+    <button id="prev">Back</button>
+    <button id="next">Next</button>
+    <div class="seg right" id="mode"><button data-m="0" class="on">Simple</button><button data-m="1">Technical</button></div>
   </div>
 
   <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div></div>
@@ -165,93 +165,93 @@ button.primary:hover{background:#27272a}
 </div>
 
 <script>
-// Texte sind [einfach, technisch]; tx() wählt passend zum Modus
+// Texts are [simple, technical]; tx() picks the one matching the mode
 let mode = 0, view = 'bug';
 const tx = v => Array.isArray(v) ? v[mode] : v;
 
 const TYPES = {
-  trigger:  {name:'Auslöser',       c:'var(--trigger)'},
-  step:     {name:'Schritt',        c:'var(--step)'},
-  store:    {name:'Speicher',       c:'var(--store)'},
-  external: {name:'Fremder Dienst', c:'var(--external)'},
+  trigger:  {name:'Trigger',          c:'var(--trigger)'},
+  step:     {name:'Step',             c:'var(--step)'},
+  store:    {name:'Storage',          c:'var(--store)'},
+  external: {name:'External service', c:'var(--external)'},
 };
-const ZONES = [['DU','FRONTEND'], ['UNSER SYSTEM','KUBERNETES-CLUSTER'], ['ANDERE FIRMEN','EXTERN']];
+const ZONES = [['YOU','FRONTEND'], ['OUR SYSTEM','KUBERNETES CLUSTER'], ['OTHER COMPANIES','EXTERNAL']];
 
-// Kopfzeile und Kette: jeder Schritt kann ein Kettenglied (ch) aufleuchten lassen
+// Header and chain: every step can light up a chain link (ch)
 const HEAD = {
-  bug: ['<b>Problem:</b> Die Antwort kommt manchmal doppelt. Warum?',
-        '<b>Bug:</b> Duplikate beim Client nach Deployments. Ursachenkette:'],
-  fix: ['<b>Lösung:</b> Bei einem Update darf der Bearbeiter seine Aufgabe erst fertig machen.',
-        '<b>Fix:</b> Graceful Shutdown – SIGTERM abfangen, laufenden Job abschließen und acken.'],
+  bug: ['<b>Problem:</b> The answer sometimes arrives twice. Why?',
+        '<b>Bug:</b> Duplicates at the client after deployments. Cause chain:'],
+  fix: ['<b>Solution:</b> During an update, the processor may finish its task first.',
+        '<b>Fix:</b> Graceful shutdown – catch SIGTERM, finish the running job and ack it.'],
 };
 const CHAIN = {
-  bug: [['Update kommt','Rolling Update'], ['Bearbeiter wird mitten in der Arbeit gestoppt','Pod wird sofort beendet'],
-        ['„Erledigt“ fehlt – Frage kommt nochmal','kein Ack → Redelivery'], ['Antwort doppelt','Duplikat']],
-  fix: [['Update kommt','Rolling Update'], ['Bearbeiter macht erst fertig','SIGTERM + Grace Period'],
-        ['„Erledigt“ wird gemeldet','Ack vor dem Beenden'], ['Nur eine Antwort','kein Duplikat']],
+  bug: [['Update arrives','Rolling update'], ['Processor is stopped mid-task','Pod is terminated immediately'],
+        ['“Done” is missing – question comes again','no ack → redelivery'], ['Answer twice','Duplicate']],
+  fix: [['Update arrives','Rolling update'], ['Processor finishes first','SIGTERM + grace period'],
+        ['“Done” is reported','Ack before exiting'], ['Only one answer','no duplicate']],
 };
 
-// Aufgabenliste des Bearbeiters
-const TASKS = [['Frage holen','Job konsumieren'], ['Claude fragen','LLM-Call'], ['Antwort schicken','Ergebnis pushen'], ['„Erledigt“ melden','Ack senden']];
+// The processor's task list
+const TASKS = [['Fetch question','Consume job'], ['Ask Claude','LLM call'], ['Send answer','Push result'], ['Report “done”','Send ack']];
 
 const NODES = {
-  you:    {type:'trigger',  x:150,  y:250, w:230, h:300, label:['Du','Browser'],           sub:['dein Chatfenster','Chat-UI']},
-  queue:  {type:'store',    x:420,  y:150, w:180, h:90,  label:['Warteliste','RabbitMQ'],   sub:['merkt sich offene Fragen','chat.requests']},
-  worker: {type:'step',     x:720,  y:150, w:220, h:150, label:['Bearbeiter','Worker-Pod'], sub:['arbeitet seine Liste ab','consumer']},
-  claude: {type:'external', x:1050, y:150, w:180, h:90,  label:['Claude','Anthropic API'],  sub:['KI','Messages API']},
-  kube:   {type:'step',     x:720,  y:365, w:220, h:90,  label:['Kubernetes','Kubernetes'], sub:['tauscht Bearbeiter aus','Deployment-Controller']},
+  you:    {type:'trigger',  x:150,  y:250, w:230, h:300, label:['You','Browser'],          sub:['your chat window','Chat UI']},
+  queue:  {type:'store',    x:420,  y:150, w:180, h:90,  label:['Waiting list','RabbitMQ'], sub:['remembers open questions','chat.requests']},
+  worker: {type:'step',     x:720,  y:150, w:220, h:150, label:['Processor','Worker pod'],  sub:['works through its list','consumer']},
+  claude: {type:'external', x:1050, y:150, w:180, h:90,  label:['Claude','Anthropic API'],  sub:['AI','Messages API']},
+  kube:   {type:'step',     x:720,  y:365, w:220, h:90,  label:['Kubernetes','Kubernetes'], sub:['swaps out processors','Deployment controller']},
 };
 
 const EDGES = {
-  yq: {from:'you',    to:'queue',  d:'M 265 150 L 328 150',        verb:['fragt','POST'],              at:[296,138]},
-  qw: {from:'queue',  to:'worker', d:'M 512 135 L 608 135',        verb:['gibt weiter','deliver'],     at:[560,123], async:true},
-  wq: {from:'worker', to:'queue',  d:'M 608 170 L 512 170',        verb:['„erledigt“','ack'],          at:[560,184]},
-  wc: {from:'worker', to:'claude', d:'M 832 135 L 958 135',        verb:['fragt','request'],           at:[895,123]},
-  cw: {from:'claude', to:'worker', d:'M 958 165 L 832 165',        verb:['antwortet','response'],      at:[895,179]},
-  wy: {from:'worker', to:'you',    d:'M 700 75 V 56 H 190 V 98',   verb:['bringt Antwort','push'],     at:[445,56], async:true},
-  kw: {from:'kube',   to:'worker', d:'M 720 318 L 720 227',        verb:['stoppt sofort','SIGKILL'],   at:[720,272]},
+  yq: {from:'you',    to:'queue',  d:'M 265 150 L 328 150',        verb:['asks','POST'],               at:[296,138]},
+  qw: {from:'queue',  to:'worker', d:'M 512 135 L 608 135',        verb:['passes on','deliver'],       at:[560,123], async:true},
+  wq: {from:'worker', to:'queue',  d:'M 608 170 L 512 170',        verb:['“done”','ack'],              at:[560,184]},
+  wc: {from:'worker', to:'claude', d:'M 832 135 L 958 135',        verb:['asks','request'],            at:[895,123]},
+  cw: {from:'claude', to:'worker', d:'M 958 165 L 832 165',        verb:['answers','response'],        at:[895,179]},
+  wy: {from:'worker', to:'you',    d:'M 700 75 V 56 H 190 V 98',   verb:['delivers answer','push'],    at:[445,56], async:true},
+  kw: {from:'kube',   to:'worker', d:'M 720 318 L 720 227',        verb:['stops at once','SIGKILL'],   at:[720,272]},
 };
 
-// Schritte: e = Pfeile, pre/fx = Zustand vor/nach, lbl = Pfeiltext nur für diesen Schritt, ch = Kettenglied, node = nur Kästchen hervorheben
+// Steps: e = arrows, pre/fx = state before/after, lbl = arrow text for this step only, ch = chain link, node = highlight only the box
 const START = [
-  {e:['yq'], t:['Du stellst eine Frage.','Der Request landet als Job in der Queue.'],
+  {e:['yq'], t:['You ask a question.','The request lands in the queue as a job.'],
    fx:m=>{m.sent=true;m.q='wait'}},
-  {e:['qw'], t:['Ein Bearbeiter nimmt die Frage. Die Warteliste merkt sich: Die Frage ist noch nicht erledigt.','Ein Pod bekommt den Job. Bis zum Ack bleibt er in der Queue reserviert.'],
+  {e:['qw'], t:['A processor takes the question. The waiting list remembers: the question is not done yet.','A pod receives the job. It stays reserved in the queue until the ack.'],
    pre:m=>{m.st='run'}, fx:m=>{m.q='out';m.tasks[0]=1}},
-  {e:['wc','cw'], t:['Er fragt Claude und bekommt die Antwort.','LLM-Request und Response.'],
+  {e:['wc','cw'], t:['It asks Claude and gets the answer.','LLM request and response.'],
    fx:m=>{m.tasks[1]=1}},
-  {e:['wy'], t:['Die Antwort kommt bei dir an. Ein Punkt fehlt noch auf seiner Liste: „erledigt“ melden.','Das Ergebnis wird gepusht. Der Ack steht noch aus.'],
+  {e:['wy'], t:['The answer reaches you. One item is still missing from its list: report “done”.','The result is pushed. The ack is still pending.'],
    fx:m=>{m.answers=1;m.tasks[2]=1}},
-  {node:'kube', ch:0, t:['Genau jetzt spielt das Team ein Update ein. Kubernetes tauscht alle Bearbeiter gegen die neue Version aus.','Ein Rolling Update startet. Die alten Pods werden ersetzt.'],
+  {node:'kube', ch:0, t:['Right now the team rolls out an update. Kubernetes swaps all processors for the new version.','A rolling update starts. The old pods are replaced.'],
    fx:m=>{m.update=true}},
 ];
 
 const BUG = [
   ...START,
-  {e:['kw'], err:true, ch:1, t:['Kubernetes stoppt den Bearbeiter sofort – mitten in seiner Liste. „Erledigt“ melden schafft er nicht mehr.','Der Pod wird ohne Shutdown-Handling beendet. Der Ack wird nie gesendet.'],
+  {e:['kw'], err:true, ch:1, t:['Kubernetes stops the processor at once – in the middle of its list. It never gets to report “done”.','The pod is terminated without shutdown handling. The ack is never sent.'],
    fx:m=>{m.st='dead';m.tasks[3]=2}},
-  {e:['qw'], err:true, ch:2, t:['Die Warteliste hat nie „erledigt“ gehört. Also gibt sie die Frage dem neuen Bearbeiter.','Ohne Ack wird der Job redelivered – an den neuen Pod.'],
+  {e:['qw'], err:true, ch:2, t:['The waiting list never heard “done”. So it gives the question to the new processor.','Without an ack, the job is redelivered – to the new pod.'],
    pre:m=>{m.st='run';m.ver=2;m.tasks=[0,0,0,0];m.q='wait'}, fx:m=>{m.q='out';m.tasks[0]=1}},
-  {e:['wc','cw'], err:true, t:['Der neue Bearbeiter fragt Claude noch einmal.','Zweiter LLM-Call für denselben Job.'],
+  {e:['wc','cw'], err:true, t:['The new processor asks Claude again.','Second LLM call for the same job.'],
    fx:m=>{m.tasks[1]=1}},
-  {e:['wy'], err:true, ch:3, t:['Du bekommst die Antwort ein zweites Mal.','Der Client erhält ein Duplikat.'],
+  {e:['wy'], err:true, ch:3, t:['You get the answer a second time.','The client receives a duplicate.'],
    fx:m=>{m.answers=2;m.tasks[2]=1}},
 ];
 
 const FIX = [
   ...START,
-  {e:['kw'], ch:1, tag:['mod','geändert'], newE:['kw'], lbl:{kw:['bitte aufhören','SIGTERM']},
-   t:['Kubernetes bittet den Bearbeiter aufzuhören – und lässt ihm Zeit, seine Liste fertig zu machen.','SIGTERM statt sofortigem Kill. Der Pod hat eine Grace Period, um den Job abzuschließen.'],
+  {e:['kw'], ch:1, tag:['mod','changed'], newE:['kw'], lbl:{kw:['please stop','SIGTERM']},
+   t:['Kubernetes asks the processor to stop – and gives it time to finish its list.','SIGTERM instead of an immediate kill. The pod gets a grace period to finish the job.'],
    fx:m=>{m.st='stopping'}},
-  {e:['wq'], ch:2, tag:['mod','geändert'], newE:['wq'],
-   t:['Er meldet der Warteliste: „erledigt“. Die Frage ist damit abgehakt.','Der Worker sendet den Ack. Der Job ist aus der Queue entfernt.'],
+  {e:['wq'], ch:2, tag:['mod','changed'], newE:['wq'],
+   t:['It tells the waiting list: “done”. The question is now checked off.','The worker sends the ack. The job is removed from the queue.'],
    fx:m=>{m.tasks[3]=3;m.q='done'}},
-  {node:'worker', t:['Erst jetzt hört er auf. Der neue Bearbeiter übernimmt ab der nächsten Frage.','Der Pod beendet sich sauber, der neue Pod übernimmt neue Jobs.'],
+  {node:'worker', t:['Only now does it stop. The new processor takes over from the next question.','The pod shuts down cleanly, the new pod takes new jobs.'],
    fx:m=>{m.st='off'}},
-  {node:'you', ch:3, good:true, t:['Ergebnis: Du hast genau eine Antwort.','Ergebnis: kein Duplikat, nur ein LLM-Call.']},
+  {node:'you', ch:3, good:true, t:['Result: you have exactly one answer.','Result: no duplicate, only one LLM call.']},
 ];
 
-// Zustand
+// State
 const init = () => ({sent:false, q:null, st:'idle', ver:1, tasks:[0,0,0,0], update:false, answers:0});
 let model = init(), steps = BUG, pos = 0, activeIdx = -1, playing = false, run = 0;
 
@@ -292,25 +292,25 @@ function dyn(id){
   switch (id) {
     case 'you': {
       let h = '';
-      if (m.sent) h += '<div class="bub me">Was ist RabbitMQ?</div>';
-      if (m.answers >= 1) h += '<div class="bub ai">RabbitMQ ist ein Message-Broker …</div>';
-      if (m.answers >= 2) h += `<div class="bub ai dup">RabbitMQ ist ein Message-Broker …<small>${tx(['doppelt!','Duplikat'])}</small></div>`;
+      if (m.sent) h += '<div class="bub me">What is RabbitMQ?</div>';
+      if (m.answers >= 1) h += '<div class="bub ai">RabbitMQ is a message broker …</div>';
+      if (m.answers >= 2) h += `<div class="bub ai dup">RabbitMQ is a message broker …<small>${tx(['twice!','duplicate'])}</small></div>`;
       return h;
     }
     case 'queue':
-      if (m.q === 'wait') return `<span class="slot"></span>${tx(['1 Frage wartet','1 ready'])}`;
-      if (m.q === 'out')  return `<span class="slot out"></span>${tx(['wartet auf „erledigt“','1 unacked'])}`;
-      if (m.q === 'done') return `<span class="okc">${tx(['abgehakt','acked'])}</span>`;
-      return 'leer';
+      if (m.q === 'wait') return `<span class="slot"></span>${tx(['1 question waiting','1 ready'])}`;
+      if (m.q === 'out')  return `<span class="slot out"></span>${tx(['waiting for “done”','1 unacked'])}`;
+      if (m.q === 'done') return `<span class="okc">${tx(['checked off','acked'])}</span>`;
+      return 'empty';
     case 'worker': {
-      if (m.st === 'idle') return tx(['wartet','idle']);
+      if (m.st === 'idle') return tx(['waiting','idle']);
       const cls = ['', 'ok', 'fail', 'okg'], mark = ['', '✓', '✕', '✓'];
       return '<div class="tasks">' + TASKS.map((t, i) => {
-        const s = m.tasks[i], extra = s === 2 ? ' – fehlt' : '';
+        const s = m.tasks[i], extra = s === 2 ? ' – missing' : '';
         return `<div class="task ${cls[s]}"><i>${mark[s]}</i>${tx(t)}${extra}</div>`;
       }).join('') + '</div>';
     }
-    case 'kube': return m.update ? `<span class="hl">${tx(['Update auf Version 2 läuft','Rollout v2'])}</span>` : tx(['nichts zu tun','stabil']);
+    case 'kube': return m.update ? `<span class="hl">${tx(['Update to version 2 running','Rollout v2'])}</span>` : tx(['nothing to do','stable']);
   }
   return '';
 }
@@ -332,7 +332,7 @@ function render(){
     if (lastHTML[id] !== h) { n.querySelector('.dyn').innerHTML = h; lastHTML[id] = h; }
   }
   const st = model.st, badge = nodeEls.worker.querySelector('.badge');
-  badge.textContent = st === 'dead' ? tx(['gestoppt','killed']) : st === 'off' ? tx(['beendet','terminated']) : st === 'stopping' ? tx(['macht fertig …','terminating']) : `${tx(['Version','v'])} ${model.ver}`.replace('v ', 'v');
+  badge.textContent = st === 'dead' ? tx(['stopped','killed']) : st === 'off' ? tx(['finished','terminated']) : st === 'stopping' ? tx(['finishing …','terminating']) : `${tx(['version','v'])} ${model.ver}`.replace('v ', 'v');
   badge.hidden = st === 'idle';
 
   const done = new Set(), errDone = new Set(), newDone = new Set();
@@ -345,13 +345,13 @@ function render(){
     for (const [k, v] of [['active', isA], ['done', isD], ['err', err], ['new', nw]]) { p.classList.toggle(k, v); l.classList.toggle(k, v); }
     const mk = nw ? (isA ? 'm-new' : 'm-newdim') : err ? (isA ? 'm-err' : 'm-errdim') : isA ? 'm-active' : isD ? 'm-done' : 'm-idle';
     p.setAttribute('marker-end', `url(#${mk})`);
-    // Pfeiltext: schrittspezifisch, solange er gilt; in der Lösung bleibt der geänderte Text stehen
+    // Arrow text: step-specific while it applies; in the solution the changed text stays
     const override = steps.slice(0, Math.max(pos, activeIdx + 1)).reduce((v, s) => (s.lbl && s.lbl[id]) || v, null);
     const verb = tx(override || e.verb), w = verb.length * 6.2 + 10, [cx, cy] = e.at;
     l.innerHTML = `<rect x="${cx - w/2}" y="${cy - 8}" width="${w}" height="16" rx="3"/><text x="${cx}" y="${cy + 4}" text-anchor="middle">${verb}</text>`;
   }
 
-  // Kette im Kopf: erreichte Glieder markieren, aktuelles hervorheben
+  // Chain in the header: mark reached links, highlight the current one
   const reached = new Set(steps.slice(0, Math.max(pos, activeIdx + 1)).map(s => s.ch).filter(v => v != null));
   document.querySelectorAll('#chain .c').forEach(c => {
     const i = +c.dataset.i;
@@ -359,11 +359,11 @@ function render(){
   });
 
   const card = $('card');
-  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} Schritte</div><div class="big">${tx(['Auf „Abspielen“ klicken.','Abspielen starten.'])}</div>`; }
+  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} steps</div><div class="big">${tx(['Click “Play”.','Start playback.'])}</div>`; }
   else {
     const tag = cur.tag ? `<span class="pill ${cur.tag[0]}">${cur.tag[1]}</span>` : '';
     card.className = 'card' + (cur.err ? ' err' : '');
-    card.innerHTML = `<div class="no">Schritt ${activeIdx + 1} von ${steps.length} ${tag}</div><div class="big">${tx(cur.t)}</div>`;
+    card.innerHTML = `<div class="no">Step ${activeIdx + 1} of ${steps.length} ${tag}</div><div class="big">${tx(cur.t)}</div>`;
   }
 
   const tl = $('timeline');
@@ -376,7 +376,7 @@ function render(){
     });
   }
   [...tl.querySelectorAll('.tl')].forEach((b, i) => { b.classList.toggle('done', i < pos); b.classList.toggle('cur', i === activeIdx); });
-  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Nochmal' : 'Abspielen');
+  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Replay' : 'Play');
 }
 
 // Animation
@@ -438,7 +438,7 @@ async function next(){
   if (await runStep(pos, id)) { pos++; render(); }
 }
 
-// Bedienung
+// Controls
 const segPick = (seg, b) => [...seg.children].forEach(x => x.classList.toggle('on', x === b));
 $('play').onclick = () => playing ? pause() : play();
 $('next').onclick = next;

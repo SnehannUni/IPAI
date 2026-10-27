@@ -1,16 +1,16 @@
-// Layout und Kantenführung – wird vom Viewer (eingebettet beim Build) und vom Validator benutzt.
-// Raster: Bereiche (zones) nebeneinander, darin Spalten (col) und Zeilen (row).
+// Layout and edge routing – used by the viewer (inlined at build time) and by the validator.
+// Grid: zones side by side, each with columns (col) and rows (row).
 
-// Zeilen sind so hoch wie ihr höchstes Kästchen plus GAP_V (Platz für Pfeile und Beschriftung), mindestens MIN_ROW.
+// Rows are as tall as their tallest box plus GAP_V (room for arrows and labels), at least MIN_ROW.
 export const LAYOUT = {MIN_W: 1200, COL_MIN: 280, TOP: 44, GAP_V: 56, MIN_ROW: 120, GAP: 96, MAX_W: 220, PAD: 10};
 
 export const DEFAULT_ZONES = [
-  {id: 'frontend', label: {simple: 'DU', tech: 'FRONTEND'}},
-  {id: 'backend', label: {simple: 'UNSER SYSTEM', tech: 'BACKEND'}},
-  {id: 'external', label: {simple: 'ANDERE FIRMEN', tech: 'EXTERN'}},
+  {id: 'frontend', label: {simple: 'YOU', tech: 'FRONTEND'}},
+  {id: 'backend', label: {simple: 'OUR SYSTEM', tech: 'BACKEND'}},
+  {id: 'external', label: {simple: 'OTHER COMPANIES', tech: 'EXTERNAL'}},
 ];
 
-// Höhen im Kästchen (passend zum CSS im Viewer): Rand 8 + Typzeile 15 + Name 20 + Untertitel 15 = 58, Zeile 18, Rand 8
+// Heights inside a box (matching the viewer CSS): padding 8 + type row 15 + name 20 + subtitle 15 = 58, line 18, padding 8
 const HEAD = 58, LINE = 18, BOTTOM = 8;
 export function nodeHeight(n) {
   if (n.widget === 'checklist') return Math.min(170, HEAD + 4 + (n.items || []).length * 16 + LINE + BOTTOM);
@@ -20,11 +20,11 @@ export function nodeHeight(n) {
   return HEAD + 4 + LINE + BOTTOM;
 }
 
-// Geschätzte Textbreite in px (Systemschrift); bewusst eher großzügig
+// Estimated text width in px (system font); deliberately generous
 export const textWidth = (s, size = 12, bold = false) => [...String(s)].length * size * (bold ? .57 : .52);
 
-// Layout für eine Ansicht: Bereiche ohne sichtbares Kästchen fallen weg. Innerhalb der übrigen Bereiche zählen
-// alle Kästchen (auch ausgeblendete), damit z. B. „Heute“ und „Geplant“ exakt dieselben Positionen haben.
+// Layout for one view: zones without a visible box are dropped. Inside the remaining zones all boxes count
+// (hidden ones too), so that e.g. "Today" and "Planned" have exactly the same positions.
 export function computeLayout(spec, viewId) {
   const {MIN_W, COL_MIN, TOP, GAP_V, MIN_ROW, GAP, MAX_W} = LAYOUT;
   const allZones = spec.zones && spec.zones.length ? spec.zones : DEFAULT_ZONES;
@@ -35,12 +35,12 @@ export function computeLayout(spec, viewId) {
 
   const zoneCols = zones.map(z => Math.max(1, ...nodes.filter(n => n.zone === z.id).map(n => (n.col || 0) + (n.cols || 1))));
   const totalCols = zoneCols.reduce((a, b) => a + b, 0);
-  // Bei vielen Spalten wird die Bühne breiter statt die Kästchen schmaler; der Viewer skaliert auf die Fensterbreite
+  // With many columns the stage gets wider instead of the boxes narrower; the viewer scales to the window width
   const W = Math.max(MIN_W, totalCols * COL_MIN), colW = W / totalCols;
   const zx = {};
   let x0 = 0;
   zones.forEach((z, i) => { zx[z.id] = {x: x0, w: zoneCols[i] * colW}; x0 += zoneCols[i] * colW; });
-  // Zeilenhöhen nach Inhalt: kompakt, aber nie zu knapp für das höchste Kästchen
+  // Row heights by content: compact, but never too tight for the tallest box
   const rows = Math.max(1, ...nodes.map(n => (n.row || 0) + (n.rows || 1)));
   const rowH = Array.from({length: rows}, (_, r) =>
     Math.max(MIN_ROW, ...nodes.filter(n => (n.row || 0) === r && (n.rows || 1) === 1).map(n => nodeHeight(n) + GAP_V)));
@@ -53,17 +53,17 @@ export function computeLayout(spec, viewId) {
     const z = zx[n.zone] || {x: 0}, cs = n.cols || 1, rs = n.rows || 1, r = n.row || 0;
     const cx = z.x + ((n.col || 0) + cs / 2) * colW;
     const w = Math.min(n.width || MAX_W, cs * colW - GAP);
-    // Ein Kästchen über mehrere Zeilen füllt sie bis auf den halben Zeilenabstand oben und unten
+    // A box spanning several rows fills them except half a row gap at the top and bottom
     const h = rs > 1 ? rowTop[r + rs] - rowTop[r] - GAP_V : nodeHeight(n);
     const cy = (rowTop[r] + rowTop[Math.min(r + rs, rows)]) / 2;
     boxes[n.id] = {x: cx - w / 2, y: cy - h / 2, w, h, cx, cy};
   }
 
-  // Kanten zwischen demselben Paar laufen parallel versetzt. Bezugsrichtung = erste Kante des Paares.
+  // Edges between the same pair run in parallel with an offset. Reference direction = first edge of the pair.
   const PAIR_OFF = {1: [0], 2: [-13, 13], 3: [-18, 0, 18], 4: [-24, -8, 8, 24]};
   const pairs = {};
   spec.edges.forEach(e => { const k = [e.from, e.to].sort().join('|'); (pairs[k] = pairs[k] || []).push(e.id); });
-  const KINK = 28;   // Knicke treffen das Kästchen oberhalb/unterhalb der Mitte, nicht auf den waagerechten Paar-Spuren
+  const KINK = 28;   // kinks hit the box above/below its centre, not on the horizontal pair lanes
 
   function route(e) {
     const S = boxes[e.from], T = boxes[e.to];
@@ -77,7 +77,7 @@ export function computeLayout(spec, viewId) {
 
     if (e.route === 'above' || e.route === 'below') {
       const dir = Math.sign(T.cx - S.cx) || 1, up = e.route === 'above';
-      // Paare auf eigenen Bahnen: Abstand 35 px ± Versatz, damit sich Hin- und Rückweg nicht decken
+      // Pairs on their own lanes: 35 px away ± offset, so there and back do not overlap
       const lane = (up ? Math.min(S.y, T.y) - 35 : Math.max(S.y + S.h, T.y + T.h) + 35) + off;
       const sx = S.cx + dir * S.w * .2 + off, tx = T.cx - dir * T.w * .2 + off;
       const sy = up ? S.y - 2 : S.y + S.h + 2, ty = up ? T.y - 4 : T.y + T.h + 4;
@@ -89,28 +89,28 @@ export function computeLayout(spec, viewId) {
     const hOv = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
     const kink = e.route === 'h-first' || e.route === 'v-first';
     let pts, lab, anchor = 'middle';
-    if (!kink && vOv > 30) {                       // nebeneinander: waagerecht
+    if (!kink && vOv > 30) {                       // side by side: horizontal
       const y = (Math.max(A.y, B.y) + Math.min(A.y + A.h, B.y + B.h)) / 2 + off, r = B.cx > A.cx;
       pts = [[r ? A.x + A.w : A.x, y], [r ? B.x : B.x + B.w, y]];
       lab = [(pts[0][0] + pts[1][0]) / 2, y + (off > 0 ? 17 : -8)];
-    } else if (!kink && hOv > 30) {                // übereinander: senkrecht
+    } else if (!kink && hOv > 30) {                // stacked: vertical
       const x = (Math.max(A.x, B.x) + Math.min(A.x + A.w, B.x + B.w)) / 2 + off, d = B.cy > A.cy;
       pts = [[x, d ? A.y + A.h : A.y], [x, d ? B.y : B.y + B.h]];
       anchor = off < 0 ? 'end' : off > 0 ? 'start' : 'middle';
       lab = [x + (off < 0 ? -8 : off > 0 ? 8 : 0), (pts[0][1] + pts[1][1]) / 2 + 4];
-    } else if (e.route === 'h-first') {            // versetzt: erst waagerecht aus A, dann senkrecht in B
+    } else if (e.route === 'h-first') {            // offset: horizontal out of A first, then vertical into B
       const r = B.cx > A.cx, d = B.cy > A.cy;
       const y = A.cy + (d ? KINK : -KINK) + off, x = B.cx + (r ? -1 : 1) * B.w * .25 + off;
       pts = [[r ? A.x + A.w : A.x, y], [x, y], [x, d ? B.y : B.y + B.h]];
       lab = [(pts[0][0] + x) / 2, y + (off > 0 ? 17 : -8)];
-    } else {                                       // versetzt (Standard): erst senkrecht aus A, dann waagerecht in B
+    } else {                                       // offset (default): vertical out of A first, then horizontal into B
       const r = B.cx > A.cx, d = B.cy > A.cy;
       const x = A.cx + (r ? 1 : -1) * A.w * .25 + off, y = B.cy + (d ? -KINK : KINK) + off;
       pts = [[x, d ? A.y + A.h : A.y], [x, y], [r ? B.x : B.x + B.w, y]];
       lab = [(x + pts[2][0]) / 2, y + (off > 0 ? 17 : -8)];
     }
     if (e.from !== first.from) pts.reverse();
-    // Enden kürzen: Start 2 px, Ende 4 px Abstand zum Kästchen (Platz für die Pfeilspitze)
+    // Shorten the ends: start 2 px, end 4 px away from the box (room for the arrow head)
     const shorten = (p, q, by) => [p[0] + Math.sign(q[0] - p[0]) * by, p[1] + Math.sign(q[1] - p[1]) * by];
     pts[0] = shorten(pts[0], pts[1], 2);
     pts[pts.length - 1] = shorten(pts[pts.length - 1], pts[pts.length - 2], 4);
@@ -125,21 +125,21 @@ export function computeLayout(spec, viewId) {
   return {W, H, TOP, zones, zx, boxes, routes};
 }
 
-// Rechteck der Pfeilbeschriftung (gleiche Schätzung wie im Viewer)
+// Rectangle of an arrow label (same estimate as in the viewer)
 export function labelRect(route, text) {
   const w = String(text).length * 6.3 + 10, [x, y] = route.lab;
   const rx = route.anchor === 'start' ? x : route.anchor === 'end' ? x - w : x - w / 2;
   return {x: rx, y: y - 12, w, h: 16};
 }
 
-// Schneidet eine waagerechte/senkrechte Strecke ein Rechteck (mit kleinem Rand nach innen)?
+// Does a horizontal/vertical segment cut a rectangle (with a small inset)?
 export function segmentHitsBox([a, b], box, inset = 3) {
   const x1 = Math.min(a[0], b[0]), x2 = Math.max(a[0], b[0]), y1 = Math.min(a[1], b[1]), y2 = Math.max(a[1], b[1]);
   return x2 > box.x + inset && x1 < box.x + box.w - inset && y2 > box.y + inset && y1 < box.y + box.h - inset;
 }
 export const rectsOverlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-// Liegen zwei Strecken aufeinander (gleiche Linie, überlappender Bereich)?
+// Do two segments lie on top of each other (same line, overlapping range)?
 export function segmentsOverlap([a, b], [c, d], tol = 5, minLen = 12) {
   const hor1 = a[1] === b[1], hor2 = c[1] === d[1];
   if (hor1 !== hor2) return false;

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ablauf: Chat mit Claude über RabbitMQ</title>
+<title>Flow: Chat with Claude via RabbitMQ</title>
 <style>
 :root{
   --bg:#ffffff; --soft:#fafafa; --line:#e4e4e7; --line2:#d4d4d8; --text:#18181b; --muted:#71717a; --faint:#a1a1aa;
@@ -66,7 +66,7 @@ body:not(.errmode) .erronly{display:none}
 .node .label{font-weight:600;font-size:13.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node .sub{color:var(--muted);font-size:11.5px;font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node .dyn{margin-top:7px;font-size:12px;color:var(--muted);min-height:16px;white-space:nowrap}
-/* Chatfenster: füllt den Rest des Kästchens, neueste Nachricht bleibt sichtbar */
+/* Chat window: fills the rest of the box, newest message stays visible */
 .node.result .dyn{flex:1;min-height:0;white-space:normal;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
 .node .badge{position:absolute;top:9px;right:10px;font-size:11px;color:var(--muted);background:#f4f4f5;border-radius:4px;padding:0 6px}
 
@@ -132,23 +132,23 @@ body:not(.errmode) .erronly{display:none}
 <body>
 <div class="wrap">
   <header>
-    <h1>Chat mit Claude über eine RabbitMQ-Warteschlange</h1>
-    <p>Was passiert zwischen „Senden“ und der Antwort.</p>
+    <h1>Chat with Claude via a RabbitMQ queue</h1>
+    <p>What happens between “Send” and the answer.</p>
   </header>
 
   <div class="controls">
-    <button class="primary" id="play">Abspielen</button>
-    <button id="prev" title="Schritt zurück (←)">Zurück</button>
-    <button id="next" title="Schritt weiter (→)">Weiter</button>
-    <button id="restart">Neustart</button>
+    <button class="primary" id="play">Play</button>
+    <button id="prev" title="Step back (←)">Back</button>
+    <button id="next" title="Step forward (→)">Next</button>
+    <button id="restart">Restart</button>
     <span class="gap"></span>
     <div class="seg" id="speed">
-      <button data-s="0.5">0,5×</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button>
+      <button data-s="0.5">0.5×</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button>
     </div>
     <div class="right">
-      <label class="toggle"><input type="checkbox" id="err"> Fehlerfall zeigen</label>
+      <label class="toggle"><input type="checkbox" id="err"> Show failure case</label>
       <div class="seg" id="mode">
-        <button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button>
+        <button data-m="0" class="on">Simple</button><button data-m="1">Technical</button>
       </div>
     </div>
   </div>
@@ -177,7 +177,7 @@ body:not(.errmode) .erronly{display:none}
         <g id="labels"></g>
       </svg>
       <div id="nodes"></div>
-      <!-- Pakete liegen über den Kästchen, damit nichts darunter verschwindet -->
+      <!-- Packets sit above the boxes so nothing disappears underneath -->
       <svg class="overlay" width="1200" height="680" viewBox="0 0 1200 680"><g id="packets"></g></svg>
     </div>
   </div>
@@ -186,11 +186,11 @@ body:not(.errmode) .erronly{display:none}
     <div class="card" id="card"></div>
     <div class="timeline" id="timeline"></div>
     <div class="legend">
-      <div class="it"><span class="sw" style="--c:var(--trigger)"></span>Auslöser</div>
-      <div class="it"><span class="sw" style="--c:var(--step)"></span>Schritt</div>
-      <div class="it"><span class="sw" style="--c:var(--store)"></span>Speicher</div>
-      <div class="it"><span class="sw" style="--c:var(--external)"></span>Fremder Dienst</div>
-      <div class="it"><span class="sw" style="--c:var(--result)"></span>Ergebnis</div>
+      <div class="it"><span class="sw" style="--c:var(--trigger)"></span>Trigger</div>
+      <div class="it"><span class="sw" style="--c:var(--step)"></span>Step</div>
+      <div class="it"><span class="sw" style="--c:var(--store)"></span>Storage</div>
+      <div class="it"><span class="sw" style="--c:var(--external)"></span>External service</div>
+      <div class="it"><span class="sw" style="--c:var(--result)"></span>Result</div>
       <span class="sep"></span>
       <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5"/></svg><span id="lg0"></span></div>
       <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5" stroke-dasharray="5 5"/></svg><span id="lg1"></span></div>
@@ -200,152 +200,152 @@ body:not(.errmode) .erronly{display:none}
 </div>
 
 <script>
-const ANSWER = 'RabbitMQ ist ein Message-Broker. Er nimmt Nachrichten an und verteilt sie über Warteschlangen an Programme.';
+const ANSWER = 'RabbitMQ is a message broker. It accepts messages and distributes them to programs via queues.';
 
-// Texte sind [einfach, technisch]; tx() wählt passend zum Modus
+// Texts are [simple, technical]; tx() picks the one matching the mode
 let mode = 0;
 const tx = v => Array.isArray(v) ? v[mode] : v;
 
 const UI = {
-  zones: [['DU','FRONTEND'], ['UNSER SYSTEM','BACKEND'], ['ANDERE FIRMEN','EXTERN']],
-  zoneSubs: [['dein Bildschirm','Client / Browser'], ['arbeitet im Hintergrund','eigene Services'], ['fremde Dienste','Third-Party-APIs']],
-  zoneNote: ['Nicht unter unserer Kontrolle.','Latenz und Ausfälle nicht kontrollierbar.'],
-  sync: ['wartet auf Antwort','synchron'],
-  async: ['läuft nebenher','asynchron'],
-  err: ['Fehlerweg','Fehlerpfad'],
+  zones: [['YOU','FRONTEND'], ['OUR SYSTEM','BACKEND'], ['OTHER COMPANIES','EXTERNAL']],
+  zoneSubs: [['your screen','client / browser'], ['works in the background','own services'], ['outside services','third-party APIs']],
+  zoneNote: ['Not under our control.','Latency and outages not controllable.'],
+  sync: ['waits for answer','synchronous'],
+  async: ['runs alongside','asynchronous'],
+  err: ['error route','error path'],
 };
 
 const TYPES = {
-  trigger:  {name:'Auslöser',       c:'var(--trigger)'},
-  step:     {name:'Schritt',        c:'var(--step)'},
-  store:    {name:'Speicher',       c:'var(--store)'},
-  external: {name:'Fremder Dienst', c:'var(--external)'},
-  result:   {name:'Ergebnis',       c:'var(--result)'},
+  trigger:  {name:'Trigger',          c:'var(--trigger)'},
+  step:     {name:'Step',             c:'var(--step)'},
+  store:    {name:'Storage',          c:'var(--store)'},
+  external: {name:'External service', c:'var(--external)'},
+  result:   {name:'Result',           c:'var(--result)'},
 };
 
 const NODES = {
-  btn:    {type:'trigger',  x:150,  y:150, w:220, h:112,  label:['Frage stellen','Chat-Input'],             sub:['Eingabefeld im Chat','UI-Event: submit']},
-  api:    {type:'step',     x:440,  y:150, w:200, h:96,  label:['Empfang','REST-API'],                     sub:['nimmt Fragen an','POST /messages']},
-  qreq:   {type:'store',    x:740,  y:150, w:200, h:96,  label:['Warteliste: Fragen','RabbitMQ Queue'],    sub:['Fragen warten hier','chat.requests']},
-  db:     {type:'store',    x:440,  y:350, w:200, h:96,  label:['Archiv','PostgreSQL'],                    sub:['merkt sich den Chat','Tabelle messages']},
-  worker: {type:'step',     x:740,  y:350, w:200, h:96,  label:['Bearbeiter','Worker'],                    sub:['kümmert sich um Fragen','Consumer · LLM-Client']},
-  anth:   {type:'external', x:1050, y:350, w:200, h:96,  label:['Claude','Anthropic API'],                 sub:['KI von Anthropic','Messages API']},
-  qres:   {type:'store',    x:740,  y:550, w:200, h:96,  label:['Warteliste: Antworten','RabbitMQ Queue'], sub:['Antworten warten hier','chat.responses']},
-  gw:     {type:'step',     x:440,  y:550, w:200, h:96,  label:['Zusteller','WebSocket-Gateway'],         sub:['offene Leitung zu dir','Server-Push']},
-  result: {type:'result',   x:150,  y:555, w:240, h:210, label:['Antwort im Chat','Chat-UI'],              sub:['dein Chatfenster','Message-Liste']},
+  btn:    {type:'trigger',  x:150,  y:150, w:220, h:112,  label:['Ask a question','Chat input'],          sub:['input field in the chat','UI event: submit']},
+  api:    {type:'step',     x:440,  y:150, w:200, h:96,  label:['Reception','REST API'],                  sub:['takes in questions','POST /messages']},
+  qreq:   {type:'store',    x:740,  y:150, w:200, h:96,  label:['Waitlist: questions','RabbitMQ queue'], sub:['questions wait here','chat.requests']},
+  db:     {type:'store',    x:440,  y:350, w:200, h:96,  label:['Archive','PostgreSQL'],                  sub:['remembers the chat','table messages']},
+  worker: {type:'step',     x:740,  y:350, w:200, h:96,  label:['Processor','Worker'],                    sub:['handles questions','consumer · LLM client']},
+  anth:   {type:'external', x:1050, y:350, w:200, h:96,  label:['Claude','Anthropic API'],                sub:['AI by Anthropic','Messages API']},
+  qres:   {type:'store',    x:740,  y:550, w:200, h:96,  label:['Waitlist: answers','RabbitMQ queue'], sub:['answers wait here','chat.responses']},
+  gw:     {type:'step',     x:440,  y:550, w:200, h:96,  label:['Courier','WebSocket gateway'],           sub:['open line to you','server push']},
+  result: {type:'result',   x:150,  y:555, w:240, h:210, label:['Answer in the chat','Chat UI'],          sub:['your chat window','message list']},
 };
 
 const EDGES = {
-  e1:  {from:'btn',   to:'api',   d:'M 260 136 L 338 136', verb:['gibt ab','POST'],          lab:[0,-12]},
-  ack: {from:'api',   to:'btn',   d:'M 340 166 L 262 166', verb:['bestätigt','202'],         lab:[0,12]},
-  e2:  {from:'api',   to:'db',    d:'M 440 198 L 440 300', verb:['notiert','INSERT'],        lab:[34,0]},
-  e3:  {from:'api',   to:'qreq',  d:'M 540 150 L 638 150', verb:['legt ab','publish'],       lab:[0,-12], async:true},
-  e4:  {from:'qreq',  to:'worker',d:'M 740 198 L 740 300', verb:['nimmt','consume'],         lab:[34,0],  async:true},
-  e5:  {from:'worker',to:'anth',  d:'M 840 334 L 948 334', verb:['fragt','request'],         lab:[0,-12]},
-  e6:  {from:'anth',  to:'worker',d:'M 950 366 L 842 366', verb:['antwortet','response'],    lab:[0,12]},
-  e6x: {from:'anth',  to:'worker',d:'M 1010 398 C 1010 470, 800 470, 800 404', verb:['überlastet','529'], lab:[0,0], err:true},
-  er:  {from:'worker',to:'qreq',  d:'M 842 316 C 896 284, 896 182, 844 162', verb:['legt zurück','requeue'], lab:[26,0], async:true, err:true},
-  e7:  {from:'worker',to:'db',    d:'M 640 350 L 542 350', verb:['notiert','INSERT'],        lab:[0,-12]},
-  e8:  {from:'worker',to:'qres',  d:'M 740 398 L 740 500', verb:['legt ab','publish'],       lab:[34,0],  async:true},
-  e9:  {from:'qres',  to:'gw',    d:'M 640 550 L 542 550', verb:['nimmt','consume'],         lab:[0,-12], async:true},
-  e10: {from:'gw',    to:'result',d:'M 340 550 L 272 550', verb:['bringt','push'],           lab:[0,-12], async:true},
+  e1:  {from:'btn',   to:'api',   d:'M 260 136 L 338 136', verb:['hands over','POST'],       lab:[0,-12]},
+  ack: {from:'api',   to:'btn',   d:'M 340 166 L 262 166', verb:['confirms','202'],          lab:[0,12]},
+  e2:  {from:'api',   to:'db',    d:'M 440 198 L 440 300', verb:['notes','INSERT'],          lab:[34,0]},
+  e3:  {from:'api',   to:'qreq',  d:'M 540 150 L 638 150', verb:['drops off','publish'],     lab:[0,-12], async:true},
+  e4:  {from:'qreq',  to:'worker',d:'M 740 198 L 740 300', verb:['takes','consume'],         lab:[34,0],  async:true},
+  e5:  {from:'worker',to:'anth',  d:'M 840 334 L 948 334', verb:['asks','request'],          lab:[0,-12]},
+  e6:  {from:'anth',  to:'worker',d:'M 950 366 L 842 366', verb:['answers','response'],      lab:[0,12]},
+  e6x: {from:'anth',  to:'worker',d:'M 1010 398 C 1010 470, 800 470, 800 404', verb:['overloaded','529'], lab:[0,0], err:true},
+  er:  {from:'worker',to:'qreq',  d:'M 842 316 C 896 284, 896 182, 844 162', verb:['puts back','requeue'], lab:[26,0], async:true, err:true},
+  e7:  {from:'worker',to:'db',    d:'M 640 350 L 542 350', verb:['notes','INSERT'],          lab:[0,-12]},
+  e8:  {from:'worker',to:'qres',  d:'M 740 398 L 740 500', verb:['drops off','publish'],     lab:[34,0],  async:true},
+  e9:  {from:'qres',  to:'gw',    d:'M 640 550 L 542 550', verb:['takes','consume'],         lab:[0,-12], async:true},
+  e10: {from:'gw',    to:'result',d:'M 340 550 L 272 550', verb:['delivers','push'],         lab:[0,-12], async:true},
 };
 
 function buildSteps(err){
   const s = [
-    {e:'e1', pk:['„Was ist RabbitMQ?“','POST /messages'],
-     t:['Frage abschicken','HTTP-Request'],
-     x:['Du tippst deine Frage ein und drückst auf Senden. Die Frage geht an den Empfang.',
-        'Das submit-Event löst einen HTTP-Request aus: POST /messages mit dem Nachrichtentext an die REST-API.'],
+    {e:'e1', pk:['“What is RabbitMQ?”','POST /messages'],
+     t:['Send the question','HTTP request'],
+     x:['You type your question and press Send. The question goes to the reception.',
+        'The submit event triggers an HTTP request: POST /messages with the message text to the REST API.'],
      fx:m=>{m.sent=true}},
-    {e:'e2', pk:['Frage','INSERT message'],
-     t:['Frage notieren','Nachricht persistieren'],
-     x:['Der Empfang schreibt die Frage ins Archiv. So geht der Chat nicht verloren.',
-        'Die API speichert die Nachricht per INSERT in PostgreSQL (Tabelle messages), bevor sie weiterverarbeitet wird.'],
+    {e:'e2', pk:['Question','INSERT message'],
+     t:['Note the question','Persist the message'],
+     x:['The reception writes the question into the archive. That way the chat is not lost.',
+        'The API stores the message via INSERT in PostgreSQL (table messages) before processing it further.'],
      fx:m=>{m.db++}},
-    {e:'e3', pk:['Auftrag','job #42'],
-     t:['Auf die Warteliste','Job publizieren'],
-     x:['Der Empfang wartet nicht selbst auf Claude. Er legt die Frage auf eine Warteliste und ist sofort wieder frei.',
-        'Die API publiziert einen Job in die RabbitMQ-Queue chat.requests und blockiert nicht auf den LLM-Call.'],
+    {e:'e3', pk:['Job','job #42'],
+     t:['Onto the waiting list','Publish the job'],
+     x:['The reception does not wait for Claude itself. It puts the question on a waiting list and is free again right away.',
+        'The API publishes a job to the RabbitMQ queue chat.requests and does not block on the LLM call.'],
      fx:m=>{m.q1++}},
-    {e:'ack', pk:['angekommen','202 Accepted'],
-     t:['Kurze Rückmeldung','202 Accepted'],
-     x:['Du bekommst sofort Bescheid, dass deine Frage angekommen ist. Im Chat steht jetzt „Claude schreibt …“.',
-        'Die API antwortet sofort mit 202 Accepted. Das Frontend zeigt einen Typing-Indikator an.'],
+    {e:'ack', pk:['received','202 Accepted'],
+     t:['Quick confirmation','202 Accepted'],
+     x:['You are told right away that your question has arrived. The chat now shows “Claude is typing …”.',
+        'The API responds immediately with 202 Accepted. The frontend shows a typing indicator.'],
      fx:m=>{m.res='typing'}},
-    {e:'e4', pk:['Auftrag','job #42'],
-     t:['Bearbeiter nimmt die Frage','Job konsumieren'],
-     x:['Ein Bearbeiter nimmt sich die nächste Frage von der Warteliste.',
-        'Ein Worker-Prozess konsumiert den Job aus chat.requests (prefetch 1, manuelles Ack).'],
+    {e:'e4', pk:['Job','job #42'],
+     t:['Processor takes the question','Consume the job'],
+     x:['A processor takes the next question from the waiting list.',
+        'A worker process consumes the job from chat.requests (prefetch 1, manual ack).'],
      fx:m=>{m.q1--;m.worker='busy'}},
-    {e:'e5', pk:['Frage + bisheriger Chat','POST /v1/messages'],
-     t:['Claude fragen','LLM-Request'],
-     x:['Der Bearbeiter gibt die Frage zusammen mit dem bisherigen Chat an Claude weiter und wartet.',
-        'Der Worker ruft die Anthropic Messages API auf (POST /v1/messages) mit dem Verlauf als messages-Array.'],
+    {e:'e5', pk:['Question + chat so far','POST /v1/messages'],
+     t:['Ask Claude','LLM request'],
+     x:['The processor passes the question to Claude together with the chat so far and waits.',
+        'The worker calls the Anthropic Messages API (POST /v1/messages) with the history as a messages array.'],
      fx:m=>{m.worker='wait'}},
   ];
   if (err) s.push(
-    {e:'e6x', err:true, pk:['überlastet','529 Overloaded'],
-     t:['Claude ist überlastet','529 Overloaded'],
-     x:['Claude hat gerade zu viel zu tun und sagt ab. Die Frage geht aber nicht verloren.',
-        'Die Anthropic API antwortet mit HTTP 529 (overloaded_error). Der Job wird nicht verworfen.'],
+    {e:'e6x', err:true, pk:['overloaded','529 Overloaded'],
+     t:['Claude is overloaded','529 Overloaded'],
+     x:['Claude is too busy right now and declines. But the question is not lost.',
+        'The Anthropic API responds with HTTP 529 (overloaded_error). The job is not discarded.'],
      fx:m=>{m.worker='error'}},
-    {e:'er', err:true, pk:['Auftrag, 2. Versuch','job #42 retry=2'],
-     t:['Zurück auf die Warteliste','Requeue mit Backoff'],
-     x:['Der Bearbeiter legt die Frage zurück auf die Warteliste und versucht es nach einer kurzen Pause nochmal.',
-        'Der Worker sendet ein Nack mit Requeue über eine Delay-Queue mit Backoff. Retry-Zähler: 2.'],
+    {e:'er', err:true, pk:['Job, 2nd attempt','job #42 retry=2'],
+     t:['Back onto the waiting list','Requeue with backoff'],
+     x:['The processor puts the question back on the waiting list and tries again after a short pause.',
+        'The worker sends a nack with requeue via a delay queue with backoff. Retry counter: 2.'],
      fx:m=>{m.q1++;m.worker='idle';m.attempt=2}},
-    {e:'e4', pk:['Auftrag, 2. Versuch','job #42 retry=2'],
-     t:['Neuer Versuch','Erneut konsumieren'],
-     x:['Nach der Pause nimmt der Bearbeiter die Frage wieder.',
-        'Nach Ablauf des Backoffs wird der Job erneut zugestellt und konsumiert.'],
+    {e:'e4', pk:['Job, 2nd attempt','job #42 retry=2'],
+     t:['New attempt','Consume again'],
+     x:['After the pause, the processor takes the question again.',
+        'Once the backoff expires, the job is redelivered and consumed.'],
      fx:m=>{m.q1--;m.worker='busy'}},
-    {e:'e5', pk:['Frage + bisheriger Chat','POST /v1/messages'],
-     t:['Claude nochmal fragen','LLM-Request (Retry)'],
-     x:['Zweiter Versuch: Die Frage geht wieder an Claude.',
-        'Zweiter Aufruf von POST /v1/messages mit identischem Payload.'],
+    {e:'e5', pk:['Question + chat so far','POST /v1/messages'],
+     t:['Ask Claude again','LLM request (retry)'],
+     x:['Second attempt: the question goes to Claude again.',
+        'Second call to POST /v1/messages with an identical payload.'],
      fx:m=>{m.worker='wait'}},
   );
   s.push(
-    {e:'e6', pk:['Antwort','200 OK'],
-     t:['Claude antwortet','LLM-Response'],
-     x:['Claude schickt die fertige Antwort an den Bearbeiter zurück.',
-        'Die API liefert 200 OK mit dem Antworttext (content-Block) und der Token-Usage zurück.'],
+    {e:'e6', pk:['Answer','200 OK'],
+     t:['Claude answers','LLM response'],
+     x:['Claude sends the finished answer back to the processor.',
+        'The API returns 200 OK with the answer text (content block) and the token usage.'],
      fx:m=>{m.worker='busy'}},
-    {e:'e7', pk:['Antwort','INSERT message'],
-     t:['Antwort notieren','Antwort persistieren'],
-     x:['Die Antwort kommt auch ins Archiv. Jetzt ist der ganze Chat gespeichert.',
-        'Der Worker speichert die Assistant-Nachricht in PostgreSQL.'],
+    {e:'e7', pk:['Answer','INSERT message'],
+     t:['Note the answer','Persist the answer'],
+     x:['The answer goes into the archive too. Now the whole chat is saved.',
+        'The worker stores the assistant message in PostgreSQL.'],
      fx:m=>{m.db++}},
-    {e:'e8', pk:['Antwort','result #42'],
-     t:['Auf die Antwort-Warteliste','Ergebnis publizieren'],
-     x:['Der Bearbeiter legt die Antwort auf eine zweite Warteliste und kümmert sich um die nächste Frage.',
-        'Der Worker publiziert das Ergebnis in chat.responses und bestätigt den ursprünglichen Job (Ack).'],
+    {e:'e8', pk:['Answer','result #42'],
+     t:['Onto the answer waiting list','Publish the result'],
+     x:['The processor puts the answer on a second waiting list and moves on to the next question.',
+        'The worker publishes the result to chat.responses and acknowledges the original job (ack).'],
      fx:m=>{m.q2++;m.worker='idle'}},
-    {e:'e9', pk:['Antwort','result #42'],
-     t:['Zusteller nimmt die Antwort','Ergebnis konsumieren'],
-     x:['Der Zusteller nimmt die Antwort und weiß, zu wem sie gehört.',
-        'Das WebSocket-Gateway konsumiert chat.responses und ordnet das Ergebnis per Conversation-ID der offenen Client-Verbindung zu.'],
+    {e:'e9', pk:['Answer','result #42'],
+     t:['Courier takes the answer','Consume the result'],
+     x:['The courier takes the answer and knows who it belongs to.',
+        'The WebSocket gateway consumes chat.responses and maps the result to the open client connection via conversation ID.'],
      fx:m=>{m.q2--}},
-    {e:'e10', pk:['Antwort','ws: message'],
-     t:['Antwort zu dir bringen','Server-Push'],
-     x:['Über eine offene Leitung bringt der Zusteller die Antwort direkt auf deinen Bildschirm. Du musst nicht nachfragen.',
-        'Das Gateway pusht die Nachricht über die bestehende WebSocket-Verbindung an den Client, ganz ohne Polling.'],
+    {e:'e10', pk:['Answer','ws: message'],
+     t:['Bring the answer to you','Server push'],
+     x:['Over an open line, the courier brings the answer straight to your screen. You do not have to ask again.',
+        'The gateway pushes the message to the client over the existing WebSocket connection, with no polling at all.'],
      fx:m=>{m.res='stream';m.chars=0}},
     {node:'result', stream:true,
-     t:['Antwort erscheint','Rendern'],
-     x:['Die Antwort erscheint in deinem Chat.',
-        'Das Frontend aktualisiert den State und rendert die Assistant-Nachricht.'],
+     t:['Answer appears','Render'],
+     x:['The answer appears in your chat.',
+        'The frontend updates its state and renders the assistant message.'],
      fx:m=>{m.res='done';m.chars=ANSWER.length}},
   );
   return s;
 }
 
-// Zustand
+// State
 const init = () => ({sent:false, db:0, q1:0, q2:0, worker:'idle', res:'none', chars:0, attempt:1});
 let model = init(), steps = buildSteps(false), pos = 0, activeIdx = -1, playing = false, run = 0, speed = 1;
 
-// Aufbau
+// Setup
 const $ = id => document.getElementById(id);
 const SVGNS = 'http://www.w3.org/2000/svg';
 const nodeEls = {}, edgeEls = {}, labelEls = {};
@@ -366,7 +366,7 @@ for (const [id, e] of Object.entries(EDGES)) {
   $('labels').appendChild(g); labelEls[id] = g;
 }
 
-// Alle Texte, die vom Modus abhängen
+// All texts that depend on the mode
 function renderTexts(){
   for (const [id, n] of Object.entries(NODES)) {
     nodeEls[id].querySelector('.label').textContent = tx(n.label);
@@ -383,28 +383,28 @@ function renderTexts(){
   $('timeline').innerHTML = '';
 }
 
-// Darstellung
+// Rendering
 function dyn(id){
   const m = model;
   switch(id){
-    case 'btn': return `<div class="input">${m.sent ? '<span class="ph">Nachricht …</span>' : '<span>Was ist RabbitMQ?</span>'}<b>Senden</b></div>`;
-    case 'db': return `<div class="rows">${'<i></i>'.repeat(m.db)}<em>${m.db} ${tx(m.db===1 ? ['Eintrag','Row'] : ['Einträge','Rows'])}</em></div>`;
+    case 'btn': return `<div class="input">${m.sent ? '<span class="ph">Message …</span>' : '<span>What is RabbitMQ?</span>'}<b>Send</b></div>`;
+    case 'db': return `<div class="rows">${'<i></i>'.repeat(m.db)}<em>${m.db} ${tx(m.db===1 ? ['entry','row'] : ['entries','rows'])}</em></div>`;
     case 'qreq': case 'qres': {
       const n = id==='qreq' ? m.q1 : m.q2;
-      return `<div class="slots">${'<span class="slot"></span>'.repeat(n)}<em>${n ? n+' '+tx(['wartend', n===1?'Message':'Messages']) : 'leer'}</em></div>`;
+      return `<div class="slots">${'<span class="slot"></span>'.repeat(n)}<em>${n ? n+' '+tx(['waiting', n===1?'message':'messages']) : 'empty'}</em></div>`;
     }
     case 'worker': {
-      const map = {idle:['',['bereit','idle']], busy:['busy',['arbeitet','busy']], wait:['wait',['wartet auf Claude','wartet auf Response']], error:['error',['Fehler','Fehler 529']]};
+      const map = {idle:['',['ready','idle']], busy:['busy',['working','busy']], wait:['wait',['waiting for Claude','awaiting response']], error:['error',['error','error 529']]};
       const [c, txt] = map[m.worker];
       return `<span class="status ${c}"><span class="dot"></span>${tx(txt)}</span>`;
     }
-    case 'gw': return `<span class="status ok"><span class="dot"></span>${tx(['mit dir verbunden','1 Client verbunden'])}</span>`;
-    case 'anth': return m.worker==='wait' ? `<span class="status busy"><span class="dot"></span>${tx(['denkt nach','verarbeitet'])}</span>` : '';
+    case 'gw': return `<span class="status ok"><span class="dot"></span>${tx(['connected to you','1 client connected'])}</span>`;
+    case 'anth': return m.worker==='wait' ? `<span class="status busy"><span class="dot"></span>${tx(['thinking','processing'])}</span>` : '';
     case 'result': {
       let h = '<div class="chat">';
-      if (m.sent) h += '<div class="bub me">Was ist RabbitMQ?</div>';
+      if (m.sent) h += '<div class="bub me">What is RabbitMQ?</div>';
       if (m.res==='typing' || (m.res==='stream' && m.chars===0))
-        h += '<div class="bub ai"><span class="typing"><i></i><i></i><i></i></span><span>Claude schreibt …</span></div>';
+        h += '<div class="bub ai"><span class="typing"><i></i><i></i><i></i></span><span>Claude is typing …</span></div>';
       else if (m.res==='stream') h += `<div class="bub ai">${ANSWER.slice(0,m.chars)}<span class="caret"></span></div>`;
       else if (m.res==='done') h += `<div class="bub ai">${ANSWER}</div>`;
       return h + '</div>';
@@ -424,7 +424,7 @@ function renderNodes(){
   }
   const badge = nodeEls.worker.querySelector('.badge');
   badge.hidden = model.attempt < 2;
-  badge.textContent = tx(['Versuch ','retry=']) + model.attempt;
+  badge.textContent = tx(['attempt ','retry=']) + model.attempt;
 }
 
 function render(){
@@ -441,14 +441,14 @@ function render(){
     p.setAttribute('marker-end', `url(#${mk})`);
   }
   renderCard(); renderTimeline();
-  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Nochmal' : 'Abspielen');
+  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Replay' : 'Play');
 }
 
 function chip(id){ const n = NODES[id]; return `<span class="chip" style="--c:${TYPES[n.type].c}">${tx(n.label)}</span>`; }
 function renderCard(){
   const s = steps[activeIdx];
   if (!s) {
-    $('card').innerHTML = `<div class="no">${steps.length} Schritte</div><h2>Bereit</h2><p>Abspielen starten oder mit den Pfeiltasten Schritt für Schritt durchgehen. Leertaste startet und pausiert.</p>`;
+    $('card').innerHTML = `<div class="no">${steps.length} steps</div><h2>Ready</h2><p>Press Play or step through with the arrow keys. Space starts and pauses.</p>`;
     return;
   }
   let route;
@@ -458,7 +458,7 @@ function renderCard(){
     const kind = s.err ? `<span class="kind err">${tx(UI.err)}</span>` : `<span class="kind">${tx(e.async ? UI.async : UI.sync)}</span>`;
     route = `${chip(e.from)}<span class="verb">${tx(e.verb)} →</span>${chip(e.to)}${kind}`;
   }
-  $('card').innerHTML = `<div class="no">Schritt ${activeIdx+1} von ${steps.length}</div><h2>${tx(s.t)}</h2><p>${tx(s.x)}</p><div class="route">${route}</div>`;
+  $('card').innerHTML = `<div class="no">Step ${activeIdx+1} of ${steps.length}</div><h2>${tx(s.t)}</h2><p>${tx(s.x)}</p><div class="route">${route}</div>`;
 }
 
 function renderTimeline(){
@@ -492,7 +492,7 @@ function animatePacket(path, label, color, id){
       if (id !== run) { g.remove(); return resolve(false); }
       const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength(ease(k) * len);
       g.setAttribute('transform', `translate(${pt.x},${pt.y})`);
-      // Label am Bühnenrand nach innen schieben, damit es nie abgeschnitten wird
+      // Push the label inward at the stage edge so it is never cut off
       const dx = Math.max(8 - (pt.x - w/2), 0) + Math.min(1192 - (pt.x + w/2), 0);
       lab.setAttribute('transform', `translate(${dx},-18)`);
       if (k < 1) requestAnimationFrame(tick);
@@ -546,7 +546,7 @@ async function next(){
   if (await runStep(pos, id)) { pos++; render(); }
 }
 
-// Bedienung
+// Controls
 $('play').onclick = () => playing ? pause() : play();
 $('next').onclick = next;
 $('prev').onclick = () => jump(pos - 1);

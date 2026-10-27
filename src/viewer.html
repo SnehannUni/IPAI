@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ablauf</title>
+<title>Flow</title>
 <style>
 :root{
   --bg:#ffffff; --soft:#fafafa; --line:#e4e4e7; --line2:#d4d4d8; --text:#18181b; --muted:#71717a; --faint:#a1a1aa;
@@ -64,7 +64,7 @@ button.primary:hover{background:#27272a}
 .edge.done{stroke:var(--faint)}
 .edge.active{stroke:var(--text)}
 .edge.async.active{animation:march .8s linear infinite}
-.edge.neu{stroke:#a7f3d0}.edge.neu.done{stroke:#6ee7b7}.edge.neu.active{stroke:var(--ok)}
+.edge.new{stroke:#a7f3d0}.edge.new.done{stroke:#6ee7b7}.edge.new.active{stroke:var(--ok)}
 .edge.mod{stroke:#bfdbfe}.edge.mod.done{stroke:#93c5fd}.edge.mod.active{stroke:var(--mod)}
 .edge.err.done{stroke:#fca5a5}.edge.err.active{stroke:var(--error)}
 @keyframes march{to{stroke-dashoffset:-10}}
@@ -72,7 +72,7 @@ button.primary:hover{background:#27272a}
 .elab text{fill:var(--faint);font-size:11.5px;transition:fill .3s}
 .elab.done text{fill:var(--muted)}
 .elab.active text{fill:var(--text);font-weight:600}
-.elab.neu text{fill:var(--ok)}.elab.mod text{fill:var(--mod)}
+.elab.new text{fill:var(--ok)}.elab.mod text{fill:var(--mod)}
 .elab.err.active text{fill:var(--error)}
 .pk rect{fill:#fff;stroke-width:1.2}
 .pk text{font-size:11.5px;font-weight:600}
@@ -84,12 +84,12 @@ button.primary:hover{background:#27272a}
 .node.error{border-color:var(--error)}
 .node.off{background:var(--soft)}
 .node.good{border-color:var(--ok);box-shadow:0 0 0 3px #ecfdf5}
-.node.neu{border:1.5px dashed var(--ok)}
+.node.new{border:1.5px dashed var(--ok)}
 .node.mod{border:1.5px dashed var(--mod)}
-.node.neu.active,.node.mod.active{border-style:solid}
+.node.new.active,.node.mod.active{border-style:solid}
 .node .type{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap;min-width:0}
 .node .tn{flex-shrink:0}
-.node.has-badge .tn{display:none}   /* mit Etikett zeigt nur der Farbpunkt den Typ */
+.node.has-badge .tn{display:none}   /* with a badge only the colour dot shows the type */
 .node .type::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
 .node .label{font-weight:600;font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node .sub{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -104,8 +104,8 @@ button.primary:hover{background:#27272a}
 .tone-ok{color:var(--ok);font-weight:600}
 .tone-strong{color:var(--text);font-weight:600}
 .pill{font-size:10.5px;font-weight:600;padding:0 6px;border-radius:4px}
-.pill.neu{background:#ecfdf5;color:#047857}.pill.mod{background:#eff6ff;color:#1d4ed8}
-.pill.test{background:#f4f4f5;color:#52525b}.pill.fehler{background:#fef2f2;color:#b91c1c}
+.pill.new{background:#ecfdf5;color:#047857}.pill.mod{background:#eff6ff;color:#1d4ed8}
+.pill.test{background:#f4f4f5;color:#52525b}.pill.error{background:#fef2f2;color:#b91c1c}
 .slot{display:inline-block;width:14px;height:10px;border-radius:2px;background:var(--text);margin-right:4px;vertical-align:-1px;animation:pop .3s ease-out}
 .slot:last-of-type{margin-right:8px}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
@@ -144,7 +144,7 @@ button.primary:hover{background:#27272a}
 .mi.bad .mnote{color:var(--error)}
 .mi.cursor{box-shadow:inset 0 0 0 2px var(--step);animation:pulse 1.2s ease-in-out infinite}
 .mi.cursor .chev{visibility:hidden}
-.mi.cursor::after{content:"Klick";position:absolute;right:6px;font-size:9.5px;font-weight:700;color:#fff;background:var(--step);padding:0 5px;border-radius:3px;line-height:14px}
+.mi.cursor::after{content:"Click";position:absolute;right:6px;font-size:9.5px;font-weight:700;color:#fff;background:var(--step);padding:0 5px;border-radius:3px;line-height:14px}
 @keyframes pulse{50%{box-shadow:inset 0 0 0 2px #93c5fd}}
 .mfade{position:absolute;left:0;right:0;bottom:0;height:52px;background:linear-gradient(rgba(255,255,255,0),#fff 70%);display:flex;align-items:flex-end;justify-content:center;font-size:10.5px;color:var(--muted);padding-bottom:2px}
 .menu.slide-r{animation:slideR .35s ease-out}.menu.slide-l{animation:slideL .35s ease-out}
@@ -192,7 +192,7 @@ button.primary:hover{background:#27272a}
 .tl.err.cur{background:var(--error);border-color:var(--error)}
 .tl-line{flex:0 0 5px;height:1px;background:var(--line)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;color:var(--muted);font-size:11.5px}
-/* Eingebettet / schmal: Nebensachen ausblenden, Bedienung kompakter */
+/* embedded / narrow: hide extras, compact controls */
 @media (max-width:820px){
   header p{display:none}
   .controls button{padding:4px 9px;font-size:12px}
@@ -217,10 +217,10 @@ button.primary:hover{background:#27272a}
   <header><h1 id="title"></h1><p id="subtitle"></p></header>
   <div class="controls">
     <div class="seg big" id="views"></div>
-    <button class="primary" id="play">Abspielen</button>
-    <button id="prev" title="Schritt zurück (←)">Zurück</button>
-    <button id="next" title="Schritt weiter (→)">Weiter</button>
-    <div class="seg right" id="mode"><button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button></div>
+    <button class="primary" id="play">Play</button>
+    <button id="prev" title="Previous step (←)">Back</button>
+    <button id="next" title="Next step (→)">Next</button>
+    <div class="seg right" id="mode"><button data-m="0" class="on">Simple</button><button data-m="1">Technical</button></div>
   </div>
   <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div><details class="explain" id="explain"><summary id="explainSum"></summary><div id="explainBody"></div></details></div>
   <div class="main" id="main">
@@ -241,23 +241,23 @@ button.primary:hover{background:#27272a}
 (() => {
 'use strict';
 
-// ---------- Layout (aus src/layout.mjs, beim Build eingesetzt) ----------
+// ---------- Layout (from src/layout.mjs, inserted at build time) ----------
 /*__LAYOUT__*/
 
-// ---------- Grundwerte ----------
+// ---------- Basics ----------
 const TYPES = {
-  trigger:  {name:'Auslöser',       c:'var(--trigger)'},
-  step:     {name:'Schritt',        c:'var(--step)'},
-  store:    {name:'Speicher',       c:'var(--store)'},
-  external: {name:'Fremder Dienst', c:'var(--external)'},
-  result:   {name:'Ergebnis',       c:'var(--result)'},
-  screen:   {name:'Bildschirm',     c:'var(--screen)'},
+  trigger:  {name:'Trigger',        c:'var(--trigger)'},
+  step:     {name:'Step',           c:'var(--step)'},
+  store:    {name:'Storage',        c:'var(--store)'},
+  external: {name:'External service', c:'var(--external)'},
+  result:   {name:'Result',         c:'var(--result)'},
+  screen:   {name:'Screen',         c:'var(--screen)'},
 };
 const MARKERS = {idle:'#d4d4d8', done:'#a1a1aa', active:'#18181b', err:'#dc2626', errdim:'#fca5a5',
-                 neu:'#059669', neudim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
-const TAGS = {neu:['neu','neu'], 'geändert':['mod','geändert'], test:['test','Test'], fehler:['fehler','Fehler']};
+                 new:'#059669', newdim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
+const TAGS = {new:['new','new'], changed:['mod','changed'], test:['test','test'], error:['error','error']};
 const TASK_MARK = {todo:'', done:'✓', fail:'✕', ok:'✓', skip:'–'};
-const meterMax = n => n.meterMax || 150;   // Balken reicht bis hier, der Strich steht bei 100 %
+const meterMax = n => n.meterMax || 150;   // the bar ends here, the limit line sits at 100 %
 
 const $ = id => document.getElementById(id);
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -269,19 +269,19 @@ const svgEl = (tag, attrs, parent) => {
   return e;
 };
 
-// Text ist entweder ein String oder {simple, tech}
+// A text is either a string or {simple, tech}
 let mode = 0;
 const tx = v => v == null ? '' : typeof v === 'string' ? v : (mode ? (v.tech ?? v.simple) : (v.simple ?? v.tech)) ?? '';
 
 let spec;
 try { spec = JSON.parse($('flow-spec').textContent); }
-catch (err) { document.querySelector('.wrap').innerHTML = `<div class="fatal">Flow-Spec konnte nicht gelesen werden:\n${esc(err.message)}</div>`; return; }
+catch (err) { document.querySelector('.wrap').innerHTML = `<div class="fatal">Could not read the flow spec:\n${esc(err.message)}</div>`; return; }
 
 const NODES = Object.fromEntries(spec.nodes.map(n => [n.id, n]));
 const EDGES = Object.fromEntries(spec.edges.map(e => [e.id, e]));
 const hasTech = JSON.stringify(spec).includes('"tech"');
 
-// ---------- Aufbau der Bühne (pro Ansicht neu, siehe buildStage) ----------
+// ---------- Stage (rebuilt per view, see buildStage) ----------
 let W, H, ZX, BOX, ROUTES, ZONES;
 const nodeEls = {}, edgeEls = {}, labelEls = {}, lastHTML = {}, menuAnim = {}, menuLevel = {};
 for (const [id, c] of Object.entries(MARKERS)) {
@@ -319,7 +319,7 @@ function buildStage(viewId){
   }
 }
 
-// ---------- Zustand ----------
+// ---------- State ----------
 let view, steps, mark, pos = 0, activeIdx = -1, playing = false, run = 0, state;
 const blank = () => ({status:null, tone:null, badge:null, badgeTone:null, state:null, meter:null, meterText:null, slots:0, checks:{}, chat:[], menu:null});
 function apply(st, patch){
@@ -342,11 +342,11 @@ function stateAt(n, withBeforeOf){
 const visible = (item) => !item.views || item.views.includes(view.id);
 const edgeVisible = e => visible(e) && visible(NODES[e.from]) && visible(NODES[e.to]);
 
-// ---------- Darstellung ----------
+// ---------- Rendering ----------
 function renderTexts(){
   $('title').textContent = tx(spec.title);
   $('subtitle').textContent = tx(view.subtitle ?? spec.subtitle);
-  document.title = tx(spec.title) || 'Ablauf';
+  document.title = tx(spec.title) || 'Flow';
   document.querySelectorAll('[data-z]').forEach(t => t.textContent = tx(ZONES[+t.dataset.z].label));
   for (const n of spec.nodes) {
     const el = nodeEls[n.id], m = mark.nodes[n.id];
@@ -361,7 +361,7 @@ function renderTexts(){
   $('chain').innerHTML = (view.chain || []).map((c, k) => (k ? '<span class="arr">→</span>' : '') + `<span class="c" data-i="${k}">${esc(tx(c))}</span>`).join('');
   const ex = [].concat(view.explain || []).map(tx).filter(Boolean);
   $('explain').hidden = !ex.length;
-  $('explainSum').textContent = tx(view.explainLabel) || (view.kind === 'bug' ? 'Worum geht es? Das Problem erklärt' : view.kind === 'fix' ? 'Was ändert sich? Die Lösung erklärt' : 'Worum geht es?');
+  $('explainSum').textContent = tx(view.explainLabel) || (view.kind === 'bug' ? 'What is this about? The problem explained' : view.kind === 'fix' ? 'What changes? The solution explained' : 'What is this about?');
   $('explainBody').innerHTML = ex.map(p => p.startsWith('>') ? `<blockquote>${esc(p.slice(1).trim())}</blockquote>` : `<p>${esc(p)}</p>`).join('');
   $('explain').open = false;
   $('banner').hidden = !head && !(view.chain || []).length && !ex.length;
@@ -376,11 +376,11 @@ function renderLegend(){
   const line = (dash, c, label) => `<div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="${c}" stroke-width="1.5"${dash ? ' stroke-dasharray="5 5"' : ''}/></svg>${label}</div>`;
   h += '<span class="sep"></span>';
   const vis = spec.edges.filter(edgeVisible);
-  if (vis.some(e => !e.async)) h += line(false, '#71717a', tx({simple:'wartet auf Antwort', tech:'synchron'}));
-  if (vis.some(e => e.async)) h += line(true, '#71717a', tx({simple:'läuft nebenher', tech:'asynchron'}));
-  if (steps.some(s => s.error)) h += line(false, '#dc2626', 'Fehler');
-  if (Object.values(mark.edges).includes('neu') || Object.values(mark.nodes).includes('neu')) h += line(false, '#059669', 'neu');
-  if (Object.values(mark.edges).includes('geändert') || Object.values(mark.nodes).includes('geändert')) h += line(false, '#2563eb', 'geändert');
+  if (vis.some(e => !e.async)) h += line(false, '#71717a', tx({simple:'waits for an answer', tech:'synchronous'}));
+  if (vis.some(e => e.async)) h += line(true, '#71717a', tx({simple:'runs alongside', tech:'asynchronous'}));
+  if (steps.some(s => s.error)) h += line(false, '#dc2626', 'error');
+  if (Object.values(mark.edges).includes('new') || Object.values(mark.nodes).includes('new')) h += line(false, '#059669', 'new');
+  if (Object.values(mark.edges).includes('changed') || Object.values(mark.nodes).includes('changed')) h += line(false, '#2563eb', 'changed');
   $('legend').innerHTML = h;
 }
 
@@ -388,7 +388,7 @@ const MENU_CHEV = {group:'▸', open:'▾', app:'›'};
 function menuHtml(n, s){
   const m = s.menu;
   if (!m) return '';
-  // Ebenenwechsel animieren: hinein = von rechts, zurück = von links
+  // Animate level changes: entering slides in from the right, going back from the left
   const level = m.level || '';
   if (menuLevel[n.id] !== undefined && menuLevel[n.id] !== level) menuAnim[n.id] = m.dir === 'out' ? 'slide-l' : 'slide-r';
   menuLevel[n.id] = level;
@@ -400,7 +400,7 @@ function menuHtml(n, s){
     const note = it.note ? `<span class="mnote">${esc(tx(it.note))}</span>` : '';
     return `<div class="mi ${kind}${it.active ? ' active' : ''}${it.cursor ? ' cursor' : ''}${it.tone ? ' ' + it.tone : ''}">${icon}<span class="mt">${esc(tx(it.text))}</span>${note}${chev}</div>`;
   }).join('');
-  return `<div class="menu ${menuAnim[n.id] || ''}">${items}</div>${m.scroll ? `<div class="mfade">${esc(tx(m.scroll === true ? {simple:'weiter scrollen ▾', tech:'scroll ▾'} : m.scroll))}</div>` : ''}`;
+  return `<div class="menu ${menuAnim[n.id] || ''}">${items}</div>${m.scroll ? `<div class="mfade">${esc(tx(m.scroll === true ? {simple:'scroll for more ▾', tech:'scroll ▾'} : m.scroll))}</div>` : ''}`;
 }
 function nodeWidget(n, s){
   if (n.widget === 'menu') return menuHtml(n, s);
@@ -436,12 +436,12 @@ function render(){
     badge.innerHTML = bHtml; badge.className = 'badge' + (s.badgeTone ? ' ' + s.badgeTone : '');
     el.classList.toggle('has-badge', !!bHtml);
     if (n.widget === 'meter') {
-      // risk (Standard): ab 80 % orange, ab 100 % rot · progress: 100 % = Ziel (grün), darüber rot
+      // risk (default): orange from 80 %, red from 100 % · progress: 100 % = goal (green), above that red
       const v = s.meter || 0, bar = el.querySelector('.meter'), progress = n.meterMode === 'progress';
       const bad = progress ? v > 100 : v >= 100;
       bar.className = 'meter' + (bad ? ' over' : progress ? (v === 100 ? ' full' : '') : (v > 80 ? ' hi' : ''));
       const value = s.meterText != null ? tx(s.meterText) : s.meter != null ? s.meter + ' %' : '';
-      el.querySelector('.mline').innerHTML = value ? `${esc(tx(n.meterLabel) || 'Auslastung')}: <span class="${bad ? 'tone-bad' : ''}">${esc(value)}</span>` : '';
+      el.querySelector('.mline').innerHTML = value ? `${esc(tx(n.meterLabel) || 'Load')}: <span class="${bad ? 'tone-bad' : ''}">${esc(value)}</span>` : '';
       bar.querySelector('i').style.width = Math.min(v, meterMax(n)) / meterMax(n) * 100 + '%';
     }
   }
@@ -457,10 +457,10 @@ function render(){
     if (!vis) continue;
     const isA = actE.has(e.id), isD = done.has(e.id) && !isA, err = isA ? !!cur.error : errDone.has(e.id);
     const mk = mark.edges[e.id], mc = mk ? TAGS[mk][0] : null;
-    for (const [k, v] of [['active', isA], ['done', isD], ['err', err], ['neu', mc === 'neu'], ['mod', mc === 'mod']]) { p.classList.toggle(k, v); l.classList.toggle(k, v); }
+    for (const [k, v] of [['active', isA], ['done', isD], ['err', err], ['new', mc === 'new'], ['mod', mc === 'mod']]) { p.classList.toggle(k, v); l.classList.toggle(k, v); }
     const marker = err ? (isA ? 'err' : 'errdim') : mc ? (isA ? mc : mc + 'dim') : isA ? 'active' : isD ? 'done' : 'idle';
     p.setAttribute('marker-end', `url(#m-${marker})`);
-    // Pfeiltext: der zuletzt gesetzte Schritt-Text gilt weiter, sonst der Standard
+    // Arrow label: the label set by the latest step stays, otherwise the default verb
     const over = reached.reduce((v, s) => (s.labels && e.id in s.labels ? s.labels[e.id] : v), null);
     const verb = tx(over || e.verb), r = ROUTES[e.id], lr = labelRect(r, verb);
     l.innerHTML = verb ? `<rect x="${lr.x}" y="${lr.y}" width="${lr.w}" height="${lr.h}" rx="3"/><text x="${lr.x + lr.w / 2}" y="${r.lab[1]}" text-anchor="middle">${esc(verb)}</text>` : '';
@@ -473,11 +473,11 @@ function render(){
   });
 
   const card = $('card');
-  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} Schritte</div><div class="big">${esc(tx(view.intro) || 'Auf „Abspielen“ klicken.')}</div>${view.introDetail ? `<div class="detail">${esc(tx(view.introDetail))}</div>` : ''}`; }
+  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} steps</div><div class="big">${esc(tx(view.intro) || 'Press “Play”.')}</div>${view.introDetail ? `<div class="detail">${esc(tx(view.introDetail))}</div>` : ''}`; }
   else {
     const t = cur.tag && TAGS[cur.tag] ? `<span class="pill ${TAGS[cur.tag][0]}">${TAGS[cur.tag][1]}</span>` : '';
     card.className = 'card' + (cur.error ? ' err' : '');
-    card.innerHTML = `<div class="no">Schritt ${activeIdx + 1} von ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>${cur.detail ? `<div class="detail">${esc(tx(cur.detail))}</div>` : ''}`;
+    card.innerHTML = `<div class="no">Step ${activeIdx + 1} of ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>${cur.detail ? `<div class="detail">${esc(tx(cur.detail))}</div>` : ''}`;
   }
 
   const tl = $('timeline');
@@ -490,7 +490,7 @@ function render(){
     });
   }
   [...tl.querySelectorAll('.tl')].forEach((b, i) => { b.classList.toggle('done', i < pos); b.classList.toggle('cur', i === activeIdx); });
-  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Nochmal' : 'Abspielen');
+  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Replay' : 'Play');
 }
 
 // ---------- Animation ----------
@@ -513,7 +513,7 @@ function animatePacket(path, color, label, id){
       if (id !== run) { g.remove(); return resolve(false); }
       const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength(ease(k) * len);
       g.setAttribute('transform', `translate(${pt.x},${pt.y})`);
-      if (lab) {   // Beschriftung bleibt innerhalb der Bühne
+      if (lab) {   // keep the label inside the stage
         const dx = Math.max(8 - (pt.x - w / 2), 0) + Math.min(W - 8 - (pt.x + w / 2), 0);
         lab.setAttribute('transform', `translate(${dx},-20)`);
       }
@@ -562,7 +562,7 @@ async function next(){
   if (await runStep(pos, id)) { pos++; render(); }
 }
 
-// ---------- Ansichten und Bedienung ----------
+// ---------- Views and controls ----------
 function selectView(v){
   view = v; steps = v.steps || [];
   buildStage(v.id);
@@ -593,8 +593,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') next();
   if (e.key === 'ArrowLeft') jump(pos - 1);
 });
-// Das Diagramm nutzt immer die volle Breite. Nach der Höhe wird nicht verkleinert: Eingebettet (z. B. im Chat)
-// ist die Fensterhöhe unbekannt oder wächst mit dem Inhalt – dann wäre das Diagramm unnötig klein.
+// The diagram always uses the full width. It is not shrunk by height: when embedded (e.g. in a chat) the window
+// height is unknown or grows with the content, so the diagram would become needlessly small.
 const fit = () => {
   const outer = $('outer');
   const s = Math.max(.3, Math.min(1.15, outer.clientWidth / W));
