@@ -2,9 +2,11 @@
 // Die Regeln sind in docs/REGELN.md beschrieben; die Kennungen hier (R1, R2 …) verweisen darauf.
 import {computeLayout, labelRect, segmentHitsBox, rectsOverlap, segmentsOverlap, textWidth, LAYOUT} from './layout.mjs';
 
-export const NODE_TYPES = ['trigger', 'step', 'store', 'external', 'result'];
-export const WIDGETS = ['chat', 'checklist', 'meter'];
-export const VIEW_KINDS = ['normal', 'bug', 'fix'];
+export const NODE_TYPES = ['trigger', 'step', 'store', 'external', 'result', 'screen'];
+export const WIDGETS = ['chat', 'checklist', 'meter', 'menu'];
+export const VIEW_KINDS = ['normal', 'bug', 'fix', 'compare'];
+export const MENU_KINDS = ['link', 'group', 'open', 'child', 'app', 'back'];
+export const ZONE_TONES = ['bug', 'fix', null];
 export const TAGS = ['neu', 'geändert', 'test', 'fehler'];
 export const CHECK_STATES = ['todo', 'done', 'fail', 'ok', 'skip'];
 export const NODE_STATES = ['dead', 'error', 'off', 'good', null];
@@ -39,6 +41,7 @@ export function validateSpec(spec) {
   if (spec.zones) spec.zones.forEach((z, i) => {
     if (!z.id) err(`zones[${i}]`, 'id fehlt');
     if (!isText(z.label)) err(`zones[${i}]`, 'label fehlt');
+    if (z.tone !== undefined && !ZONE_TONES.includes(z.tone)) err(`zones[${i}]`, 'tone muss "bug" oder "fix" sein');
   });
   if (new Set(zoneIds).size !== zoneIds.length) err('zones', 'doppelte id');
 
@@ -71,8 +74,13 @@ export function validateSpec(spec) {
       cells[k] = n.id;
     }
   });
-  const totalCols = zoneIds.reduce((sum, z) => sum + Math.max(1, ...nodes.filter(n => n.zone === z).map(n => (n.col || 0) + (n.cols || 1))), 0);
-  if (totalCols > LIMITS.columns) warn('R4', 'Layout', `${totalCols} Spalten – mehr als ${LIMITS.columns} werden unübersichtlich`);
+  const colsInView = viewId => zoneIds
+    .filter(z => nodes.some(n => n.zone === z && (!n.views || viewId == null || n.views.includes(viewId))))
+    .reduce((sum, z) => sum + Math.max(1, ...nodes.filter(n => n.zone === z).map(n => (n.col || 0) + (n.cols || 1))), 0);
+  for (const v of (Array.isArray(spec.views) && spec.views.length ? spec.views : [{}])) {
+    const c = colsInView(v.id);
+    if (c > LIMITS.columns) warn('R4', v.id ? `Ansicht "${v.id}"` : 'Layout', `${c} Spalten – mehr als ${LIMITS.columns} werden unübersichtlich`);
+  }
 
   // Pfeile
   const edges = Array.isArray(spec.edges) ? spec.edges : [];
@@ -109,6 +117,8 @@ export function validateSpec(spec) {
     if (p.slots) t.slots = Math.max(t.slots, Math.min(p.slots, 9));
   };
   nodes.forEach(n => n.initial && collect(n.id, n.initial));
+  const menuTexts = {};
+  const collectMenu = (id, item, view) => (menuTexts[view + '|' + id] = menuTexts[view + '|' + id] || []).push(item);
 
   views.forEach((v, vi) => {
     const vw = `Ansicht "${v.id ?? vi}"`;
@@ -163,6 +173,15 @@ export function validateSpec(spec) {
           [].concat(p.say).forEach(m => { if (m.from && !SPEAKERS.includes(m.from)) err(at, `say.from muss ${SPEAKERS.join(', ')} sein`); });
         }
         if ((p.meter != null || p.meterText != null) && n.widget !== 'meter') err(at, 'meter/meterText nur bei widget "meter"');
+        if (p.menu !== undefined) {
+          if (n.widget !== 'menu') err(at, 'menu nur bei widget "menu"');
+          else if (p.menu !== null) [].concat(p.menu.items || []).forEach((it, i) => {
+            const item = typeof it === 'string' || isText(it) && !it.kind && !('text' in it) ? {text: it} : it;
+            if (!isText(item.text)) err(at, `menu.items[${i}] braucht text`);
+            if (item.kind != null && !MENU_KINDS.includes(item.kind)) err(at, `menu.items[${i}].kind muss einer von ${MENU_KINDS.join(', ')} sein`);
+            collectMenu(id, item, v.id);
+          });
+        }
       }
       for (const id of Object.keys(s.labels || {})) if (!edgeById[id]) err(`${w} labels`, `Pfeil "${id}" gibt es nicht`);
       if (s.tag != null && !TAGS.includes(s.tag)) err(w, `tag muss einer von ${TAGS.join(', ')} sein`);
@@ -179,7 +198,7 @@ export function validateSpec(spec) {
       }
       if (stepEdges.length > LIMITS.edgesPerStep) warn('R8', w, `${stepEdges.length} Pfeile in einem Schritt – aufteilen`);
       focus.forEach(id => seen.add(id));   // focus im selben Schritt führt ein Kästchen ein
-      if (si === 0) {
+      if (si === 0 && v.kind !== 'compare') {
         const first = stepEdges[0] ? nodeById[edgeById[stepEdges[0]]?.from] : nodeById[focus[0]];
         if (first && first.type !== 'trigger') warn('R9', w, `erster Schritt sollte beim Auslöser beginnen, nicht bei "${first.id}"`);
       } else if (stepEdges.length) {
@@ -198,7 +217,7 @@ export function validateSpec(spec) {
 
     const explain = [].concat(v.explain || []);
     explain.forEach((p, i) => { if (!isText(p)) err(`${vw} explain[${i}]`, 'ist kein Text'); });
-    if ((v.kind === 'bug' || v.kind === 'fix') && !explain.length)
+    if (['bug', 'fix', 'compare'].includes(v.kind) && !explain.length)
       warn('R15', vw, 'explain fehlt – in 2–4 kurzen Absätzen erklären, worum es geht (Problem: wer ist betroffen, was läuft schief, warum; Lösung: was ändert sich, was bleibt gleich)');
     explain.forEach((p, i) => variants(p).some(t => words(t) > LIMITS.wordsPerExplain) &&
       warn('R15', `${vw} explain[${i}]`, `Absatz ist länger als ${LIMITS.wordsPerExplain} Wörter – aufteilen`));
@@ -221,7 +240,7 @@ export function validateSpec(spec) {
       else if (last && !Object.entries(last.set || {}).some(([id, p]) => p.state === 'good' && ['trigger', 'result'].includes(nodeById[id]?.type)))
         warn('R14', vw, 'letzter Schritt der Lösung sollte Nutzer/Ergebnis mit state: "good" zeigen');
     }
-    if (steps.length) {
+    if (steps.length && v.kind !== 'compare') {
       const last = steps[steps.length - 1];
       const ends = [...(last.edges || []).map(id => edgeById[id]?.to), ...[].concat(last.focus || [])];
       if (!ends.some(id => ['trigger', 'result'].includes(nodeById[id]?.type))) warn('R9', vw, 'letzter Schritt sollte beim Nutzer bzw. Ergebnis enden');
@@ -230,18 +249,19 @@ export function validateSpec(spec) {
 
   edges.forEach(e => { if (!views.some(v => (v.steps || []).some(s => (s.edges || []).includes(e.id)))) warn('R2', `Pfeil "${e.id}"`, 'wird in keinem Schritt benutzt'); });
 
-  if (!errors.length) checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView, shown, warn});
+  if (!errors.length) checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView, shown, menuTexts, warn});
   return {errors, warnings};
 }
 
 // Geometrie und Platz: Pfeile durch Kästchen, Pfeile aufeinander, Beschriftungen, abgeschnittene Texte
-function checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView, shown, warn}) {
-  const {boxes, routes} = computeLayout(spec);
+function checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView, shown, menuTexts, warn}) {
+  const layouts = Object.fromEntries(views.map(v => [v.id, computeLayout(spec, v.id)]));
   const reported = new Set();
   const once = (key, fn) => { if (!reported.has(key)) { reported.add(key); fn(); } };
   const segs = r => r.pts.slice(1).map((p, i) => [r.pts[i], p]);
 
   for (const v of views) {
+    const {boxes, routes} = layouts[v.id];
     const visNodes = nodes.filter(n => inView(n, v));
     const visEdges = edges.filter(e => edgeInView(e, v));
     const labels = [];
@@ -281,6 +301,7 @@ function checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView,
   const empty = {status: [], badge: [], meterText: [], slots: 0};
   for (const n of nodes) for (const v of views) {
     if (!inView(n, v)) continue;
+    const {boxes} = layouts[v.id];
     const inner = boxes[n.id].w - 2 * LAYOUT.PAD - 2, w = `Kästchen "${n.id}"`;
     const a = shown['*|' + n.id] || empty, b = shown[v.id + '|' + n.id] || empty;
     const t = {status: [...a.status, ...b.status], badge: [...a.badge, ...b.badge], meterText: [...a.meterText, ...b.meterText], slots: Math.max(a.slots, b.slots)};
@@ -295,6 +316,14 @@ function checkGeometry({spec, nodes, edges, views, nodeById, inView, edgeInView,
     fit('badge', t.badge, s => 12 + marks + textWidth(s, 10.5, true) + 18);   // mit Etikett entfällt der Typname
     fit('status', t.status, s => t.slots * 18 + textWidth(s, 12));
     if (n.widget === 'checklist') fit('Listenpunkt', n.items, s => 21 + textWidth(s, 12, true));
+    if (n.widget === 'menu') {
+      // Menüzeile: Symbol 14 + Abstände, eingerückt bei Unterpunkten, Pfeil rechts bei Gruppen/Apps
+      const items = menuTexts[v.id + '|' + n.id] || [];
+      fit('Menüeintrag', items.map(it => it.text), t => {
+        const it = items.find(x => variants(x.text).includes(t)) || {};
+        return (it.kind === 'child' ? 38 : 28) + (['group', 'open', 'app'].includes(it.kind) ? 16 : 0) + textWidth(t, 12.5, !!it.active) + (it.note ? textWidth(longest(it.note), 10.5) + 8 : 0);
+      });
+    }
     if (n.widget === 'meter') fit('Balkenzeile', t.meterText.length ? t.meterText : ['100 %'], s => textWidth(`${longest(n.meterLabel) || 'Auslastung'}: ${s}`, 12));
   }
 }

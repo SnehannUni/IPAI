@@ -7,7 +7,7 @@
 <style>
 :root{
   --bg:#ffffff; --soft:#fafafa; --line:#e4e4e7; --line2:#d4d4d8; --text:#18181b; --muted:#71717a; --faint:#a1a1aa;
-  --trigger:#d97706; --step:#2563eb; --store:#059669; --external:#7c3aed; --result:#db2777;
+  --trigger:#d97706; --step:#2563eb; --store:#059669; --external:#7c3aed; --result:#db2777; --screen:#52525b;
   --error:#dc2626; --ok:#059669; --mod:#2563eb;
 }
 *{box-sizing:border-box}
@@ -126,6 +126,32 @@ button.primary:hover{background:#27272a}
 .meter b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text)}
 .still *{transition:none!important;animation:none!important}
 
+.node.menu .w{flex:1;min-height:0;overflow:hidden;position:relative;margin-top:6px}
+.menu{display:flex;flex-direction:column;gap:1px}
+.mi{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:12.5px;line-height:15px;color:#3f3f46;white-space:nowrap;position:relative}
+.mi .ic{flex:0 0 14px;height:14px;border-radius:4px;background:#e4e4e7}
+.mi .ic.back{background:none;color:var(--muted);font-size:13px;display:grid;place-items:center}
+.mi .mt{overflow:hidden;text-overflow:ellipsis}
+.mi .chev{margin-left:auto;color:var(--faint);font-size:12px}
+.mi.app .chev{color:var(--text);font-weight:700}
+.mi.child{padding-left:30px;font-size:12px;color:var(--muted)}
+.mi.back{color:var(--muted);border-bottom:1px solid var(--line);border-radius:6px 6px 0 0;margin-bottom:3px;font-size:12px}
+.mi.active{background:#f4f4f5;color:var(--text);font-weight:600}
+.mi.active::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:2px;border-radius:2px;background:var(--text)}
+.mi.ok.active::before{background:var(--ok)}
+.mi.bad{color:var(--error)}
+.mi .mnote{font-size:10.5px;color:var(--ok);font-weight:600}
+.mi.bad .mnote{color:var(--error)}
+.mi.cursor{box-shadow:inset 0 0 0 2px var(--step);animation:pulse 1.2s ease-in-out infinite}
+.mi.cursor .chev{visibility:hidden}
+.mi.cursor::after{content:"Klick";position:absolute;right:6px;font-size:9.5px;font-weight:700;color:#fff;background:var(--step);padding:0 5px;border-radius:3px;line-height:14px}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 2px #93c5fd}}
+.mfade{position:absolute;left:0;right:0;bottom:0;height:52px;background:linear-gradient(rgba(255,255,255,0),#fff 70%);display:flex;align-items:flex-end;justify-content:center;font-size:10.5px;color:var(--muted);padding-bottom:2px}
+.menu.slide-r{animation:slideR .35s ease-out}.menu.slide-l{animation:slideL .35s ease-out}
+@keyframes slideR{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideL{from{transform:translateX(-28px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.menu.slide-r,.menu.slide-l,.mi.cursor{animation:none}}
+.zone-cap.bug{fill:#b91c1c}.zone-cap.fix{fill:#047857}
 .node.chat .w{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden}
 .bub{max-width:88%;padding:6px 10px;border-radius:8px;font-size:12.5px;line-height:1.4;color:var(--text);animation:pop .25s ease-out}
 .bub.me{align-self:flex-end;background:#f4f4f5}
@@ -225,6 +251,7 @@ const TYPES = {
   store:    {name:'Speicher',       c:'var(--store)'},
   external: {name:'Fremder Dienst', c:'var(--external)'},
   result:   {name:'Ergebnis',       c:'var(--result)'},
+  screen:   {name:'Bildschirm',     c:'var(--screen)'},
 };
 const MARKERS = {idle:'#d4d4d8', done:'#a1a1aa', active:'#18181b', err:'#dc2626', errdim:'#fca5a5',
                  neu:'#059669', neudim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
@@ -254,45 +281,51 @@ const NODES = Object.fromEntries(spec.nodes.map(n => [n.id, n]));
 const EDGES = Object.fromEntries(spec.edges.map(e => [e.id, e]));
 const hasTech = JSON.stringify(spec).includes('"tech"');
 
-// ---------- Layout ----------
-const L = computeLayout(spec);
-const {W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L, ZONES = L.zones;
-
-// ---------- Aufbau der Bühne ----------
-$('stage').style.height = H + 'px'; $('stage').style.width = W + 'px';
-for (const s of [$('svg'), $('overlay')]) { s.setAttribute('width', W); s.setAttribute('height', H); s.setAttribute('viewBox', `0 0 ${W} ${H}`); }
+// ---------- Aufbau der Bühne (pro Ansicht neu, siehe buildStage) ----------
+let W, H, ZX, BOX, ROUTES, ZONES;
+const nodeEls = {}, edgeEls = {}, labelEls = {}, lastHTML = {}, menuAnim = {}, menuLevel = {};
 for (const [id, c] of Object.entries(MARKERS)) {
   const m = svgEl('marker', {id:'m-' + id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse'}, $('defs'));
   svgEl('path', {d:'M0,1 L9,5 L0,9 z', fill:c}, m);
 }
-ZONES.forEach((z, i) => {
-  const {x, w} = ZX[z.id];
-  if (ZONES.length > 1 && (i === 0 || i === ZONES.length - 1)) svgEl('rect', {x, y:0, width:w, height:H, fill:'#fafafa'}, $('zones'));
-  if (i) svgEl('line', {class:'zone-div', x1:x, y1:0, x2:x, y2:H}, $('zones'));
-  svgEl('text', {class:'zone-cap', x:x + 24, y:32, 'data-z':i}, $('zones'));
-});
-
-const nodeEls = {}, edgeEls = {}, labelEls = {};
-for (const n of spec.nodes) {
+function buildStage(viewId){
+  const L = computeLayout(spec, viewId);
+  ({W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L); ZONES = L.zones;
+  for (const k of [nodeEls, edgeEls, labelEls, lastHTML, menuAnim, menuLevel]) for (const id in k) delete k[id];
+  for (const id of ['zones', 'edges', 'labels', 'nodes', 'packets']) $(id).innerHTML = '';
+  $('stage').style.height = H + 'px'; $('stage').style.width = W + 'px';
+  for (const s of [$('svg'), $('overlay')]) { s.setAttribute('width', W); s.setAttribute('height', H); s.setAttribute('viewBox', `0 0 ${W} ${H}`); }
+  const TINT = {bug:'#fef7f7', fix:'#f3fbf7'};
+  ZONES.forEach((z, i) => {
+    const {x, w} = ZX[z.id];
+    const fill = TINT[z.tone] || (ZONES.length > 1 && (i === 0 || i === ZONES.length - 1) ? '#fafafa' : null);
+    if (fill) svgEl('rect', {x, y:0, width:w, height:H, fill}, $('zones'));
+    if (i) svgEl('line', {class:'zone-div', x1:x, y1:0, x2:x, y2:H}, $('zones'));
+    svgEl('text', {class:'zone-cap ' + (z.tone || ''), x:x + 24, y:32, 'data-z':i}, $('zones'));
+  });
+  for (const n of spec.nodes) {
+  if (!BOX[n.id]) continue;
   const b = BOX[n.id], t = TYPES[n.type] || TYPES.step, d = document.createElement('div');
-  d.className = 'node' + (n.widget === 'chat' ? ' chat' : '');
+  d.className = 'node' + (n.widget === 'chat' ? ' chat' : n.widget === 'menu' ? ' menu' : '');
   d.style.cssText = `--c:${t.c};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
   d.innerHTML = `<div class="type"><span class="tn"></span><span class="marks"></span><span class="badge"></span></div><div class="label"></div><div class="sub"></div>`
     + `<div class="w">${n.widget === 'meter' ? `<div class="meter"><i></i><b style="left:${100 / meterMax(n) * 100}%"></b></div><div class="mline"></div>` : ''}</div><div class="line"></div>`;
   $('nodes').appendChild(d); nodeEls[n.id] = d;
-}
-for (const e of spec.edges) {
-  edgeEls[e.id] = svgEl('path', {d:ROUTES[e.id].d, class:'edge' + (e.async ? ' async' : '')}, $('edges'));
-  labelEls[e.id] = svgEl('g', {class:'elab'}, $('labels'));
+  }
+  for (const e of spec.edges) {
+    if (!ROUTES[e.id]) continue;
+    edgeEls[e.id] = svgEl('path', {d:ROUTES[e.id].d, class:'edge' + (e.async ? ' async' : '')}, $('edges'));
+    labelEls[e.id] = svgEl('g', {class:'elab'}, $('labels'));
+  }
 }
 
 // ---------- Zustand ----------
 let view, steps, mark, pos = 0, activeIdx = -1, playing = false, run = 0, state;
-const blank = () => ({status:null, tone:null, badge:null, badgeTone:null, state:null, meter:null, meterText:null, slots:0, checks:{}, chat:[]});
+const blank = () => ({status:null, tone:null, badge:null, badgeTone:null, state:null, meter:null, meterText:null, slots:0, checks:{}, chat:[], menu:null});
 function apply(st, patch){
   for (const [id, p] of Object.entries(patch || {})) {
     const s = st[id] || (st[id] = blank());
-    for (const k of ['status', 'tone', 'badge', 'badgeTone', 'state', 'meter', 'meterText', 'slots']) if (k in p) s[k] = p[k];
+    for (const k of ['status', 'tone', 'badge', 'badgeTone', 'state', 'meter', 'meterText', 'slots', 'menu']) if (k in p) s[k] = p[k];
     if (p.check === 'reset') s.checks = {};
     else if (p.check) Object.assign(s.checks, p.check);
     if (p.clearChat) s.chat = [];
@@ -317,6 +350,7 @@ function renderTexts(){
   document.querySelectorAll('[data-z]').forEach(t => t.textContent = tx(ZONES[+t.dataset.z].label));
   for (const n of spec.nodes) {
     const el = nodeEls[n.id], m = mark.nodes[n.id];
+    if (!el) continue;
     el.querySelector('.tn').textContent = (TYPES[n.type] || TYPES.step).name;
     el.querySelector('.label').textContent = tx(n.label);
     el.querySelector('.sub').textContent = tx(n.sub);
@@ -350,8 +384,26 @@ function renderLegend(){
   $('legend').innerHTML = h;
 }
 
-const lastHTML = {};
+const MENU_CHEV = {group:'▸', open:'▾', app:'›'};
+function menuHtml(n, s){
+  const m = s.menu;
+  if (!m) return '';
+  // Ebenenwechsel animieren: hinein = von rechts, zurück = von links
+  const level = m.level || '';
+  if (menuLevel[n.id] !== undefined && menuLevel[n.id] !== level) menuAnim[n.id] = m.dir === 'out' ? 'slide-l' : 'slide-r';
+  menuLevel[n.id] = level;
+  const items = (m.items || []).map(raw => {
+    const it = typeof raw === 'string' || (raw && !raw.kind && !('text' in raw)) ? {text: raw} : raw;
+    const kind = it.kind || 'link';
+    const icon = kind === 'back' ? '<span class="ic back">←</span>' : kind === 'child' ? '' : '<span class="ic"></span>';
+    const chev = MENU_CHEV[kind] ? `<span class="chev">${MENU_CHEV[kind]}</span>` : '';
+    const note = it.note ? `<span class="mnote">${esc(tx(it.note))}</span>` : '';
+    return `<div class="mi ${kind}${it.active ? ' active' : ''}${it.cursor ? ' cursor' : ''}${it.tone ? ' ' + it.tone : ''}">${icon}<span class="mt">${esc(tx(it.text))}</span>${note}${chev}</div>`;
+  }).join('');
+  return `<div class="menu ${menuAnim[n.id] || ''}">${items}</div>${m.scroll ? `<div class="mfade">${esc(tx(m.scroll === true ? {simple:'weiter scrollen ▾', tech:'scroll ▾'} : m.scroll))}</div>` : ''}`;
+}
 function nodeWidget(n, s){
+  if (n.widget === 'menu') return menuHtml(n, s);
   if (n.widget === 'chat') return s.chat.map(m =>
     `<div class="bub ${m.from === 'user' ? 'me' : 'ai'} ${m.tone || ''}">${esc(tx(m.text))}${m.note ? `<small>${esc(tx(m.note))}</small>` : ''}</div>`).join('');
   if (n.widget === 'checklist') return '<div class="tasks">' + (n.items || []).map((it, i) => {
@@ -374,8 +426,9 @@ function render(){
 
   for (const n of spec.nodes) {
     const el = nodeEls[n.id], s = state[n.id], m = mark.nodes[n.id];
+    if (!el) continue;
     el.hidden = !visible(n);
-    el.className = 'node' + (n.widget === 'chat' ? ' chat' : '') + (actN.has(n.id) ? ' active' : '')
+    el.className = 'node' + (n.widget === 'chat' ? ' chat' : n.widget === 'menu' ? ' menu' : '') + (actN.has(n.id) ? ' active' : '')
       + (s.state ? ' ' + s.state : '') + (m ? ' ' + TAGS[m][0] : '');
     const wHtml = nodeWidget(n, s), lHtml = nodeLine(n, s), bHtml = esc(tx(s.badge)), badge = el.querySelector('.badge');
     if (wHtml != null && lastHTML[n.id + 'w'] !== wHtml) { el.querySelector('.w').innerHTML = wHtml; lastHTML[n.id + 'w'] = wHtml; }
@@ -397,7 +450,9 @@ function render(){
   const done = new Set(), errDone = new Set();
   steps.slice(0, pos).forEach(s => (s.edges || []).forEach(id => { done.add(id); if (s.error) errDone.add(id); else errDone.delete(id); }));
   for (const e of spec.edges) {
-    const p = edgeEls[e.id], l = labelEls[e.id], vis = edgeVisible(e);
+    const p = edgeEls[e.id], l = labelEls[e.id];
+    if (!p) continue;
+    const vis = edgeVisible(e);
     p.style.display = l.style.display = vis ? '' : 'none';
     if (!vis) continue;
     const isA = actE.has(e.id), isD = done.has(e.id) && !isA, err = isA ? !!cur.error : errDone.has(e.id);
@@ -510,6 +565,7 @@ async function next(){
 // ---------- Ansichten und Bedienung ----------
 function selectView(v){
   view = v; steps = v.steps || [];
+  buildStage(v.id);
   mark = {nodes: (v.mark && v.mark.nodes) || {}, edges: (v.mark && v.mark.edges) || {}};
   [...$('views').children].forEach(b => b.classList.toggle('on', b.dataset.v === v.id));
   renderTexts(); jump(0); fit();

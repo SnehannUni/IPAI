@@ -79,6 +79,16 @@ Das Bild zeigt, *was* passiert – die Texte müssen erklären, *warum* und *was
 - In `simple` jedes Fachwort vermeiden oder beim ersten Auftreten erklären („Daten-Pool, eine Art gemeinsamer Ordner“). In `tech` die echten Namen aus Code und Plan verwenden.
 - **Feature-Pläne** werden wie Bugs dargestellt: `kind: "bug"` = „Heute“ (Problem Statement), `kind: "fix"` = „Geplant“ (Proposed Solution). Akzeptanzkriterien, die nicht in den Ablauf passen, gehören in `explain` oder eine eigene kurze Ansicht.
 
+## 4c. Oberflächen-Features (R16)
+
+Ändert sich vor allem, **was man sieht** (Menü, Formular, Seite), wird zuerst der Bildschirm gezeigt, nicht die Technik.
+
+- **Erste Ansicht `kind: "compare"`:** zwei Bereiche „Heute“ (`tone: "bug"`) und „Geplant“ (`tone: "fix"`) nebeneinander, darin je ein `screen`-Kästchen (z. B. `widget: "menu"`) und was dabei herauskommt. Jeder Schritt zeigt denselben Moment auf beiden Seiten.
+- **Eine konkrete Person mit einem Ziel** in der `headline` („Anna arbeitet nur in ReKo …“). Unterschiede in Zahlen im Etikett („2 Klicks, scrollen“ vs. „1 Klick“).
+- **Echte Beschriftungen** (Menüpunkte, Knöpfe), keine erfundenen Rollenbegriffe. Klicks mit `cursor` zeigen, Ergebnis mit `active`.
+- **Technik danach** in eigenen Ansichten (`kind: "normal"`, Label „Technik“). Dort gelten die übrigen Regeln.
+- 4–6 Schritte pro Vergleich; nur Momente, die man auf dem Bildschirm sieht.
+
 ## 5. Bugs darstellen
 
 Ein Bug bekommt **zwei Ansichten**: `"kind": "bug"` und `"kind": "fix"`.

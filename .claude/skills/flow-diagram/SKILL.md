@@ -22,6 +22,7 @@ Du beschreibst den Ablauf als **Flow-Spec** (JSON). Das Tool `flowviz` prüft si
      - Was miteinander redet, gehört in dieselbe Zeile oder Spalte.
      - Besser 4–5 Spalten als 6.
    - Welche Schritte gibt es, jeweils ein bis zwei kurze Sätze in der Reihenfolge Auslöser → Hinweg → Verarbeitung → Rückweg → Ergebnis?
+   - Ändert sich vor allem die Oberfläche? Dann zuerst eine Vorher/Nachher-Ansicht (`kind: "compare"`) mit `screen`-Kästchen und einer konkreten Person, Technik danach (REGELN.md R16, Vorlage: `flows/feature-sidebar-app-drill-in.flow.json`).
    - Bei Bugs:
      - Ist die Ursache für Laien logisch?
      - Woran sieht man sie im Bild (Häkchen-Liste, Balken, rotes Etikett, doppelte Blase)?

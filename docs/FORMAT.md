@@ -15,7 +15,7 @@ Vorlagen:
 |---|---|---|
 | `title` | ja | Überschrift |
 | `subtitle` | – | eine Zeile darunter (pro Ansicht überschreibbar) |
-| `zones` | – | Bereiche von links nach rechts: `[{"id", "label"}]`. Standard: `frontend`, `backend`, `external` |
+| `zones` | – | Bereiche von links nach rechts: `[{"id", "label", "tone"}]`. Standard: `frontend`, `backend`, `external`. `tone: "bug"` / `"fix"` tönt den Bereich rot/grün (für Vorher/Nachher) |
 | `nodes` | ja | Kästchen |
 | `edges` | ja | Pfeile |
 | `views` | ja | Ansichten mit Schritten (z. B. Normal/Fehlerfall oder Bug/Lösung) |
@@ -27,18 +27,18 @@ Vorlagen:
 | Feld | Bedeutung |
 |---|---|
 | `id` | eindeutig, kurz (`queue`, `worker`) |
-| `type` | `trigger` · `step` · `store` · `external` · `result` |
+| `type` | `trigger` · `step` · `store` · `external` · `result` · `screen` (Bildschirm: was der Nutzer sieht, z. B. ein Menü) |
 | `zone` | id eines Bereichs |
 | `col`, `row` | Position im Raster: Spalte innerhalb des Bereichs, Zeile (ab 0) |
 | `cols`, `rows` | Breite/Höhe in Rasterzellen (Standard 1). Chatfenster: `"rows": 2` |
 | `label`, `sub` | Name und Untertitel (was es *tut*) |
-| `widget` | optional: `chat` (Sprechblasen), `checklist` (Häkchen-Liste, braucht `items`), `meter` (Balken) |
+| `widget` | optional: `chat` (Sprechblasen), `checklist` (Häkchen-Liste, braucht `items`), `meter` (Balken), `menu` (vereinfachte Seitenleiste/Menü, Inhalt per Zustand `menu`) |
 | `items` | Punkte der Checkliste (Text, höchstens 5) |
 | `meterLabel` | Beschriftung der Balkenzeile, z. B. „Speicher“ → „Speicher: 70 %“ |
 | `meterMode` | `risk` (Standard: ab 80 % orange, ab 100 % rot) · `progress` (100 % = Ziel erreicht, grün; darüber rot) |
 | `meterMax` | Wert, bei dem der Balken voll ist (Standard 150). Der Grenzstrich steht immer bei 100 % |
 | `initial` | Startzustand, gleiche Felder wie ein Zustands-Patch (siehe unten) |
-| `views` | nur in diesen Ansichten sichtbar (der Platz bleibt reserviert) |
+| `views` | nur in diesen Ansichten sichtbar. Bereiche ohne sichtbares Kästchen fallen in der Ansicht weg; innerhalb eines Bereichs bleibt der Platz reserviert (gleiche Positionen in „Heute“ und „Geplant“) |
 | `width` | Breite in px (Standard 220, höchstens Spaltenbreite − 96) |
 
 **Größen:** Bei vielen Spalten wird die Bühne breiter (mindestens 280 px pro Spalte), und der Viewer skaliert auf die Fensterbreite. Kästchen sind also meist 184–220 px breit, davon etwa 180 px für Text. Der Validator schätzt alle Texte (Name, Untertitel, Statuszeile, Etikett, Listenpunkte, Balkenzeile) und meldet R3, wenn etwas abgeschnitten würde.
@@ -69,7 +69,7 @@ Vorlagen:
 | Feld | Bedeutung |
 |---|---|
 | `id`, `label` | Kennung und Beschriftung des Umschalters |
-| `kind` | `normal` · `bug` (rot) · `fix` (grün) |
+| `kind` | `normal` · `bug` (rot) · `fix` (grün) · `compare` (Vorher/Nachher nebeneinander: zwei Bereiche mit `tone`, jeder Schritt verändert beide Seiten) |
 | `headline` | Satz im Kopf. Text vor dem ersten `:` wird fett („Problem: …“) |
 | `chain` | Ursachen- bzw. Lösungskette: Liste kurzer Texte. Glieder zählen **ab 0** |
 | `mark` | `{"nodes": {"id": "neu"\|"geändert"}, "edges": {…}}` – Unterschiede grün/blau markieren |
@@ -112,6 +112,11 @@ Vorlagen:
 | `meterText` | Text statt „70 %“ in der Balkenzeile, z. B. „1.200 Server“ oder „−997 ms“ |
 | `say` | Chat-Blase(n) anhängen: `{"from": "user"\|"ai"\|"system", "text", "tone": "bad"\|"ok", "note"}` |
 | `clearChat` | `true` leert den Chat |
+| `menu` | Inhalt eines `menu`-Kästchens (ersetzt den vorigen): `{"level", "dir", "scroll", "items"}`. Wechselt `level`, gleitet das Menü herein (`dir: "in"` von rechts, `"out"` von links). `scroll: true` blendet „weiter scrollen“ ein |
+
+**Menüeinträge** (`menu.items`): Text oder `{"text", "kind", "active", "cursor", "tone", "note"}`.
+- `kind`: `link` (Standard) · `group` (zu, ▸) · `open` (aufgeklappt, ▾) · `child` (eingerückt) · `app` (öffnet eigenes Menü, ›) · `back` (← Zurück-Zeile)
+- `active`: markiert (du bist hier) · `cursor`: blaue „Klick“-Markierung · `tone`: `ok`/`bad` · `note`: kleiner Hinweis daneben
 
 ## Direkt zu einem Schritt springen
 

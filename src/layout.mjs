@@ -16,18 +16,24 @@ export function nodeHeight(n) {
   if (n.widget === 'checklist') return Math.min(170, HEAD + 4 + (n.items || []).length * 16 + LINE + BOTTOM);
   if (n.widget === 'meter') return HEAD + 14 + LINE + LINE + BOTTOM;   // Balken, Wertzeile, Statuszeile
   if (n.widget === 'chat') return 140;
+  if (n.widget === 'menu') return HEAD + 6 + 8 * 25 + BOTTOM;
   return HEAD + 4 + LINE + BOTTOM;
 }
 
 // Geschätzte Textbreite in px (Systemschrift); bewusst eher großzügig
 export const textWidth = (s, size = 12, bold = false) => [...String(s)].length * size * (bold ? .57 : .52);
 
-export function computeLayout(spec) {
+// Layout für eine Ansicht: Bereiche ohne sichtbares Kästchen fallen weg. Innerhalb der übrigen Bereiche zählen
+// alle Kästchen (auch ausgeblendete), damit z. B. „Heute“ und „Geplant“ exakt dieselben Positionen haben.
+export function computeLayout(spec, viewId) {
   const {MIN_W, COL_MIN, TOP, GAP_V, MIN_ROW, GAP, MAX_W} = LAYOUT;
-  const zones = spec.zones && spec.zones.length ? spec.zones : DEFAULT_ZONES;
+  const allZones = spec.zones && spec.zones.length ? spec.zones : DEFAULT_ZONES;
+  const shown = n => viewId == null || !n.views || n.views.includes(viewId);
+  const zones = allZones.filter(z => spec.nodes.some(n => n.zone === z.id && shown(n)));
+  const nodes = spec.nodes.filter(n => zones.some(z => z.id === n.zone));
   const edgesById = Object.fromEntries(spec.edges.map(e => [e.id, e]));
 
-  const zoneCols = zones.map(z => Math.max(1, ...spec.nodes.filter(n => n.zone === z.id).map(n => (n.col || 0) + (n.cols || 1))));
+  const zoneCols = zones.map(z => Math.max(1, ...nodes.filter(n => n.zone === z.id).map(n => (n.col || 0) + (n.cols || 1))));
   const totalCols = zoneCols.reduce((a, b) => a + b, 0);
   // Bei vielen Spalten wird die Bühne breiter statt die Kästchen schmaler; der Viewer skaliert auf die Fensterbreite
   const W = Math.max(MIN_W, totalCols * COL_MIN), colW = W / totalCols;
@@ -35,15 +41,15 @@ export function computeLayout(spec) {
   let x0 = 0;
   zones.forEach((z, i) => { zx[z.id] = {x: x0, w: zoneCols[i] * colW}; x0 += zoneCols[i] * colW; });
   // Zeilenhöhen nach Inhalt: kompakt, aber nie zu knapp für das höchste Kästchen
-  const rows = Math.max(1, ...spec.nodes.map(n => (n.row || 0) + (n.rows || 1)));
+  const rows = Math.max(1, ...nodes.map(n => (n.row || 0) + (n.rows || 1)));
   const rowH = Array.from({length: rows}, (_, r) =>
-    Math.max(MIN_ROW, ...spec.nodes.filter(n => (n.row || 0) === r && (n.rows || 1) === 1).map(n => nodeHeight(n) + GAP_V)));
+    Math.max(MIN_ROW, ...nodes.filter(n => (n.row || 0) === r && (n.rows || 1) === 1).map(n => nodeHeight(n) + GAP_V)));
   const rowTop = [TOP];
   rowH.forEach((h, r) => rowTop.push(rowTop[r] + h));
   const H = rowTop[rows] + 4;
 
   const boxes = {};
-  for (const n of spec.nodes) {
+  for (const n of nodes) {
     const z = zx[n.zone] || {x: 0}, cs = n.cols || 1, rs = n.rows || 1, r = n.row || 0;
     const cx = z.x + ((n.col || 0) + cs / 2) * colW;
     const w = Math.min(n.width || MAX_W, cs * colW - GAP);
