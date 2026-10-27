@@ -47,6 +47,7 @@ for (const file of files.filter(f => f.pathname.endsWith('.flow.json'))) {
         document: fakeDom(JSON.stringify(spec)),
         location: {hash: `#view=${view.id}&step=${step}&still${mode}`},
         URLSearchParams, ResizeObserver: class { observe() {} },
+        window: {innerHeight: 900, scrollY: 0, addEventListener() {}},
         requestAnimationFrame: () => 0, setTimeout: () => 0, performance: {now: () => 0}, console,
       };
       assert.doesNotThrow(() => script.runInNewContext(context), `${view.id} Schritt ${step}${mode}`);

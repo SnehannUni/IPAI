@@ -1,7 +1,8 @@
 // Layout und Kantenführung – wird vom Viewer (eingebettet beim Build) und vom Validator benutzt.
 // Raster: Bereiche (zones) nebeneinander, darin Spalten (col) und Zeilen (row).
 
-export const LAYOUT = {MIN_W: 1200, COL_MIN: 280, TOP: 64, PITCH: 200, GAP: 96, MAX_W: 220, PAD: 12};
+// Zeilen sind so hoch wie ihr höchstes Kästchen plus GAP_V (Platz für Pfeile und Beschriftung), mindestens MIN_ROW.
+export const LAYOUT = {MIN_W: 1200, COL_MIN: 280, TOP: 44, GAP_V: 56, MIN_ROW: 120, GAP: 96, MAX_W: 220, PAD: 10};
 
 export const DEFAULT_ZONES = [
   {id: 'frontend', label: {simple: 'DU', tech: 'FRONTEND'}},
@@ -9,22 +10,20 @@ export const DEFAULT_ZONES = [
   {id: 'external', label: {simple: 'ANDERE FIRMEN', tech: 'EXTERN'}},
 ];
 
-// Höhen im Kästchen: Rand 10 + Typzeile 15 + Name 20 + Untertitel 16 = 61, Statuszeile 20, Rand 10
-const HEAD = 71, LINE = 20;
+// Höhen im Kästchen (passend zum CSS im Viewer): Rand 8 + Typzeile 15 + Name 20 + Untertitel 15 = 58, Zeile 18, Rand 8
+const HEAD = 58, LINE = 18, BOTTOM = 8;
 export function nodeHeight(n) {
-  const rs = n.rows || 1;
-  if (rs > 1) return (rs - 1) * LAYOUT.PITCH + 150;
-  if (n.widget === 'checklist') return Math.min(190, HEAD + 6 + (n.items || []).length * 17 + LINE + 4);
-  if (n.widget === 'meter') return HEAD + 14 + LINE + LINE;   // Balken, Wertzeile, Statuszeile
-  if (n.widget === 'chat') return 150;
-  return 96;
+  if (n.widget === 'checklist') return Math.min(170, HEAD + 4 + (n.items || []).length * 16 + LINE + BOTTOM);
+  if (n.widget === 'meter') return HEAD + 14 + LINE + LINE + BOTTOM;   // Balken, Wertzeile, Statuszeile
+  if (n.widget === 'chat') return 140;
+  return HEAD + 4 + LINE + BOTTOM;
 }
 
 // Geschätzte Textbreite in px (Systemschrift); bewusst eher großzügig
 export const textWidth = (s, size = 12, bold = false) => [...String(s)].length * size * (bold ? .57 : .52);
 
 export function computeLayout(spec) {
-  const {MIN_W, COL_MIN, TOP, PITCH, GAP, MAX_W} = LAYOUT;
+  const {MIN_W, COL_MIN, TOP, GAP_V, MIN_ROW, GAP, MAX_W} = LAYOUT;
   const zones = spec.zones && spec.zones.length ? spec.zones : DEFAULT_ZONES;
   const edgesById = Object.fromEntries(spec.edges.map(e => [e.id, e]));
 
@@ -35,14 +34,22 @@ export function computeLayout(spec) {
   const zx = {};
   let x0 = 0;
   zones.forEach((z, i) => { zx[z.id] = {x: x0, w: zoneCols[i] * colW}; x0 += zoneCols[i] * colW; });
+  // Zeilenhöhen nach Inhalt: kompakt, aber nie zu knapp für das höchste Kästchen
   const rows = Math.max(1, ...spec.nodes.map(n => (n.row || 0) + (n.rows || 1)));
-  const H = TOP + rows * PITCH + 4;
+  const rowH = Array.from({length: rows}, (_, r) =>
+    Math.max(MIN_ROW, ...spec.nodes.filter(n => (n.row || 0) === r && (n.rows || 1) === 1).map(n => nodeHeight(n) + GAP_V)));
+  const rowTop = [TOP];
+  rowH.forEach((h, r) => rowTop.push(rowTop[r] + h));
+  const H = rowTop[rows] + 4;
 
   const boxes = {};
   for (const n of spec.nodes) {
-    const z = zx[n.zone] || {x: 0}, cs = n.cols || 1, rs = n.rows || 1;
-    const cx = z.x + ((n.col || 0) + cs / 2) * colW, cy = TOP + ((n.row || 0) + rs / 2) * PITCH;
-    const w = Math.min(n.width || MAX_W, cs * colW - GAP), h = nodeHeight(n);
+    const z = zx[n.zone] || {x: 0}, cs = n.cols || 1, rs = n.rows || 1, r = n.row || 0;
+    const cx = z.x + ((n.col || 0) + cs / 2) * colW;
+    const w = Math.min(n.width || MAX_W, cs * colW - GAP);
+    // Ein Kästchen über mehrere Zeilen füllt sie bis auf den halben Zeilenabstand oben und unten
+    const h = rs > 1 ? rowTop[r + rs] - rowTop[r] - GAP_V : nodeHeight(n);
+    const cy = (rowTop[r] + rowTop[Math.min(r + rs, rows)]) / 2;
     boxes[n.id] = {x: cx - w / 2, y: cy - h / 2, w, h, cx, cy};
   }
 
