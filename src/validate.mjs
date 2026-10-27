@@ -14,7 +14,7 @@ export const SPEAKERS = ['user', 'ai', 'system'];
 export const METER_MODES = ['risk', 'progress'];
 
 const DEFAULT_ZONES = ['frontend', 'backend', 'external'];
-const LIMITS = {nodesPerView: 8, wordsPerStep: 25, sentencesPerStep: 2, edgesPerStep: 4, columns: 6, labelChars: 26};
+const LIMITS = {nodesPerView: 8, wordsPerStep: 25, sentencesPerStep: 2, wordsPerDetail: 55, sentencesPerDetail: 3, wordsPerExplain: 70, edgesPerStep: 4, columns: 6, labelChars: 26};
 
 const isText = v => typeof v === 'string' || (v && typeof v === 'object' && !Array.isArray(v) && (typeof v.simple === 'string' || typeof v.tech === 'string'));
 // Alle Fassungen eines Textes (einfach und technisch) – beide werden geprüft
@@ -132,6 +132,13 @@ export function validateSpec(spec) {
       const stepEdges = s.edges || [];
       const focus = [].concat(s.focus || []);
       if (!isText(s.text)) err(w, 'text fehlt');
+      if (s.detail != null && !isText(s.detail)) err(w, 'detail ist kein Text');
+      for (const t of variants(s.detail)) {
+        if (words(t) > LIMITS.wordsPerDetail) { warn('R15', w, `detail hat ${words(t)} Wörter – höchstens ${LIMITS.wordsPerDetail}, sonst wird es in der Karte abgeschnitten`); break; }
+        if (sentences(t) > LIMITS.sentencesPerDetail) { warn('R15', w, `detail hat ${sentences(t)} Sätze – höchstens ${LIMITS.sentencesPerDetail}`); break; }
+      }
+      // Schlüsselschritte (Kettenglied, Fehler, Änderung) brauchen eine Erklärung, was das bedeutet
+      if (!s.detail && (s.chain != null || s.error || s.tag)) warn('R15', w, 'Schlüsselschritt ohne detail – in 1–3 Sätzen erklären, warum das passiert und was es für den Nutzer bedeutet');
       if (!stepEdges.length && !focus.length) err(w, 'braucht edges oder focus');
       stepEdges.forEach(id => {
         const e = edgeById[id];
@@ -188,6 +195,13 @@ export function validateSpec(spec) {
     visNodes.forEach(n => { if (!involved.has(n.id)) warn('R2', vw, `Kästchen "${n.id}" kommt in keinem Schritt vor – weglassen, mit views ausblenden oder einbinden`); });
     edges.filter(e => edgeInView(e, v) && !usedEdges.has(e.id) && !e.showUnused).forEach(e =>
       warn('R2', vw, `Pfeil "${e.id}" ist sichtbar, wird aber nicht benutzt – mit views ausblenden oder showUnused: true, wenn das Fehlen etwas zeigt`));
+
+    const explain = [].concat(v.explain || []);
+    explain.forEach((p, i) => { if (!isText(p)) err(`${vw} explain[${i}]`, 'ist kein Text'); });
+    if ((v.kind === 'bug' || v.kind === 'fix') && !explain.length)
+      warn('R15', vw, 'explain fehlt – in 2–4 kurzen Absätzen erklären, worum es geht (Problem: wer ist betroffen, was läuft schief, warum; Lösung: was ändert sich, was bleibt gleich)');
+    explain.forEach((p, i) => variants(p).some(t => words(t) > LIMITS.wordsPerExplain) &&
+      warn('R15', `${vw} explain[${i}]`, `Absatz ist länger als ${LIMITS.wordsPerExplain} Wörter – aufteilen`));
 
     if (v.kind === 'bug') {
       if (!v.headline) warn('R11', vw, 'Bug-Ansicht braucht eine headline ("Problem: …")');

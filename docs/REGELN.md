@@ -68,6 +68,17 @@ Weitere Regeln:
 - **Zustand ändert sich, wenn das Paket ankommt** (`set`). Nur was *vor* der Bewegung gilt (z. B. ein neu gestarteter Bearbeiter), kommt in `setBefore`.
 - **Sichtbarer Zustand statt Erklärtext.** Zähler, Warteschlangen-Plätze, Häkchen-Listen, Chat-Blasen und Speicherbalken zeigen, was passiert. Der Satz erklärt nur das *Warum*.
 
+## 4b. Erklären (R15)
+
+Das Bild zeigt, *was* passiert – die Texte müssen erklären, *warum* und *was das bedeutet*. Kurz heißt nicht knapp.
+
+- **`explain` je Ansicht** (Pflicht bei `bug` und `fix`): 2–4 kurze Absätze, je höchstens 70 Wörter.
+  - **Problem:** Wer ist betroffen? Was versucht er? Was läuft heute schief, und warum? Ein Zitat aus Nutzer-Feedback, falls vorhanden (Absatz mit `>`).
+  - **Lösung / Plan:** Was ändert sich für den Nutzer? Wie funktioniert es im Kern? Was bleibt gleich? Was ist noch offen?
+- **`detail` je Schritt** (Pflicht bei Schlüsselschritten mit `chain`, `error` oder `tag`, sonst empfohlen): 1–3 Sätze, höchstens 55 Wörter. `text` sagt *was* passiert, `detail` sagt *warum* und *welche Folge* das hat.
+- In `simple` jedes Fachwort vermeiden oder beim ersten Auftreten erklären („Daten-Pool, eine Art gemeinsamer Ordner“). In `tech` die echten Namen aus Code und Plan verwenden.
+- **Feature-Pläne** werden wie Bugs dargestellt: `kind: "bug"` = „Heute“ (Problem Statement), `kind: "fix"` = „Geplant“ (Proposed Solution). Akzeptanzkriterien, die nicht in den Ablauf passen, gehören in `explain` oder eine eigene kurze Ansicht.
+
 ## 5. Bugs darstellen
 
 Ein Bug bekommt **zwei Ansichten**: `"kind": "bug"` und `"kind": "fix"`.

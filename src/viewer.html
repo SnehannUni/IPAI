@@ -135,11 +135,28 @@ button.primary:hover{background:#27272a}
 .bub small{display:block;font-size:10.5px;font-weight:600;margin-top:2px}
 .bub.bad small{color:var(--error)}.bub.ok small{color:var(--ok)}
 
-.card{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:8px 14px;height:72px;overflow:hidden}
+.card{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:8px 14px;height:118px;overflow:hidden}
 .card .big{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .detail{margin-top:4px;font-size:13.5px;line-height:1.45;color:#3f3f46;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card.err .detail{color:#7f1d1d}
+.explain{margin-top:8px;font-size:13.5px;line-height:1.5;color:#3f3f46}
+.explain summary{cursor:pointer;color:var(--muted);font-size:12.5px;user-select:none;list-style:none}
+.explain summary::-webkit-details-marker{display:none}
+.explain summary::before{content:"▸ ";font-size:10px}
+.explain[open] summary::before{content:"▾ "}
+.explain p{margin:6px 0 0;max-width:980px}
+.explain p+p{margin-top:4px}
+.explain blockquote{margin:6px 0 0;padding-left:10px;border-left:2px solid var(--line2);color:var(--muted);font-style:italic}
 .card .no{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
 .card .big{font-size:16px;font-weight:500;margin-top:2px;letter-spacing:-.01em}
 .card.err .big{color:#b91c1c}
+.main{display:block}
+@media (min-width:1000px){
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+  .main .card{margin-top:0;height:auto;min-height:150px;padding:12px 14px}
+  .main .card .big,.main .card .detail{display:block;-webkit-line-clamp:unset}
+  .main .card .detail{margin-top:8px}
+}
 .bottom{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;margin-top:8px}
 .timeline{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 .tl{width:22px;height:22px;font-size:11px!important;border-radius:50%;padding:0;font-size:11.5px;color:var(--faint);display:grid;place-items:center}
@@ -154,7 +171,7 @@ button.primary:hover{background:#27272a}
   header p{display:none}
   .controls button{padding:4px 9px;font-size:12px}
   .seg.big button{padding:4px 12px;font-size:12.5px}
-  .card{height:84px}.card .big{font-size:14px;-webkit-line-clamp:3}
+  .card{height:132px}.card .big{font-size:14px}.card .detail{font-size:13px;-webkit-line-clamp:4}
   .legend{display:none}
 }
 @media (max-height:640px){
@@ -179,7 +196,8 @@ button.primary:hover{background:#27272a}
     <button id="next" title="Schritt weiter (→)">Weiter</button>
     <div class="seg right" id="mode"><button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button></div>
   </div>
-  <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div></div>
+  <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div><details class="explain" id="explain"><summary id="explainSum"></summary><div id="explainBody"></div></details></div>
+  <div class="main" id="main">
   <div class="stage-outer" id="outer">
     <div class="stage" id="stage">
       <svg id="svg"><defs id="defs"></defs><g id="zones"></g><g id="edges"></g><g id="labels"></g></svg>
@@ -188,6 +206,7 @@ button.primary:hover{background:#27272a}
     </div>
   </div>
   <div class="card" id="card"></div>
+  </div>
   <div class="bottom"><div class="timeline" id="timeline"></div><div class="legend" id="legend"></div></div>
 </div>
 
@@ -306,7 +325,12 @@ function renderTexts(){
   const head = tx(view.headline), i = head.indexOf(':');
   $('head').innerHTML = i > 0 ? `<b>${esc(head.slice(0, i + 1))}</b>${esc(head.slice(i + 1))}` : esc(head);
   $('chain').innerHTML = (view.chain || []).map((c, k) => (k ? '<span class="arr">→</span>' : '') + `<span class="c" data-i="${k}">${esc(tx(c))}</span>`).join('');
-  $('banner').hidden = !head && !(view.chain || []).length;
+  const ex = [].concat(view.explain || []).map(tx).filter(Boolean);
+  $('explain').hidden = !ex.length;
+  $('explainSum').textContent = tx(view.explainLabel) || (view.kind === 'bug' ? 'Worum geht es? Das Problem erklärt' : view.kind === 'fix' ? 'Was ändert sich? Die Lösung erklärt' : 'Worum geht es?');
+  $('explainBody').innerHTML = ex.map(p => p.startsWith('>') ? `<blockquote>${esc(p.slice(1).trim())}</blockquote>` : `<p>${esc(p)}</p>`).join('');
+  $('explain').open = false;
+  $('banner').hidden = !head && !(view.chain || []).length && !ex.length;
   $('banner').className = 'banner ' + (view.kind || '');
   $('timeline').innerHTML = '';
   renderLegend();
@@ -394,11 +418,11 @@ function render(){
   });
 
   const card = $('card');
-  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} Schritte</div><div class="big">${esc(tx(view.intro) || 'Auf „Abspielen“ klicken.')}</div>`; }
+  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} Schritte</div><div class="big">${esc(tx(view.intro) || 'Auf „Abspielen“ klicken.')}</div>${view.introDetail ? `<div class="detail">${esc(tx(view.introDetail))}</div>` : ''}`; }
   else {
     const t = cur.tag && TAGS[cur.tag] ? `<span class="pill ${TAGS[cur.tag][0]}">${TAGS[cur.tag][1]}</span>` : '';
     card.className = 'card' + (cur.error ? ' err' : '');
-    card.innerHTML = `<div class="no">Schritt ${activeIdx + 1} von ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>`;
+    card.innerHTML = `<div class="no">Schritt ${activeIdx + 1} von ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>${cur.detail ? `<div class="detail">${esc(tx(cur.detail))}</div>` : ''}`;
   }
 
   const tl = $('timeline');
@@ -515,11 +539,12 @@ document.addEventListener('keydown', e => {
 });
 const fit = () => {
   const outer = $('outer');
-  const below = $('card').offsetHeight + document.querySelector('.bottom').offsetHeight + 30;
+  const side = getComputedStyle($('main')).display === 'grid';
+  const below = (side ? 0 : $('card').offsetHeight) + document.querySelector('.bottom').offsetHeight + 30;
   const top = outer.getBoundingClientRect().top + (window.scrollY || 0);
   const byWidth = outer.clientWidth / W;
   const byHeight = window.innerHeight > 320 ? (window.innerHeight - top - below) / H : Infinity;
-  const s = Math.max(.35, Math.min(1, byWidth, byHeight));
+  const s = Math.max(.35, Math.min(1, byWidth, Math.max(byHeight, .65)));
   const left = Math.max(0, (outer.clientWidth - W * s) / 2);
   $('stage').style.transform = `translateX(${left}px) scale(${s})`;
   outer.style.height = H * s + 'px';
@@ -527,6 +552,7 @@ const fit = () => {
 let lastW = 0;
 new ResizeObserver(() => { if ($('outer').clientWidth !== lastW) { lastW = $('outer').clientWidth; fit(); } }).observe($('outer'));
 window.addEventListener('resize', fit); fit();
+$('explain').addEventListener('toggle', fit);
 const hash = new URLSearchParams(location.hash.slice(1));
 if (hash.has('still')) document.body.classList.add('still');
 if (hash.get('mode') === 'tech' && hasTech) $('mode').children[1].click();

@@ -610,6 +610,10 @@
               },
               "tone": "bad"
             }
+          },
+          "detail": {
+            "simple": "Das liegt nicht an uns, sondern daran, dass Claude in diesem Moment zu viele Anfragen hat. Der Bearbeiter merkt sich das.",
+            "tech": "Transienter Fehler auf Anbieterseite; kein Retry im Worker selbst."
           }
         },
         {
@@ -636,6 +640,10 @@
               },
               "tone": null
             }
+          },
+          "detail": {
+            "simple": "Statt aufzugeben, kommt die Frage zurück auf die Warteliste. Nach einer kurzen Pause wird sie wieder abgeholt.",
+            "tech": "Nack mit Requeue über eine Delay-Queue, Retry-Zähler wird erhöht."
           }
         },
         {
@@ -708,6 +716,12 @@
               "state": "good"
             }
           }
+        }
+      ],
+      "explain": [
+        {
+          "simple": "Auch fremde Dienste wie Claude sind manchmal überlastet. Dank der Warteliste geht deine Frage dabei nicht verloren: Sie wird einfach etwas später noch einmal versucht.",
+          "tech": "Bei 529 overloaded_error wird der Job per Nack in eine Delay-Queue gelegt und nach einem Backoff erneut verarbeitet."
         }
       ]
     }

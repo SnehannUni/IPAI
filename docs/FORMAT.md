@@ -73,14 +73,17 @@ Vorlagen:
 | `headline` | Satz im Kopf. Text vor dem ersten `:` wird fett („Problem: …“) |
 | `chain` | Ursachen- bzw. Lösungskette: Liste kurzer Texte. Glieder zählen **ab 0** |
 | `mark` | `{"nodes": {"id": "neu"\|"geändert"}, "edges": {…}}` – Unterschiede grün/blau markieren |
-| `intro` | Text, der vor dem ersten Schritt in der Erklärung steht |
+| `explain` | Erklärtext zur Ansicht: Liste von 2–4 kurzen Absätzen (Text). Ein Absatz, der mit `>` beginnt, wird als Zitat gezeigt (z. B. Nutzer-Feedback). Erscheint aufklappbar unter der Kopfzeile, bei genug Fensterhöhe aufgeklappt |
+| `explainLabel` | Beschriftung zum Aufklappen (Standard: „Worum geht es? Das Problem erklärt“ bzw. „Was ändert sich? Die Lösung erklärt“) |
+| `intro`, `introDetail` | Satz und Erklärung, die vor dem ersten Schritt in der Karte stehen |
 | `steps` | Schritte, siehe unten. In Meldungen heißen sie „Schritt 1, 2, …“ |
 
 ## steps
 
 | Feld | Bedeutung |
 |---|---|
-| `text` | ein bis zwei kurze Sätze, was passiert |
+| `text` | ein bis zwei kurze Sätze: **was** passiert (groß in der Karte) |
+| `detail` | ein bis drei Sätze: **warum** es passiert und was es für den Nutzer bedeutet (kleiner darunter, höchstens 55 Wörter) |
 | `edges` | Pfeile, die nacheinander animiert werden |
 | `focus` | Kästchen-id (oder Liste), die hervorgehoben wird; führt das Kästchen auch ein (R10) |
 | `packet` | Beschriftung des wandernden Pakets: Text (für alle Pfeile) oder `{"edgeId": Text}` |

@@ -71,7 +71,8 @@ export function computeLayout(spec) {
 
     if (e.route === 'above' || e.route === 'below') {
       const dir = Math.sign(T.cx - S.cx) || 1, up = e.route === 'above';
-      const lane = (up ? Math.min(S.y, T.y) - 22 : Math.max(S.y + S.h, T.y + T.h) + 22) + (up ? -Math.abs(off) : Math.abs(off));
+      // Paare auf eigenen Bahnen: Abstand 35 px ± Versatz, damit sich Hin- und Rückweg nicht decken
+      const lane = (up ? Math.min(S.y, T.y) - 35 : Math.max(S.y + S.h, T.y + T.h) + 35) + off;
       const sx = S.cx + dir * S.w * .2 + off, tx = T.cx - dir * T.w * .2 + off;
       const sy = up ? S.y - 2 : S.y + S.h + 2, ty = up ? T.y - 4 : T.y + T.h + 4;
       return {pts: [[sx, sy], [sx, lane], [tx, lane], [tx, ty]], lab: [(sx + tx) / 2, lane + (up ? -8 : 17)], anchor: 'middle'};

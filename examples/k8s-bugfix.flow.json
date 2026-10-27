@@ -331,6 +331,10 @@
               },
               "tone": "strong"
             }
+          },
+          "detail": {
+            "simple": "Bei einem Update werden alle laufenden Bearbeiter durch die neue Version ersetzt. Das passiert mehrmals pro Woche.",
+            "tech": "Der Deployment-Controller ersetzt die Pods schrittweise durch die neue Version."
           }
         },
         {
@@ -354,6 +358,10 @@
                 "tech": "killed"
               }
             }
+          },
+          "detail": {
+            "simple": "Der Bearbeiter hatte die Antwort schon geschickt, aber den letzten Punkt seiner Liste nicht mehr geschafft. Für die Warteliste sieht es so aus, als wäre gar nichts passiert.",
+            "tech": "Ohne SIGTERM-Handling endet der Prozess sofort. Antwort gepusht, Ack fehlt."
           }
         },
         {
@@ -396,6 +404,10 @@
                 "tech": "1 unacked"
               }
             }
+          },
+          "detail": {
+            "simple": "Die Warteliste will sicherstellen, dass keine Frage verloren geht. Deshalb gibt sie jede unbestätigte Frage noch einmal heraus.",
+            "tech": "At-least-once: Unacked Messages werden nach dem Verbindungsverlust erneut zugestellt."
           }
         },
         {
@@ -414,6 +426,10 @@
                 "1": "done"
               }
             }
+          },
+          "detail": {
+            "simple": "Er weiß nicht, dass die Frage schon beantwortet wurde, und fängt von vorne an.",
+            "tech": "Kein Idempotenz-Check: Der neue Pod verarbeitet den Job vollständig neu."
           }
         },
         {
@@ -443,7 +459,21 @@
                 "2": "done"
               }
             }
+          },
+          "detail": {
+            "simple": "Für dich sieht es aus, als hätte Claude sich wiederholt. Außerdem wurde Claude zweimal bezahlt.",
+            "tech": "Doppelter LLM-Call und doppelte Nachricht beim Client."
           }
+        }
+      ],
+      "explain": [
+        {
+          "simple": "Manchmal steht die Antwort von Claude zweimal im Chat. Das passiert nicht zufällig, sondern immer dann, wenn das Team gerade ein Update einspielt.",
+          "tech": "Duplikate treten nur während Deployments auf: Ein Worker-Pod wird beendet, nachdem er die Antwort gepusht, aber bevor er den Job geackt hat."
+        },
+        {
+          "simple": "Jede Frage wartet in einer Warteliste, bis ein Bearbeiter meldet: „erledigt“. Fehlt diese Meldung, geht die Warteliste davon aus, dass etwas schiefging, und gibt die Frage noch einmal heraus.",
+          "tech": "RabbitMQ hält die Message bis zum Ack zurück. Ohne Ack wird sie nach dem Verbindungsabbruch redelivered – at-least-once-Zustellung."
         }
       ]
     },
@@ -581,6 +611,10 @@
               },
               "tone": "strong"
             }
+          },
+          "detail": {
+            "simple": "Das Update kommt genauso wie vorher. Geändert hat sich nur, wie Kubernetes und der Bearbeiter damit umgehen.",
+            "tech": "Gleicher Rollout wie im Bug-Szenario."
           }
         },
         {
@@ -606,6 +640,10 @@
                 "tech": "terminating"
               }
             }
+          },
+          "detail": {
+            "simple": "Statt sofort abzuschalten, gibt Kubernetes dem Bearbeiter eine Frist. In dieser Zeit nimmt er keine neuen Fragen an, macht aber die laufende fertig.",
+            "tech": "SIGTERM-Handler stoppt den Consumer, beendet den laufenden Job; Grace Period z. B. 60 s."
           }
         },
         {
@@ -631,6 +669,10 @@
               },
               "tone": "ok"
             }
+          },
+          "detail": {
+            "simple": "Jetzt ist die Liste vollständig. Die Warteliste weiß, dass die Frage erledigt ist, und gibt sie nicht noch einmal heraus.",
+            "tech": "Ack vor dem Exit, daher keine Redelivery."
           }
         },
         {
@@ -660,7 +702,21 @@
             "you": {
               "state": "good"
             }
+          },
+          "detail": {
+            "simple": "Das Update hat stattgefunden, ohne dass du etwas davon gemerkt hast.",
+            "tech": "Zero-Duplicate-Deployment."
           }
+        }
+      ],
+      "explain": [
+        {
+          "simple": "Bei einem Update stoppt Kubernetes den Bearbeiter nicht mehr sofort. Es bittet ihn aufzuhören und gibt ihm Zeit, seine angefangene Aufgabe zu Ende zu bringen.",
+          "tech": "Graceful Shutdown: SIGTERM abfangen, keine neuen Jobs annehmen, laufenden Job abschließen und acken; terminationGracePeriodSeconds passend setzen."
+        },
+        {
+          "simple": "Der Bearbeiter meldet also noch „erledigt“, bevor er aufhört. Die Warteliste hakt die Frage ab und gibt sie nicht noch einmal heraus.",
+          "tech": "Mit Ack vor dem Exit gibt es keine Redelivery. Als zusätzliches Sicherheitsnetz empfiehlt sich ein Idempotenz-Check per Job-ID."
         }
       ]
     }

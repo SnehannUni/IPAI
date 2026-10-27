@@ -25,10 +25,10 @@ Du beschreibst den Ablauf als **Flow-Spec** (JSON). Das Tool `flowviz` prüft si
    - Bei Bugs:
      - Ist die Ursache für Laien logisch?
      - Woran sieht man sie im Bild (Häkchen-Liste, Balken, rotes Etikett, doppelte Blase)?
-3. **Schreiben:** `flows/<thema>.flow.json`. Alle Texte als `{"simple", "tech"}`. JSON direkt mit dem Edit-Werkzeug ändern, dafür braucht es kein Skript.
+3. **Schreiben:** `flows/<thema>.flow.json`. Zu jeder Bug-/Lösungs-Ansicht `explain` (2–4 Absätze) und zu jedem wichtigen Schritt `detail` (warum, welche Folge) schreiben – siehe REGELN.md R15. Feature-Pläne: „Heute“ als `bug`, „Geplant“ als `fix`. Alle Texte als `{"simple", "tech"}`. JSON direkt mit dem Edit-Werkzeug ändern, dafür braucht es kein Skript.
 4. **Prüfen:** `node bin/flowviz.mjs validate flows/<thema>.flow.json`
    - Fehler immer beheben.
-   - Regelhinweise (R1 … R14) beheben. Nur mit Begründung ignorieren, und die Begründung dem Nutzer nennen.
+   - Regelhinweise (R1 … R15) beheben. Nur mit Begründung ignorieren, und die Begründung dem Nutzer nennen.
    - **R3 „zu breit“:** Text kürzen. Der Validator rechnet mit der echten Kästchenbreite.
    - **R4/R5** (Pfeil durch Kästchen, Pfeile oder Texte aufeinander): Kästchen umstellen, `route` setzen (`above`, `below`, `h-first`, `v-first`) oder Verben kürzen.
    - **R2** (in einer Ansicht ungenutzt): dem Pfeil oder Kästchen `views` geben.
