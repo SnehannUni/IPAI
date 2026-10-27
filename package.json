@@ -1,7 +1,7 @@
 {
   "name": "flowviz",
   "version": "0.1.0",
-  "description": "Animated, abstract flow diagrams that an LLM can generate from a JSON spec",
+  "description": "IPAI – Interpretable Planning for AI: animated, abstract flow diagrams that an LLM can generate from a JSON spec",
   "type": "module",
   "bin": {
     "flowviz": "bin/flowviz.mjs"

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repo contains **flowviz**: an LLM describes a flow as JSON (flow spec), the tool checks it and builds an animated HTML diagram that laypeople can understand.
+This repo is **IPAI – Interpretable Planning for AI**. It contains **flowviz**: an LLM describes a flow as JSON (flow spec), the tool checks it and builds an animated HTML diagram that laypeople can understand.
 
 ## When a flow, plan, data flow or bug should be visualized
 
