@@ -25,7 +25,8 @@ button.primary:hover{background:#27272a}
 .seg button{border:0;border-radius:0;padding:6px 10px;color:var(--muted)}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button.on{background:var(--soft);color:var(--text);font-weight:500}
-.toggle{display:flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted);font-size:13px;cursor:pointer;user-select:none}
+.right{margin-left:auto;display:flex;gap:16px;align-items:center}
+.toggle{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;user-select:none}
 .toggle input{accent-color:var(--text);width:14px;height:14px;margin:0}
 
 .stage-outer{position:relative;width:100%}
@@ -56,13 +57,18 @@ body:not(.errmode) .erronly{display:none}
 .pk-label rect{fill:#fff;stroke:var(--line2)}
 .pk-label text{fill:var(--text);font-size:11px;font-weight:500}
 
-.node{position:absolute;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;transition:border-color .3s,box-shadow .3s}
+.stage svg.overlay{pointer-events:none;z-index:3}
+.node{position:absolute;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;line-height:1.3;transition:border-color .3s,box-shadow .3s}
+.node>*{flex-shrink:0}
 .node.active{border-color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06)}
 .node .type{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center}
 .node .type::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
-.node .label{font-weight:600;font-size:13.5px;margin-top:2px;white-space:nowrap}
-.node .sub{color:var(--muted);font-size:11.5px;font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;white-space:nowrap}
-.node .dyn{margin-top:7px;font-size:12px;color:var(--muted);min-height:16px}
+.node .label{font-weight:600;font-size:13.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .sub{color:var(--muted);font-size:11.5px;font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .dyn{margin-top:7px;font-size:12px;color:var(--muted);min-height:16px;white-space:nowrap}
+/* Chatfenster: füllt den Rest des Kästchens, neueste Nachricht bleibt sichtbar */
+.node.result .dyn{flex:1;min-height:0;white-space:normal;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.node .badge{position:absolute;top:9px;right:10px;font-size:11px;color:var(--muted);background:#f4f4f5;border-radius:4px;padding:0 6px}
 
 .input{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:3px 3px 3px 8px;font-size:12px;color:var(--text)}
 .input .ph{color:var(--faint)}
@@ -83,7 +89,6 @@ body:not(.errmode) .erronly{display:none}
 .status.busy,.status.wait{color:var(--text)}
 .status.error{color:var(--error)}.status.error .dot{background:var(--error)}
 .status.ok .dot{background:var(--store)}
-.attempt{margin-left:8px;color:var(--faint)}
 @keyframes blink{50%{opacity:.25}}
 
 .chat{display:flex;flex-direction:column;gap:6px}
@@ -140,7 +145,12 @@ body:not(.errmode) .erronly{display:none}
     <div class="seg" id="speed">
       <button data-s="0.5">0,5×</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button>
     </div>
-    <label class="toggle"><input type="checkbox" id="err"> Fehlerfall zeigen</label>
+    <div class="right">
+      <label class="toggle"><input type="checkbox" id="err"> Fehlerfall zeigen</label>
+      <div class="seg" id="mode">
+        <button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button>
+      </div>
+    </div>
   </div>
 
   <div class="stage-outer" id="outer">
@@ -158,16 +168,17 @@ body:not(.errmode) .erronly{display:none}
           <rect x="900" y="0" width="300" height="680" fill="#fafafa"/>
           <line class="zone-div" x1="300" y1="0" x2="300" y2="680"/>
           <line class="zone-div" x1="900" y1="0" x2="900" y2="680"/>
-          <text class="zone-cap" x="24" y="38">FRONTEND</text><text class="zone-sub" x="24" y="56">Browser</text>
-          <text class="zone-cap" x="324" y="38">BACKEND</text><text class="zone-sub" x="324" y="56">eigener Server</text>
-          <text class="zone-cap" x="924" y="38">EXTERN</text><text class="zone-sub" x="924" y="56">fremde Dienste</text>
-          <text class="zone-note" x="924" y="652">Nicht unter eigener Kontrolle.</text>
+          <text class="zone-cap" x="24" y="38" id="zc0"></text><text class="zone-sub" x="24" y="56" id="zs0"></text>
+          <text class="zone-cap" x="324" y="38" id="zc1"></text><text class="zone-sub" x="324" y="56" id="zs1"></text>
+          <text class="zone-cap" x="924" y="38" id="zc2"></text><text class="zone-sub" x="924" y="56" id="zs2"></text>
+          <text class="zone-note" x="924" y="652" id="znote"></text>
         </g>
         <g id="edges"></g>
         <g id="labels"></g>
-        <g id="packets"></g>
       </svg>
       <div id="nodes"></div>
+      <!-- Pakete liegen über den Kästchen, damit nichts darunter verschwindet -->
+      <svg class="overlay" width="1200" height="680" viewBox="0 0 1200 680"><g id="packets"></g></svg>
     </div>
   </div>
 
@@ -181,15 +192,28 @@ body:not(.errmode) .erronly{display:none}
       <div class="it"><span class="sw" style="--c:var(--external)"></span>Fremder Dienst</div>
       <div class="it"><span class="sw" style="--c:var(--result)"></span>Ergebnis</div>
       <span class="sep"></span>
-      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5"/></svg>wartet auf Antwort</div>
-      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5" stroke-dasharray="5 5"/></svg>läuft nebenher</div>
-      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 5"/></svg>Fehlerweg</div>
+      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5"/></svg><span id="lg0"></span></div>
+      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#71717a" stroke-width="1.5" stroke-dasharray="5 5"/></svg><span id="lg1"></span></div>
+      <div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 5"/></svg><span id="lg2"></span></div>
     </div>
   </div>
 </div>
 
 <script>
-const ANSWER = 'RabbitMQ ist ein Message-Broker: Er nimmt Nachrichten an, parkt sie in Warteschlangen und verteilt sie an Programme, die gerade Zeit haben.';
+const ANSWER = 'RabbitMQ ist ein Message-Broker. Er nimmt Nachrichten an und verteilt sie über Warteschlangen an Programme.';
+
+// Texte sind [einfach, technisch]; tx() wählt passend zum Modus
+let mode = 0;
+const tx = v => Array.isArray(v) ? v[mode] : v;
+
+const UI = {
+  zones: [['DU','FRONTEND'], ['UNSER SYSTEM','BACKEND'], ['ANDERE FIRMEN','EXTERN']],
+  zoneSubs: [['dein Bildschirm','Client / Browser'], ['arbeitet im Hintergrund','eigene Services'], ['fremde Dienste','Third-Party-APIs']],
+  zoneNote: ['Nicht unter unserer Kontrolle.','Latenz und Ausfälle nicht kontrollierbar.'],
+  sync: ['wartet auf Antwort','synchron'],
+  async: ['läuft nebenher','asynchron'],
+  err: ['Fehlerweg','Fehlerpfad'],
+};
 
 const TYPES = {
   trigger:  {name:'Auslöser',       c:'var(--trigger)'},
@@ -200,55 +224,119 @@ const TYPES = {
 };
 
 const NODES = {
-  btn:    {type:'trigger',  x:150,  y:150, w:220, h:96,  label:'Nachricht senden',        sub:'Chat-Eingabe'},
-  api:    {type:'step',     x:440,  y:150, w:200, h:96,  label:'Nachricht annehmen',      sub:'POST /messages'},
-  qreq:   {type:'store',    x:740,  y:150, w:200, h:96,  label:'Warteschlange: Fragen',   sub:'chat.requests'},
-  db:     {type:'store',    x:440,  y:350, w:200, h:96,  label:'Datenbank',               sub:'PostgreSQL'},
-  worker: {type:'step',     x:740,  y:350, w:200, h:96,  label:'Worker',                  sub:'ruft Provider auf'},
-  anth:   {type:'external', x:1050, y:350, w:200, h:96,  label:'Anthropic API',           sub:'Claude'},
-  qres:   {type:'store',    x:740,  y:550, w:200, h:96,  label:'Warteschlange: Antworten',sub:'chat.responses'},
-  gw:     {type:'step',     x:440,  y:550, w:200, h:96,  label:'Live-Verbindung',         sub:'WebSocket'},
-  result: {type:'result',   x:150,  y:555, w:220, h:204, label:'Antwort im Chat',         sub:'Chat-Fenster'},
+  btn:    {type:'trigger',  x:150,  y:150, w:220, h:112,  label:['Frage stellen','Chat-Input'],             sub:['Eingabefeld im Chat','UI-Event: submit']},
+  api:    {type:'step',     x:440,  y:150, w:200, h:96,  label:['Empfang','REST-API'],                     sub:['nimmt Fragen an','POST /messages']},
+  qreq:   {type:'store',    x:740,  y:150, w:200, h:96,  label:['Warteliste: Fragen','RabbitMQ Queue'],    sub:['Fragen warten hier','chat.requests']},
+  db:     {type:'store',    x:440,  y:350, w:200, h:96,  label:['Archiv','PostgreSQL'],                    sub:['merkt sich den Chat','Tabelle messages']},
+  worker: {type:'step',     x:740,  y:350, w:200, h:96,  label:['Bearbeiter','Worker'],                    sub:['kümmert sich um Fragen','Consumer · LLM-Client']},
+  anth:   {type:'external', x:1050, y:350, w:200, h:96,  label:['Claude','Anthropic API'],                 sub:['KI von Anthropic','Messages API']},
+  qres:   {type:'store',    x:740,  y:550, w:200, h:96,  label:['Warteliste: Antworten','RabbitMQ Queue'], sub:['Antworten warten hier','chat.responses']},
+  gw:     {type:'step',     x:440,  y:550, w:200, h:96,  label:['Zusteller','WebSocket-Gateway'],         sub:['offene Leitung zu dir','Server-Push']},
+  result: {type:'result',   x:150,  y:555, w:240, h:210, label:['Antwort im Chat','Chat-UI'],              sub:['dein Chatfenster','Message-Liste']},
 };
 
 const EDGES = {
-  e1:  {from:'btn',   to:'api',   d:'M 260 136 L 338 136', verb:'schickt',     lab:[0,-12]},
-  ack: {from:'api',   to:'btn',   d:'M 340 166 L 262 166', verb:'bestätigt',   lab:[0,12]},
-  e2:  {from:'api',   to:'db',    d:'M 440 198 L 440 300', verb:'speichert',   lab:[36,0]},
-  e3:  {from:'api',   to:'qreq',  d:'M 540 150 L 638 150', verb:'legt ab',     lab:[0,-12], async:true},
-  e4:  {from:'qreq',  to:'worker',d:'M 740 198 L 740 300', verb:'holt ab',     lab:[32,0],  async:true},
-  e5:  {from:'worker',to:'anth',  d:'M 840 334 L 948 334', verb:'fragt',       lab:[0,-12]},
-  e6:  {from:'anth',  to:'worker',d:'M 950 366 L 842 366', verb:'antwortet',   lab:[0,12]},
-  e6x: {from:'anth',  to:'worker',d:'M 1010 398 C 1010 470, 800 470, 800 404', verb:'Fehler 529', lab:[0,0], err:true},
-  er:  {from:'worker',to:'qreq',  d:'M 842 316 C 896 284, 896 182, 844 162', verb:'legt zurück', lab:[26,0], async:true, err:true},
-  e7:  {from:'worker',to:'db',    d:'M 640 350 L 542 350', verb:'speichert',   lab:[0,-12]},
-  e8:  {from:'worker',to:'qres',  d:'M 740 398 L 740 500', verb:'legt ab',     lab:[32,0],  async:true},
-  e9:  {from:'qres',  to:'gw',    d:'M 640 550 L 542 550', verb:'holt ab',     lab:[0,-12], async:true},
-  e10: {from:'gw',    to:'result',d:'M 340 550 L 262 550', verb:'schiebt',     lab:[0,-12], async:true},
+  e1:  {from:'btn',   to:'api',   d:'M 260 136 L 338 136', verb:['gibt ab','POST'],          lab:[0,-12]},
+  ack: {from:'api',   to:'btn',   d:'M 340 166 L 262 166', verb:['bestätigt','202'],         lab:[0,12]},
+  e2:  {from:'api',   to:'db',    d:'M 440 198 L 440 300', verb:['notiert','INSERT'],        lab:[34,0]},
+  e3:  {from:'api',   to:'qreq',  d:'M 540 150 L 638 150', verb:['legt ab','publish'],       lab:[0,-12], async:true},
+  e4:  {from:'qreq',  to:'worker',d:'M 740 198 L 740 300', verb:['nimmt','consume'],         lab:[34,0],  async:true},
+  e5:  {from:'worker',to:'anth',  d:'M 840 334 L 948 334', verb:['fragt','request'],         lab:[0,-12]},
+  e6:  {from:'anth',  to:'worker',d:'M 950 366 L 842 366', verb:['antwortet','response'],    lab:[0,12]},
+  e6x: {from:'anth',  to:'worker',d:'M 1010 398 C 1010 470, 800 470, 800 404', verb:['überlastet','529'], lab:[0,0], err:true},
+  er:  {from:'worker',to:'qreq',  d:'M 842 316 C 896 284, 896 182, 844 162', verb:['legt zurück','requeue'], lab:[26,0], async:true, err:true},
+  e7:  {from:'worker',to:'db',    d:'M 640 350 L 542 350', verb:['notiert','INSERT'],        lab:[0,-12]},
+  e8:  {from:'worker',to:'qres',  d:'M 740 398 L 740 500', verb:['legt ab','publish'],       lab:[34,0],  async:true},
+  e9:  {from:'qres',  to:'gw',    d:'M 640 550 L 542 550', verb:['nimmt','consume'],         lab:[0,-12], async:true},
+  e10: {from:'gw',    to:'result',d:'M 340 550 L 272 550', verb:['bringt','push'],           lab:[0,-12], async:true},
 };
 
 function buildSteps(err){
   const s = [
-    {e:'e1',  pk:'„Was ist RabbitMQ?“', t:'Nachricht abschicken', x:'Die Frage wird eingetippt und abgeschickt. Der Browser sendet sie per HTTP an die eigene API.', fx:m=>{m.sent=true}},
-    {e:'e2',  pk:'Nachricht', t:'Nachricht speichern', x:'Die API legt die Nachricht in der Datenbank ab, damit der Chat-Verlauf erhalten bleibt.', fx:m=>{m.db++}},
-    {e:'e3',  pk:'Auftrag #42', t:'Auftrag in die Warteschlange', x:'Statt selbst auf Claude zu warten, legt die API einen Auftrag in die RabbitMQ-Warteschlange. Das geht sofort.', fx:m=>{m.q1++}},
-    {e:'ack', pk:'202 Accepted', t:'Sofortige Bestätigung', x:'Der Browser bekommt direkt „angenommen“ zurück und zeigt „Claude schreibt …“. Die Seite blockiert nicht.', fx:m=>{m.res='typing'}},
-    {e:'e4',  pk:'Auftrag #42', t:'Worker holt den Auftrag', x:'Ein Worker im Hintergrund nimmt den nächsten Auftrag aus der Warteschlange.', fx:m=>{m.q1--;m.worker='busy'}},
-    {e:'e5',  pk:'Verlauf + Frage', t:'Frage an Claude', x:'Der Worker schickt den bisherigen Verlauf und die neue Frage an die Anthropic API und wartet auf die Antwort.', fx:m=>{m.worker='wait'}},
+    {e:'e1', pk:['„Was ist RabbitMQ?“','POST /messages'],
+     t:['Frage abschicken','HTTP-Request'],
+     x:['Du tippst deine Frage ein und drückst auf Senden. Die Frage geht an den Empfang.',
+        'Das submit-Event löst einen HTTP-Request aus: POST /messages mit dem Nachrichtentext an die REST-API.'],
+     fx:m=>{m.sent=true}},
+    {e:'e2', pk:['Frage','INSERT message'],
+     t:['Frage notieren','Nachricht persistieren'],
+     x:['Der Empfang schreibt die Frage ins Archiv. So geht der Chat nicht verloren.',
+        'Die API speichert die Nachricht per INSERT in PostgreSQL (Tabelle messages), bevor sie weiterverarbeitet wird.'],
+     fx:m=>{m.db++}},
+    {e:'e3', pk:['Auftrag','job #42'],
+     t:['Auf die Warteliste','Job publizieren'],
+     x:['Der Empfang wartet nicht selbst auf Claude. Er legt die Frage auf eine Warteliste und ist sofort wieder frei.',
+        'Die API publiziert einen Job in die RabbitMQ-Queue chat.requests und blockiert nicht auf den LLM-Call.'],
+     fx:m=>{m.q1++}},
+    {e:'ack', pk:['angekommen','202 Accepted'],
+     t:['Kurze Rückmeldung','202 Accepted'],
+     x:['Du bekommst sofort Bescheid, dass deine Frage angekommen ist. Im Chat steht jetzt „Claude schreibt …“.',
+        'Die API antwortet sofort mit 202 Accepted. Das Frontend zeigt einen Typing-Indikator an.'],
+     fx:m=>{m.res='typing'}},
+    {e:'e4', pk:['Auftrag','job #42'],
+     t:['Bearbeiter nimmt die Frage','Job konsumieren'],
+     x:['Ein Bearbeiter nimmt sich die nächste Frage von der Warteliste.',
+        'Ein Worker-Prozess konsumiert den Job aus chat.requests (prefetch 1, manuelles Ack).'],
+     fx:m=>{m.q1--;m.worker='busy'}},
+    {e:'e5', pk:['Frage + bisheriger Chat','POST /v1/messages'],
+     t:['Claude fragen','LLM-Request'],
+     x:['Der Bearbeiter gibt die Frage zusammen mit dem bisherigen Chat an Claude weiter und wartet.',
+        'Der Worker ruft die Anthropic Messages API auf (POST /v1/messages) mit dem Verlauf als messages-Array.'],
+     fx:m=>{m.worker='wait'}},
   ];
   if (err) s.push(
-    {e:'e6x', pk:'529 Overloaded', err:true, t:'Anthropic ist überlastet', x:'Die API meldet einen Fehler. Der Auftrag geht dabei nicht verloren.', fx:m=>{m.worker='error'}},
-    {e:'er',  pk:'Auftrag #42, Versuch 2', err:true, t:'Zurück in die Warteschlange', x:'Der Worker legt den Auftrag zurück in die Warteschlange, um es nach einer kurzen Pause erneut zu versuchen.', fx:m=>{m.q1++;m.worker='idle';m.attempt=2}},
-    {e:'e4',  pk:'Auftrag #42, Versuch 2', t:'Neuer Versuch', x:'Nach der Pause holt der Worker den Auftrag erneut ab.', fx:m=>{m.q1--;m.worker='busy'}},
-    {e:'e5',  pk:'Verlauf + Frage', t:'Erneut an Claude', x:'Zweiter Versuch: Die Frage geht wieder an die Anthropic API.', fx:m=>{m.worker='wait'}},
+    {e:'e6x', err:true, pk:['überlastet','529 Overloaded'],
+     t:['Claude ist überlastet','529 Overloaded'],
+     x:['Claude hat gerade zu viel zu tun und sagt ab. Die Frage geht aber nicht verloren.',
+        'Die Anthropic API antwortet mit HTTP 529 (overloaded_error). Der Job wird nicht verworfen.'],
+     fx:m=>{m.worker='error'}},
+    {e:'er', err:true, pk:['Auftrag, 2. Versuch','job #42 retry=2'],
+     t:['Zurück auf die Warteliste','Requeue mit Backoff'],
+     x:['Der Bearbeiter legt die Frage zurück auf die Warteliste und versucht es nach einer kurzen Pause nochmal.',
+        'Der Worker sendet ein Nack mit Requeue über eine Delay-Queue mit Backoff. Retry-Zähler: 2.'],
+     fx:m=>{m.q1++;m.worker='idle';m.attempt=2}},
+    {e:'e4', pk:['Auftrag, 2. Versuch','job #42 retry=2'],
+     t:['Neuer Versuch','Erneut konsumieren'],
+     x:['Nach der Pause nimmt der Bearbeiter die Frage wieder.',
+        'Nach Ablauf des Backoffs wird der Job erneut zugestellt und konsumiert.'],
+     fx:m=>{m.q1--;m.worker='busy'}},
+    {e:'e5', pk:['Frage + bisheriger Chat','POST /v1/messages'],
+     t:['Claude nochmal fragen','LLM-Request (Retry)'],
+     x:['Zweiter Versuch: Die Frage geht wieder an Claude.',
+        'Zweiter Aufruf von POST /v1/messages mit identischem Payload.'],
+     fx:m=>{m.worker='wait'}},
   );
   s.push(
-    {e:'e6',  pk:'Antwort', t:'Claude antwortet', x:'Claude liefert den Antworttext an den Worker zurück.', fx:m=>{m.worker='busy'}},
-    {e:'e7',  pk:'Antwort', t:'Antwort speichern', x:'Auch die Antwort wird in der Datenbank gespeichert. Der Verlauf ist vollständig.', fx:m=>{m.db++}},
-    {e:'e8',  pk:'Antwort #42', t:'Antwort in die Warteschlange', x:'Der Worker legt die Antwort in eine zweite Warteschlange und ist wieder frei für den nächsten Auftrag.', fx:m=>{m.q2++;m.worker='idle'}},
-    {e:'e9',  pk:'Antwort #42', t:'Live-Verbindung holt die Antwort', x:'Die Live-Verbindung holt die Antwort ab und ordnet sie dem richtigen Browser-Fenster zu.', fx:m=>{m.q2--}},
-    {e:'e10', pk:'Antworttext', t:'An den Browser schieben', x:'Über die offene WebSocket-Verbindung wird die Antwort direkt in den Browser geschoben, ohne dass dieser nachfragen muss.', fx:m=>{m.res='stream';m.chars=0}},
-    {node:'result', stream:true, t:'Antwort erscheint', x:'Die Antwort wird im Chat angezeigt.', fx:m=>{m.res='done';m.chars=ANSWER.length}},
+    {e:'e6', pk:['Antwort','200 OK'],
+     t:['Claude antwortet','LLM-Response'],
+     x:['Claude schickt die fertige Antwort an den Bearbeiter zurück.',
+        'Die API liefert 200 OK mit dem Antworttext (content-Block) und der Token-Usage zurück.'],
+     fx:m=>{m.worker='busy'}},
+    {e:'e7', pk:['Antwort','INSERT message'],
+     t:['Antwort notieren','Antwort persistieren'],
+     x:['Die Antwort kommt auch ins Archiv. Jetzt ist der ganze Chat gespeichert.',
+        'Der Worker speichert die Assistant-Nachricht in PostgreSQL.'],
+     fx:m=>{m.db++}},
+    {e:'e8', pk:['Antwort','result #42'],
+     t:['Auf die Antwort-Warteliste','Ergebnis publizieren'],
+     x:['Der Bearbeiter legt die Antwort auf eine zweite Warteliste und kümmert sich um die nächste Frage.',
+        'Der Worker publiziert das Ergebnis in chat.responses und bestätigt den ursprünglichen Job (Ack).'],
+     fx:m=>{m.q2++;m.worker='idle'}},
+    {e:'e9', pk:['Antwort','result #42'],
+     t:['Zusteller nimmt die Antwort','Ergebnis konsumieren'],
+     x:['Der Zusteller nimmt die Antwort und weiß, zu wem sie gehört.',
+        'Das WebSocket-Gateway konsumiert chat.responses und ordnet das Ergebnis per Conversation-ID der offenen Client-Verbindung zu.'],
+     fx:m=>{m.q2--}},
+    {e:'e10', pk:['Antwort','ws: message'],
+     t:['Antwort zu dir bringen','Server-Push'],
+     x:['Über eine offene Leitung bringt der Zusteller die Antwort direkt auf deinen Bildschirm. Du musst nicht nachfragen.',
+        'Das Gateway pusht die Nachricht über die bestehende WebSocket-Verbindung an den Client, ganz ohne Polling.'],
+     fx:m=>{m.res='stream';m.chars=0}},
+    {node:'result', stream:true,
+     t:['Antwort erscheint','Rendern'],
+     x:['Die Antwort erscheint in deinem Chat.',
+        'Das Frontend aktualisiert den State und rendert die Assistant-Nachricht.'],
+     fx:m=>{m.res='done';m.chars=ANSWER.length}},
   );
   return s;
 }
@@ -264,8 +352,8 @@ const nodeEls = {}, edgeEls = {}, labelEls = {};
 
 for (const [id, n] of Object.entries(NODES)) {
   const t = TYPES[n.type], el = document.createElement('div');
-  el.className = 'node'; el.style.cssText = `--c:${t.c};left:${n.x-n.w/2}px;top:${n.y-n.h/2}px;width:${n.w}px;height:${n.h}px`;
-  el.innerHTML = `<div class="type">${t.name}</div><div class="label">${n.label}</div><div class="sub">${n.sub}</div><div class="dyn"></div>`;
+  el.className = 'node ' + n.type; el.style.cssText = `--c:${t.c};left:${n.x-n.w/2}px;top:${n.y-n.h/2}px;width:${n.w}px;height:${n.h}px`;
+  el.innerHTML = `<div class="type">${t.name}</div><div class="label"></div><div class="sub"></div><div class="dyn"></div><span class="badge" hidden></span>`;
   $('nodes').appendChild(el); nodeEls[id] = el;
 }
 for (const [id, e] of Object.entries(EDGES)) {
@@ -273,12 +361,26 @@ for (const [id, e] of Object.entries(EDGES)) {
   p.setAttribute('d', e.d);
   p.setAttribute('class', 'edge' + (e.async ? ' async' : '') + (e.err ? ' errpath erronly' : ''));
   $('edges').appendChild(p); edgeEls[id] = p;
-  const len = p.getTotalLength(), mid = p.getPointAtLength(len/2);
   const g = document.createElementNS(SVGNS, 'g');
-  const w = e.verb.length * 6 + 10, cx = mid.x + e.lab[0], cy = mid.y + e.lab[1];
   g.setAttribute('class', 'elab' + (e.err ? ' err erronly' : ''));
-  g.innerHTML = `<rect x="${cx-w/2}" y="${cy-8}" width="${w}" height="16" rx="3"/><text x="${cx}" y="${cy+4}" text-anchor="middle">${e.verb}</text>`;
   $('labels').appendChild(g); labelEls[id] = g;
+}
+
+// Alle Texte, die vom Modus abhängen
+function renderTexts(){
+  for (const [id, n] of Object.entries(NODES)) {
+    nodeEls[id].querySelector('.label').textContent = tx(n.label);
+    nodeEls[id].querySelector('.sub').textContent = tx(n.sub);
+  }
+  for (const [id, e] of Object.entries(EDGES)) {
+    const p = edgeEls[id], mid = p.getPointAtLength(p.getTotalLength()/2), verb = tx(e.verb);
+    const w = verb.length * 6 + 10, cx = mid.x + e.lab[0], cy = mid.y + e.lab[1];
+    labelEls[id].innerHTML = `<rect x="${cx-w/2}" y="${cy-8}" width="${w}" height="16" rx="3"/><text x="${cx}" y="${cy+4}" text-anchor="middle">${verb}</text>`;
+  }
+  UI.zones.forEach((z,i) => { $('zc'+i).textContent = tx(z); $('zs'+i).textContent = tx(UI.zoneSubs[i]); });
+  $('znote').textContent = tx(UI.zoneNote);
+  $('lg0').textContent = tx(UI.sync); $('lg1').textContent = tx(UI.async); $('lg2').textContent = tx(UI.err);
+  $('timeline').innerHTML = '';
 }
 
 // Darstellung
@@ -286,18 +388,18 @@ function dyn(id){
   const m = model;
   switch(id){
     case 'btn': return `<div class="input">${m.sent ? '<span class="ph">Nachricht …</span>' : '<span>Was ist RabbitMQ?</span>'}<b>Senden</b></div>`;
-    case 'db': return `<div class="rows">${'<i></i>'.repeat(m.db)}<em>${m.db} ${m.db===1?'Eintrag':'Einträge'}</em></div>`;
+    case 'db': return `<div class="rows">${'<i></i>'.repeat(m.db)}<em>${m.db} ${tx(m.db===1 ? ['Eintrag','Row'] : ['Einträge','Rows'])}</em></div>`;
     case 'qreq': case 'qres': {
       const n = id==='qreq' ? m.q1 : m.q2;
-      return `<div class="slots">${'<span class="slot"></span>'.repeat(n)}<em>${n ? n+' wartend' : 'leer'}</em></div>`;
+      return `<div class="slots">${'<span class="slot"></span>'.repeat(n)}<em>${n ? n+' '+tx(['wartend', n===1?'Message':'Messages']) : 'leer'}</em></div>`;
     }
     case 'worker': {
-      const map = {idle:['','bereit'], busy:['busy','arbeitet'], wait:['wait','wartet auf Claude'], error:['error','Fehler']};
+      const map = {idle:['',['bereit','idle']], busy:['busy',['arbeitet','busy']], wait:['wait',['wartet auf Claude','wartet auf Response']], error:['error',['Fehler','Fehler 529']]};
       const [c, txt] = map[m.worker];
-      return `<span class="status ${c}"><span class="dot"></span>${txt}</span>${m.attempt>1 ? '<span class="attempt">Versuch '+m.attempt+'</span>' : ''}`;
+      return `<span class="status ${c}"><span class="dot"></span>${tx(txt)}</span>`;
     }
-    case 'gw': return `<span class="status ok"><span class="dot"></span>1 Browser verbunden</span>`;
-    case 'anth': return m.worker==='wait' ? `<span class="status busy"><span class="dot"></span>verarbeitet</span>` : '';
+    case 'gw': return `<span class="status ok"><span class="dot"></span>${tx(['mit dir verbunden','1 Client verbunden'])}</span>`;
+    case 'anth': return m.worker==='wait' ? `<span class="status busy"><span class="dot"></span>${tx(['denkt nach','verarbeitet'])}</span>` : '';
     case 'result': {
       let h = '<div class="chat">';
       if (m.sent) h += '<div class="bub me">Was ist RabbitMQ?</div>';
@@ -320,6 +422,9 @@ function renderNodes(){
     const h = dyn(id);
     if (lastHTML[id] !== h) { nodeEls[id].querySelector('.dyn').innerHTML = h; lastHTML[id] = h; }
   }
+  const badge = nodeEls.worker.querySelector('.badge');
+  badge.hidden = model.attempt < 2;
+  badge.textContent = tx(['Versuch ','retry=']) + model.attempt;
 }
 
 function render(){
@@ -339,7 +444,7 @@ function render(){
   $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Nochmal' : 'Abspielen');
 }
 
-function chip(id){ const n = NODES[id]; return `<span class="chip" style="--c:${TYPES[n.type].c}">${n.label}</span>`; }
+function chip(id){ const n = NODES[id]; return `<span class="chip" style="--c:${TYPES[n.type].c}">${tx(n.label)}</span>`; }
 function renderCard(){
   const s = steps[activeIdx];
   if (!s) {
@@ -350,10 +455,10 @@ function renderCard(){
   if (s.node) route = chip(s.node);
   else {
     const e = EDGES[s.e];
-    const kind = s.err ? '<span class="kind err">Fehlerweg</span>' : `<span class="kind">${e.async ? 'läuft nebenher' : 'wartet auf Antwort'}</span>`;
-    route = `${chip(e.from)}<span class="verb">${e.verb} →</span>${chip(e.to)}${kind}`;
+    const kind = s.err ? `<span class="kind err">${tx(UI.err)}</span>` : `<span class="kind">${tx(e.async ? UI.async : UI.sync)}</span>`;
+    route = `${chip(e.from)}<span class="verb">${tx(e.verb)} →</span>${chip(e.to)}${kind}`;
   }
-  $('card').innerHTML = `<div class="no">Schritt ${activeIdx+1} von ${steps.length}</div><h2>${s.t}</h2><p>${s.x}</p><div class="route">${route}</div>`;
+  $('card').innerHTML = `<div class="no">Schritt ${activeIdx+1} von ${steps.length}</div><h2>${tx(s.t)}</h2><p>${tx(s.x)}</p><div class="route">${route}</div>`;
 }
 
 function renderTimeline(){
@@ -362,7 +467,7 @@ function renderTimeline(){
     tl.innerHTML = '';
     steps.forEach((s,i) => {
       if (i) { const ln = document.createElement('span'); ln.className = 'tl-line'; tl.appendChild(ln); }
-      const b = document.createElement('button'); b.className = 'tl' + (s.err ? ' err' : ''); b.textContent = i+1; b.title = s.t;
+      const b = document.createElement('button'); b.className = 'tl' + (s.err ? ' err' : ''); b.textContent = i+1; b.title = tx(s.t);
       b.onclick = () => jump(i+1); tl.appendChild(b);
     });
   }
@@ -381,11 +486,15 @@ function animatePacket(path, label, color, id){
     g.innerHTML = `<circle r="4" fill="${color}"/>
       <g class="pk-label" transform="translate(0,-18)"><rect x="${-w/2}" y="-9" width="${w}" height="18" rx="4"/><text y="4" text-anchor="middle">${label}</text></g>`;
     $('packets').appendChild(g);
+    const lab = g.querySelector('.pk-label');
     const t0 = performance.now();
     (function tick(now){
       if (id !== run) { g.remove(); return resolve(false); }
       const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength(ease(k) * len);
       g.setAttribute('transform', `translate(${pt.x},${pt.y})`);
+      // Label am Bühnenrand nach innen schieben, damit es nie abgeschnitten wird
+      const dx = Math.max(8 - (pt.x - w/2), 0) + Math.min(1192 - (pt.x + w/2), 0);
+      lab.setAttribute('transform', `translate(${dx},-18)`);
       if (k < 1) requestAnimationFrame(tick);
       else { g.style.transition = 'opacity .2s'; g.style.opacity = 0; setTimeout(() => g.remove(), 220); resolve(true); }
     })(t0);
@@ -406,7 +515,7 @@ async function runStep(i, id){
   activeIdx = i; render();
   if (!await wait(220 / speed, id)) return false;
   const s = steps[i];
-  if (s.e && !await animatePacket(edgeEls[s.e], s.pk, s.err ? '#dc2626' : '#18181b', id)) return false;
+  if (s.e && !await animatePacket(edgeEls[s.e], tx(s.pk), s.err ? '#dc2626' : '#18181b', id)) return false;
   if (s.stream && !await typewriter(id)) return false;
   s.fx(model); render();
   return true;
@@ -446,6 +555,11 @@ $('speed').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   speed = +b.dataset.s; [...$('speed').children].forEach(x => x.classList.toggle('on', x === b));
 };
+$('mode').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = +b.dataset.m; [...$('mode').children].forEach(x => x.classList.toggle('on', x === b));
+  renderTexts(); render();
+};
 $('err').onchange = e => {
   document.body.classList.toggle('errmode', e.target.checked);
   steps = buildSteps(e.target.checked); $('timeline').innerHTML = ''; jump(0); play();
@@ -462,7 +576,7 @@ function fit(){
   $('stage').style.transform = `scale(${s})`; $('outer').style.height = 680 * s + 'px';
 }
 new ResizeObserver(fit).observe($('outer')); fit();
-render();
+renderTexts(); render();
 setTimeout(play, 700);
 </script>
 </body>
