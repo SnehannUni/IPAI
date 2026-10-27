@@ -1,0 +1,137 @@
+{
+  "title": "Facebook, 4. Oktober 2021: Ein Wartungsbefehl legt alles lahm",
+  "subtitle": {
+    "simple": "Wie ein einziger Befehl Facebook sechs Stunden lang aus dem Internet verschwinden ließ.",
+    "tech": "Backbone-Ausfall, Audit-Bug, DNS-Server ziehen BGP-Routen zurück."
+  },
+  "zones": [
+    {"id": "menschen", "label": {"simple": "MENSCHEN", "tech": "CLIENTS / OPS"}},
+    {"id": "internet", "label": {"simple": "INTERNET", "tech": "INTERNET"}},
+    {"id": "facebook", "label": {"simple": "FACEBOOK", "tech": "META-NETZ"}}
+  ],
+  "nodes": [
+    {"id": "you", "type": "trigger", "zone": "menschen", "col": 0, "row": 0,
+     "label": {"simple": "Du", "tech": "Nutzer"},
+     "sub": {"simple": "öffnest Facebook", "tech": "App / Browser"}},
+    {"id": "tech", "type": "trigger", "zone": "menschen", "col": 0, "row": 1,
+     "label": {"simple": "Techniker", "tech": "Netzwerk-Engineer"},
+     "sub": {"simple": "wartet die Leitungen", "tech": "Backbone-Wartung"}},
+    {"id": "net", "type": "external", "zone": "internet", "col": 0, "row": 0,
+     "label": {"simple": "Internet", "tech": "Internet (BGP)"},
+     "sub": {"simple": "kennt die Wege", "tech": "Router + DNS-Resolver"},
+     "initial": {"status": {"simple": "kennt Weg zu Facebook", "tech": "Route vorhanden"}, "tone": "ok"}},
+    {"id": "dns", "type": "step", "zone": "facebook", "col": 0, "row": 0,
+     "label": {"simple": "Wegweiser", "tech": "DNS-Server"},
+     "sub": {"simple": "sagt, wo Facebook ist", "tech": "autoritatives DNS + BGP"}},
+    {"id": "bb", "type": "step", "zone": "facebook", "col": 1, "row": 0,
+     "label": {"simple": "Hauptleitung", "tech": "Backbone"},
+     "sub": {"simple": "verbindet Rechenzentren", "tech": "Glasfaser zwischen DCs"},
+     "initial": {"status": {"simple": "alle Leitungen an", "tech": "alle Links up"}, "tone": "ok"}},
+    {"id": "audit", "type": "step", "zone": "facebook", "col": 1, "row": 1, "widget": "checklist",
+     "label": {"simple": "Prüfprogramm", "tech": "Audit-Tool"},
+     "sub": {"simple": "stoppt gefährliche Befehle", "tech": "prüft Netzwerk-Befehle"},
+     "items": [
+       {"simple": "Befehl ansehen", "tech": "Befehl parsen"},
+       {"simple": "Gefahr erkennen", "tech": "Risiko bewerten"},
+       {"simple": "Gefährliches stoppen", "tech": "Befehl blockieren"}
+     ]}
+  ],
+  "edges": [
+    {"id": "yi", "from": "you", "to": "net", "verb": {"simple": "sucht", "tech": "DNS-Query"}},
+    {"id": "iy", "from": "net", "to": "you", "verb": {"simple": "zeigt Weg", "tech": "IP-Adresse"}},
+    {"id": "in", "from": "net", "to": "dns", "verb": {"simple": "fragt", "tech": "DNS-Query"}},
+    {"id": "ni", "from": "dns", "to": "net", "verb": {"simple": "nennt Weg", "tech": "Antwort + BGP"}},
+    {"id": "db", "from": "dns", "to": "bb", "verb": {"simple": "prüft", "tech": "Health-Check"}},
+    {"id": "bd", "from": "bb", "to": "dns", "verb": {"simple": "erreichbar", "tech": "OK"}},
+    {"id": "ta", "from": "tech", "to": "audit", "verb": {"simple": "gibt Befehl", "tech": "CLI-Befehl"}},
+    {"id": "ab", "from": "audit", "to": "bb", "verb": {"simple": "lässt durch", "tech": "ausgeführt"}, "views": ["bug"]},
+    {"id": "at", "from": "audit", "to": "tech", "verb": {"simple": "stoppt", "tech": "blockiert"}, "views": ["fix"]}
+  ],
+  "views": [
+    {
+      "id": "bug", "kind": "bug", "label": "Bug",
+      "headline": {
+        "simple": "Problem: Facebook war sechs Stunden lang weltweit nicht zu finden. Warum?",
+        "tech": "Bug: Backbone down → DNS zieht BGP-Routen zurück → facebook.com nicht auflösbar."
+      },
+      "chain": [
+        {"simple": "Befehl schaltet Leitungen ab", "tech": "Backbone-Befehl"},
+        {"simple": "Prüfprogramm lässt ihn durch", "tech": "Audit-Bug"},
+        {"simple": "Wegweiser sieht nichts mehr", "tech": "Health-Check schlägt fehl"},
+        {"simple": "Weg im Internet gelöscht", "tech": "BGP-Withdraw"},
+        {"simple": "Facebook weltweit weg", "tech": "DNS nicht auflösbar"}
+      ],
+      "steps": [
+        {"edges": ["yi", "in"], "packet": {"simple": "Wo ist Facebook?", "tech": "facebook.com?"},
+         "text": {"simple": "Du öffnest Facebook. Das Internet fragt Facebooks Wegweiser, wo die Seite zu finden ist.", "tech": "Die App löst facebook.com auf; die Anfrage landet bei Facebooks DNS-Servern."}},
+        {"edges": ["ni", "iy"], "packet": {"simple": "hier entlang", "tech": "IP-Adresse"},
+         "text": {"simple": "Der Wegweiser nennt den Weg, und Facebook lädt bei dir.", "tech": "DNS-Antwort mit IP-Adresse; die Route dorthin ist per BGP bekannt."},
+         "set": {"you": {"status": {"simple": "Facebook läuft", "tech": "200 OK"}, "tone": "ok"}}},
+        {"edges": ["db", "bd"],
+         "text": {"simple": "Nebenbei prüft der Wegweiser ständig, ob er die Rechenzentren über die Hauptleitung erreicht.", "tech": "Die DNS-Server prüfen laufend die Verbindung zu den Rechenzentren über den Backbone."},
+         "set": {"dns": {"status": {"simple": "Rechenzentren erreichbar", "tech": "Health-Check OK"}, "tone": "ok"}}},
+        {"edges": ["ta"], "chain": 0, "packet": {"simple": "Leitungen prüfen", "tech": "Kapazität messen"},
+         "text": {"simple": "Bei einer Routine-Wartung gibt ein Techniker einen Befehl, der aus Versehen alle Leitungen abschaltet.", "tech": "Ein Befehl zur Kapazitätsmessung trennt ungewollt alle Backbone-Verbindungen."},
+         "set": {"audit": {"check": {"0": "done"}}}},
+        {"edges": ["ab"], "error": true, "chain": 1, "packet": {"simple": "Leitungen prüfen", "tech": "Kapazität messen"},
+         "text": {"simple": "Das Prüfprogramm soll so etwas stoppen, hat aber selbst einen Fehler und lässt den Befehl durch.", "tech": "Ein Bug im Audit-Tool verhindert, dass der Befehl blockiert wird."},
+         "setBefore": {"audit": {"check": {"1": "fail", "2": "fail"}}},
+         "set": {"bb": {"state": "dead", "status": {"simple": "alle Leitungen aus", "tech": "alle Links down"}, "tone": "bad"}}},
+        {"edges": ["db"], "error": true, "chain": 2, "packet": {"simple": "Hallo?", "tech": "Timeout"},
+         "text": {"simple": "Der Wegweiser erreicht kein Rechenzentrum mehr und hält sich deshalb selbst für kaputt.", "tech": "Der Health-Check scheitert; die DNS-Server markieren sich als ungesund."},
+         "set": {"dns": {"status": {"simple": "keine Rechenzentren", "tech": "Health-Check fehlgeschlagen"}, "tone": "bad"}}},
+        {"edges": ["ni"], "error": true, "chain": 3, "packet": {"simple": "Weg löschen", "tech": "BGP-Withdraw"},
+         "labels": {"ni": {"simple": "zieht zurück", "tech": "BGP-Withdraw"}},
+         "text": {"simple": "Also löscht er seinen Weg aus dem Internet – obwohl er selbst noch läuft.", "tech": "Die DNS-Server ziehen ihre BGP-Routen zurück, obwohl sie selbst laufen."},
+         "set": {"net": {"status": {"simple": "kein Weg zu Facebook", "tech": "keine Route"}, "tone": "bad"}, "dns": {"badge": {"simple": "unsichtbar", "tech": "nicht geroutet"}}}},
+        {"edges": ["yi", "iy"], "error": true, "chain": 4, "packet": {"yi": {"simple": "Wo ist Facebook?", "tech": "facebook.com?"}, "iy": {"simple": "unbekannt", "tech": "SERVFAIL"}},
+         "labels": {"iy": {"simple": "unbekannt", "tech": "SERVFAIL"}},
+         "text": {"simple": "Du öffnest Facebook wieder, doch das Internet kennt keinen Weg mehr: Die Seite ist verschwunden.", "tech": "facebook.com lässt sich weltweit nicht mehr auflösen."},
+         "set": {"you": {"status": {"simple": "Facebook nicht erreichbar", "tech": "DNS-Fehler"}, "tone": "bad"}}}
+      ]
+    },
+    {
+      "id": "fix", "kind": "fix", "label": "Lösung",
+      "headline": {
+        "simple": "Lösung: Das reparierte Prüfprogramm stoppt den gefährlichen Befehl, bevor er die Leitungen erreicht.",
+        "tech": "Fix: Audit-Tool korrigiert – Befehle, die den Backbone trennen, werden blockiert."
+      },
+      "intro": {
+        "simple": "Meta nennt im Bericht keine Details zur Reparatur. Gezeigt wird die naheliegende: das Prüfprogramm korrigieren.",
+        "tech": "Der Postmortem nennt keinen konkreten Fix. Gezeigt: korrigiertes Audit-Tool."
+      },
+      "chain": [
+        {"simple": "Befehl kommt", "tech": "Backbone-Befehl"},
+        {"simple": "Prüfprogramm stoppt ihn", "tech": "Audit blockiert"},
+        {"simple": "Leitungen bleiben an", "tech": "Backbone up"},
+        {"simple": "Weg bleibt im Internet", "tech": "BGP-Routen bleiben"},
+        {"simple": "Facebook läuft", "tech": "DNS auflösbar"}
+      ],
+      "mark": {"nodes": {"audit": "geändert"}, "edges": {"at": "neu"}},
+      "steps": [
+        {"edges": ["yi", "in"], "packet": {"simple": "Wo ist Facebook?", "tech": "facebook.com?"},
+         "text": {"simple": "Du öffnest Facebook. Das Internet fragt Facebooks Wegweiser, wo die Seite zu finden ist.", "tech": "Die App löst facebook.com auf; die Anfrage landet bei Facebooks DNS-Servern."}},
+        {"edges": ["ni", "iy"], "packet": {"simple": "hier entlang", "tech": "IP-Adresse"},
+         "text": {"simple": "Der Wegweiser nennt den Weg, und Facebook lädt bei dir.", "tech": "DNS-Antwort mit IP-Adresse; die Route dorthin ist per BGP bekannt."},
+         "set": {"you": {"status": {"simple": "Facebook läuft", "tech": "200 OK"}, "tone": "ok"}}},
+        {"edges": ["db", "bd"],
+         "text": {"simple": "Nebenbei prüft der Wegweiser ständig, ob er die Rechenzentren über die Hauptleitung erreicht.", "tech": "Die DNS-Server prüfen laufend die Verbindung zu den Rechenzentren über den Backbone."},
+         "set": {"dns": {"status": {"simple": "Rechenzentren erreichbar", "tech": "Health-Check OK"}, "tone": "ok"}}},
+        {"edges": ["ta"], "chain": 0, "tag": "test", "packet": {"simple": "Leitungen prüfen", "tech": "Kapazität messen"},
+         "text": {"simple": "Härtetest: Bei der Wartung kommt wieder derselbe Befehl, der alle Leitungen abschalten würde.", "tech": "Derselbe Befehl, der alle Backbone-Verbindungen trennen würde."},
+         "set": {"audit": {"check": {"0": "done"}}}},
+        {"edges": ["at"], "chain": 1, "tag": "geändert", "packet": {"simple": "gestoppt", "tech": "abgelehnt"},
+         "text": {"simple": "Das reparierte Prüfprogramm erkennt die Gefahr und schickt den Befehl zurück.", "tech": "Das korrigierte Audit-Tool erkennt das Risiko und blockiert den Befehl."},
+         "setBefore": {"audit": {"check": {"1": "ok", "2": "ok"}}},
+         "set": {"tech": {"status": {"simple": "Befehl abgelehnt", "tech": "blockiert"}, "tone": "ok"}}},
+        {"edges": ["db", "bd"], "chain": 2,
+         "text": {"simple": "Die Hauptleitung bleibt an, und der Wegweiser erreicht die Rechenzentren weiter.", "tech": "Backbone bleibt up, der Health-Check der DNS-Server bleibt grün."}},
+        {"edges": ["yi", "in", "ni", "iy"], "chain": 3, "packet": {"yi": {"simple": "Wo ist Facebook?", "tech": "facebook.com?"}, "ni": {"simple": "hier entlang", "tech": "IP-Adresse"}},
+         "text": {"simple": "Du öffnest Facebook, und der Wegweiser nennt dem Internet wie immer den Weg.", "tech": "DNS-Auflösung funktioniert, die BGP-Routen bleiben bestehen."}},
+        {"focus": "you", "chain": 4,
+         "text": {"simple": "Ergebnis: Facebook bleibt erreichbar, die Wartung richtet keinen Schaden an.", "tech": "Ergebnis: kein Ausfall, keine zurückgezogenen Routen."},
+         "set": {"you": {"state": "good"}}}
+      ]
+    }
+  ]
+}

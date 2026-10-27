@@ -79,3 +79,50 @@ test('R13: Lösung ohne markierte Änderung', () => {
   spec.views[1].steps.forEach(s => delete s.tag);
   assert.ok(hasRule(validateSpec(spec).warnings, 'R13'));
 });
+
+test('R3: zu langes Etikett wird erkannt (Platz im Kästchen)', () => {
+  const spec = clone(load('k8s-bugfix.flow.json'));
+  spec.views[0].steps[5].set.worker.badge = {simple: 'gestoppt mitten in der Arbeit', tech: 'killed'};
+  assert.ok(validateSpec(spec).warnings.some(w => w.startsWith('R3') && w.includes('badge')));
+});
+
+test('R4: Pfeile, die aufeinander liegen, werden erkannt', () => {
+  const tiny = {
+    title: 't',
+    nodes: [
+      {id: 'a', type: 'trigger', zone: 'frontend', label: 'A'},
+      {id: 'b', type: 'step', zone: 'backend', col: 0, label: 'B'},
+      {id: 'c', type: 'result', zone: 'backend', col: 1, label: 'C'},
+    ],
+    edges: [{id: 'ab', from: 'a', to: 'b', verb: 'x'}, {id: 'ac', from: 'a', to: 'c', verb: 'y'}],
+    views: [{id: 'v', steps: [{edges: ['ab'], text: 'a'}, {edges: ['ac'], text: 'b'}]}],
+  };
+  const {warnings} = validateSpec(tiny);
+  assert.ok(warnings.some(w => w.startsWith('R4') && w.includes('liegt auf')), warnings.join('\n'));
+});
+
+test('R2: Pfeil in einer Ansicht sichtbar, aber dort ungenutzt', () => {
+  const spec = clone(load('k8s-bugfix.flow.json'));
+  delete spec.edges.find(e => e.id === 'wq').showUnused;
+  assert.ok(validateSpec(spec).warnings.some(w => w.startsWith('R2') && w.includes('"wq"')));
+});
+
+test('R14: Lösung endet ohne gutes Ergebnis', () => {
+  const spec = clone(load('k8s-bugfix.flow.json'));
+  delete spec.views[1].steps.at(-1).set;
+  assert.ok(hasRule(validateSpec(spec).warnings, 'R14'));
+});
+
+test('R7: Abkürzungen zählen nicht als Satzende', () => {
+  const spec = clone(load('k8s-bugfix.flow.json'));
+  spec.views[0].steps[0].text = {simple: 'Verlust von 460 Mio. Dollar am 1.8.2012. Danach ist Schluss.', tech: 'Ca. 4 Mio. Orders, z. B. in 154 Aktien.'};
+  assert.ok(!hasRule(validateSpec(spec).warnings, 'R7'));
+  spec.views[0].steps[0].text = {simple: 'Eins. Zwei. Drei.', tech: 'x'};
+  assert.ok(hasRule(validateSpec(spec).warnings, 'R7'));
+});
+
+test('Meldungen nennen Schritte ab 1 ("Schritt 3")', () => {
+  const spec = clone(load('k8s-bugfix.flow.json'));
+  spec.views[0].steps[2].edges = ['gibtsnicht'];
+  assert.ok(validateSpec(spec).errors.some(e => e.includes('Schritt 3')));
+});

@@ -1,0 +1,646 @@
+{
+  "title": "Sentry 2015: Die Datenbank gehen die Nummern aus",
+  "subtitle": {
+    "simple": "Warum Sentry einen Tag lang keine neuen Fehler speichern konnte.",
+    "tech": "PostgreSQL Transaction-ID-Wraparound, 20.7.2015."
+  },
+  "zones": [
+    {
+      "id": "du",
+      "label": {
+        "simple": "DU",
+        "tech": "CLIENT"
+      }
+    },
+    {
+      "id": "sentry",
+      "label": {
+        "simple": "SENTRY",
+        "tech": "SENTRY-BACKEND"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "app",
+      "type": "trigger",
+      "zone": "du",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Deine App",
+        "tech": "App mit Sentry-SDK"
+      },
+      "sub": {
+        "simple": "meldet Abstürze",
+        "tech": "sendet Events"
+      }
+    },
+    {
+      "id": "ui",
+      "type": "result",
+      "zone": "du",
+      "col": 0,
+      "row": 2,
+      "label": {
+        "simple": "Deine Übersicht",
+        "tech": "Sentry-Web-UI"
+      },
+      "sub": {
+        "simple": "zeigt gemeldete Fehler",
+        "tech": "Issue-Stream"
+      }
+    },
+    {
+      "id": "queue",
+      "type": "store",
+      "zone": "sentry",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Warteliste",
+        "tech": "Event-Queue"
+      },
+      "sub": {
+        "simple": "nimmt Meldungen an",
+        "tech": "Puffer vor der DB"
+      },
+      "initial": {
+        "status": "leer"
+      }
+    },
+    {
+      "id": "worker",
+      "type": "step",
+      "zone": "sentry",
+      "col": 1,
+      "row": 1,
+      "label": {
+        "simple": "Bearbeiter",
+        "tech": "Worker"
+      },
+      "sub": {
+        "simple": "speichert Meldungen",
+        "tech": "schreibt Events in die DB"
+      }
+    },
+    {
+      "id": "db",
+      "type": "store",
+      "zone": "sentry",
+      "col": 2,
+      "row": 1,
+      "widget": "meter",
+      "label": {
+        "simple": "Datenbank",
+        "tech": "PostgreSQL"
+      },
+      "sub": {
+        "simple": "merkt sich alle Fehler",
+        "tech": "Haupt-DB"
+      },
+      "meterLabel": {
+        "simple": "Nummern weg",
+        "tech": "XID-Alter"
+      },
+      "initial": {
+        "meter": 70
+      }
+    },
+    {
+      "id": "vacuum",
+      "type": "step",
+      "zone": "sentry",
+      "col": 2,
+      "row": 0,
+      "widget": "checklist",
+      "label": {
+        "simple": "Aufräumer",
+        "tech": "Autovacuum"
+      },
+      "sub": {
+        "simple": "gibt alte Nummern frei",
+        "tech": "VACUUM FREEZE"
+      },
+      "items": [
+        {
+          "simple": "kleine Tabellen",
+          "tech": "kleine Relationen"
+        },
+        {
+          "simple": "große Tabellen",
+          "tech": "Event-Tabellen"
+        },
+        {
+          "simple": "Riesen-Tabelle",
+          "tech": "Event→Rollup-Mapping"
+        }
+      ],
+      "initial": {
+        "badge": {
+          "simple": "3 Helfer",
+          "tech": "3 Worker"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "aq",
+      "from": "app",
+      "to": "queue",
+      "verb": {
+        "simple": "meldet",
+        "tech": "POST"
+      }
+    },
+    {
+      "id": "qw",
+      "from": "queue",
+      "to": "worker",
+      "verb": {
+        "simple": "gibt weiter",
+        "tech": "consume"
+      },
+      "async": true
+    },
+    {
+      "id": "wd",
+      "from": "worker",
+      "to": "db",
+      "verb": {
+        "simple": "speichert",
+        "tech": "INSERT"
+      }
+    },
+    {
+      "id": "dw",
+      "from": "db",
+      "to": "worker",
+      "verb": {
+        "simple": "lehnt ab",
+        "tech": "ERROR"
+      },
+      "views": [
+        "bug"
+      ]
+    },
+    {
+      "id": "vd",
+      "from": "vacuum",
+      "to": "db",
+      "verb": {
+        "simple": "gibt frei",
+        "tech": "FREEZE"
+      },
+      "async": true
+    },
+    {
+      "id": "du",
+      "from": "db",
+      "to": "ui",
+      "verb": {
+        "simple": "zeigt an",
+        "tech": "SELECT"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "bug",
+      "kind": "bug",
+      "label": "Bug",
+      "headline": {
+        "simple": "Problem: Sentry nimmt einen Tag lang keine neuen Fehler an. Warum?",
+        "tech": "Bug: PostgreSQL verweigert Writes wegen drohendem XID-Wraparound."
+      },
+      "chain": [
+        {
+          "simple": "Viele Speicherungen verbrauchen Nummern",
+          "tech": "hohe Write-Last verbraucht XIDs"
+        },
+        {
+          "simple": "Aufräumer hängt an Riesen-Tabelle",
+          "tech": "Autovacuum zu langsam"
+        },
+        {
+          "simple": "Nummern fast weg – Datenbank sperrt",
+          "tech": "Wraparound-Schutz: keine Writes"
+        },
+        {
+          "simple": "Neue Fehler gehen verloren",
+          "tech": "Events gestaut und verworfen"
+        }
+      ],
+      "steps": [
+        {
+          "edges": [
+            "aq"
+          ],
+          "packet": {
+            "simple": "Fehler",
+            "tech": "Event"
+          },
+          "text": {
+            "simple": "Deine App meldet einen Fehler an Sentry, und die Meldung landet in der Warteliste.",
+            "tech": "Das SDK schickt ein Event; es landet in der Queue."
+          },
+          "set": {
+            "queue": {
+              "slots": 1,
+              "status": {
+                "simple": "1 Meldung",
+                "tech": "1 Event"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "qw",
+            "wd"
+          ],
+          "text": {
+            "simple": "Der Bearbeiter speichert sie, und jede Speicherung verbraucht eine Nummer aus einem Vorrat von rund 2 Milliarden.",
+            "tech": "Der Worker schreibt das Event; jede schreibende Transaktion bekommt eine Transaktions-ID (XID), Limit etwa 2 Mrd."
+          },
+          "set": {
+            "queue": {
+              "slots": 0,
+              "status": "leer"
+            },
+            "db": {
+              "meter": 72
+            }
+          }
+        },
+        {
+          "edges": [
+            "du"
+          ],
+          "text": {
+            "simple": "Du siehst den neuen Fehler in deiner Übersicht.",
+            "tech": "Das Event erscheint im Issue-Stream."
+          },
+          "set": {
+            "ui": {
+              "status": {
+                "simple": "1 neuer Fehler",
+                "tech": "1 neues Event"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": "vacuum",
+          "text": {
+            "simple": "Im Hintergrund arbeitet ein Aufräumer, der alte Nummern freigibt, aber erst, wenn er alle Tabellen geschafft hat.",
+            "tech": "Autovacuum friert alte Zeilen ein; das XID-Alter sinkt erst, wenn auch die älteste Tabelle erledigt ist."
+          }
+        },
+        {
+          "edges": [
+            "vd"
+          ],
+          "text": {
+            "simple": "Die kleinen und großen Tabellen schafft er, an der Riesen-Tabelle arbeitet er noch.",
+            "tech": "Die meisten Relationen sind gevacuumt, die große Mapping-Tabelle noch nicht."
+          },
+          "set": {
+            "vacuum": {
+              "check": {
+                "0": "done",
+                "1": "done"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "aq",
+            "qw",
+            "wd"
+          ],
+          "chain": 0,
+          "packet": {
+            "simple": "viele Fehler",
+            "tech": "viele Events"
+          },
+          "text": {
+            "simple": "Gleichzeitig speichert Sentry ständig neue Meldungen, und jede verbraucht eine weitere Nummer.",
+            "tech": "Sentry ist sehr schreiblastig: Die XIDs werden schneller verbraucht, als Autovacuum sie einfriert."
+          },
+          "set": {
+            "db": {
+              "meter": 92
+            }
+          }
+        },
+        {
+          "focus": "vacuum",
+          "error": true,
+          "chain": 1,
+          "text": {
+            "simple": "Der Aufräumer bleibt an der Riesen-Tabelle hängen und wird nicht rechtzeitig fertig.",
+            "tech": "Zu hohes freeze_max_age, nur 3 Worker, starkes Cost-Delay: Der Vacuum der Mapping-Tabelle wird nicht fertig."
+          },
+          "set": {
+            "vacuum": {
+              "check": {
+                "2": "fail"
+              },
+              "badge": {
+                "simple": "zu langsam",
+                "tech": "hängt"
+              }
+            },
+            "db": {
+              "meter": 99
+            }
+          }
+        },
+        {
+          "edges": [
+            "wd",
+            "dw"
+          ],
+          "error": true,
+          "chain": 2,
+          "text": {
+            "simple": "Bei nur noch einer Million freien Nummern sperrt sich die Datenbank selbst, damit keine Daten kaputtgehen.",
+            "tech": "Weniger als 1 Mio. XIDs übrig: PostgreSQL verweigert alle Writes, um Wraparound und Datenverlust zu verhindern."
+          },
+          "set": {
+            "db": {
+              "meter": 100,
+              "state": "dead",
+              "status": {
+                "simple": "gesperrt",
+                "tech": "read-only"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "aq"
+          ],
+          "error": true,
+          "packet": {
+            "simple": "Fehler",
+            "tech": "Event"
+          },
+          "text": {
+            "simple": "Neue Meldungen kommen weiter an und stauen sich in der Warteliste.",
+            "tech": "Events laufen weiter ein; Queue und Puffer füllen sich."
+          },
+          "set": {
+            "queue": {
+              "slots": 5,
+              "status": {
+                "simple": "Stau",
+                "tech": "Backlog wächst"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "du"
+          ],
+          "error": true,
+          "chain": 3,
+          "labels": {
+            "du": {
+              "simple": "nichts Neues",
+              "tech": "nur alte Daten"
+            }
+          },
+          "text": {
+            "simple": "Stundenlang zeigt deine Übersicht keine neuen Fehler, und die gestauten Meldungen werden am Ende weggeworfen.",
+            "tech": "Ausfall über den US-Arbeitstag; der Event-Backlog wird verworfen."
+          },
+          "set": {
+            "ui": {
+              "status": {
+                "simple": "keine neuen Fehler",
+                "tech": "keine neuen Events"
+              },
+              "tone": "bad",
+              "state": "dead"
+            },
+            "queue": {
+              "slots": 0,
+              "status": {
+                "simple": "weggeworfen",
+                "tech": "verworfen"
+              },
+              "tone": "bad"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "kind": "fix",
+      "label": "Lösung",
+      "headline": {
+        "simple": "Lösung: Der Aufräumer fängt früher an, hat mehr Helfer und macht keine Pausen.",
+        "tech": "Fix: Autovacuum aggressiver – freeze_max_age 500 Mio., 6 Worker, cost_delay 0, neue Hardware."
+      },
+      "chain": [
+        {
+          "simple": "Viele Speicherungen verbrauchen Nummern",
+          "tech": "hohe Write-Last verbraucht XIDs"
+        },
+        {
+          "simple": "Aufräumer schafft alle Tabellen",
+          "tech": "Autovacuum hält Schritt"
+        },
+        {
+          "simple": "Nummern bleiben weit unter der Grenze",
+          "tech": "XID-Alter niedrig"
+        },
+        {
+          "simple": "Alle Fehler kommen an",
+          "tech": "keine verlorenen Events"
+        }
+      ],
+      "mark": {
+        "nodes": {
+          "vacuum": "geändert"
+        },
+        "edges": {
+          "vd": "geändert"
+        }
+      },
+      "steps": [
+        {
+          "edges": [
+            "aq"
+          ],
+          "packet": {
+            "simple": "Fehler",
+            "tech": "Event"
+          },
+          "text": {
+            "simple": "Deine App meldet einen Fehler an Sentry, und die Meldung landet in der Warteliste.",
+            "tech": "Das SDK schickt ein Event; es landet in der Queue."
+          },
+          "set": {
+            "queue": {
+              "slots": 1,
+              "status": {
+                "simple": "1 Meldung",
+                "tech": "1 Event"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "qw",
+            "wd"
+          ],
+          "text": {
+            "simple": "Der Bearbeiter speichert sie, und jede Speicherung verbraucht eine Nummer aus einem Vorrat von rund 2 Milliarden.",
+            "tech": "Der Worker schreibt das Event; jede schreibende Transaktion bekommt eine Transaktions-ID (XID), Limit etwa 2 Mrd."
+          },
+          "set": {
+            "queue": {
+              "slots": 0,
+              "status": "leer"
+            },
+            "db": {
+              "meter": 72
+            }
+          }
+        },
+        {
+          "edges": [
+            "du"
+          ],
+          "text": {
+            "simple": "Du siehst den neuen Fehler in deiner Übersicht.",
+            "tech": "Das Event erscheint im Issue-Stream."
+          },
+          "set": {
+            "ui": {
+              "status": {
+                "simple": "1 neuer Fehler",
+                "tech": "1 neues Event"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": "vacuum",
+          "tag": "geändert",
+          "text": {
+            "simple": "Der Aufräumer ist neu eingestellt: Er fängt früher an, hat doppelt so viele Helfer und macht keine Pausen.",
+            "tech": "autovacuum_freeze_max_age 500 Mio., max_workers 6, naptime 15 s, cost_delay 0; dazu stärkere Hardware."
+          },
+          "set": {
+            "vacuum": {
+              "badge": {
+                "simple": "6 Helfer",
+                "tech": "6 Worker"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "aq",
+            "qw",
+            "wd"
+          ],
+          "chain": 0,
+          "tag": "test",
+          "packet": {
+            "simple": "viele Fehler",
+            "tech": "viele Events"
+          },
+          "text": {
+            "simple": "Härtetest: Wieder speichert Sentry ständig neue Meldungen, und jede verbraucht eine Nummer.",
+            "tech": "Gleiche hohe Write-Last wie am 20.7.: Die XIDs werden schnell verbraucht."
+          },
+          "set": {
+            "db": {
+              "meter": 85
+            }
+          }
+        },
+        {
+          "edges": [
+            "vd"
+          ],
+          "chain": 1,
+          "tag": "geändert",
+          "text": {
+            "simple": "Der Aufräumer schafft jetzt auch die Riesen-Tabelle rechtzeitig und gibt die alten Nummern frei.",
+            "tech": "Der Vacuum der Mapping-Tabelle wird fertig; relfrozenxid rückt vor, das XID-Alter sinkt."
+          },
+          "set": {
+            "vacuum": {
+              "check": {
+                "0": "done",
+                "1": "done",
+                "2": "ok"
+              }
+            },
+            "db": {
+              "meter": 30
+            }
+          }
+        },
+        {
+          "edges": [
+            "qw",
+            "wd"
+          ],
+          "chain": 2,
+          "text": {
+            "simple": "Die Datenbank nimmt weiter alles an, und die Nummern bleiben weit unter der Grenze.",
+            "tech": "Writes laufen weiter; das XID-Alter bleibt weit unter dem Schutz-Limit."
+          },
+          "set": {
+            "db": {
+              "meter": 32,
+              "status": {
+                "simple": "offen",
+                "tech": "Writes ok"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "du"
+          ],
+          "chain": 3,
+          "text": {
+            "simple": "Ergebnis: Jeder gemeldete Fehler erscheint in deiner Übersicht.",
+            "tech": "Ergebnis: kein Ausfall, kein verworfener Backlog."
+          },
+          "set": {
+            "ui": {
+              "status": {
+                "simple": "alle Fehler da",
+                "tech": "alle Events da"
+              },
+              "tone": "ok",
+              "state": "good"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

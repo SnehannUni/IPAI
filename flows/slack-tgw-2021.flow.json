@@ -1,0 +1,727 @@
+{
+ "title": "Slack-Ausfall am ersten Arbeitstag (4.1.2021)",
+ "subtitle": {
+  "simple": "Warum Slack am Montagmorgen nach den Ferien nicht lud.",
+  "tech": "AWS Transit Gateway skaliert zu langsam, Autoscaling scheitert am provision-service."
+ },
+ "zones": [
+  {
+   "id": "frontend",
+   "label": {
+    "simple": "DU",
+    "tech": "CLIENT"
+   }
+  },
+  {
+   "id": "slack",
+   "label": {
+    "simple": "SLACK",
+    "tech": "SLACK-VPC (WEB)"
+   }
+  },
+  {
+   "id": "external",
+   "label": {
+    "simple": "AWS",
+    "tech": "AWS"
+   }
+  },
+  {
+   "id": "data",
+   "label": {
+    "simple": "SLACK-DATEN",
+    "tech": "SLACK-VPC (BACKEND)"
+   }
+  }
+ ],
+ "nodes": [
+  {
+   "id": "user",
+   "type": "trigger",
+   "zone": "frontend",
+   "col": 0,
+   "row": 0,
+   "rows": 2,
+   "widget": "chat",
+   "label": {
+    "simple": "Du",
+    "tech": "Slack-Client"
+   },
+   "sub": {
+    "simple": "öffnest Slack",
+    "tech": "Desktop- und Mobile-App"
+   }
+  },
+  {
+   "id": "web",
+   "type": "step",
+   "zone": "slack",
+   "col": 0,
+   "row": 0,
+   "widget": "meter",
+   "label": {
+    "simple": "Slack-Server",
+    "tech": "Webapp-Tier"
+   },
+   "sub": {
+    "simple": "beantworten deine App",
+    "tech": "Web-Fleet hinter LB"
+   },
+   "meterLabel": {
+    "simple": "Last",
+    "tech": "Threads"
+   },
+   "initial": {
+    "meter": 30
+   }
+  },
+  {
+   "id": "scaler",
+   "type": "step",
+   "zone": "slack",
+   "col": 0,
+   "row": 2,
+   "label": {
+    "simple": "Planer",
+    "tech": "Autoscaling"
+   },
+   "sub": {
+    "simple": "bestellt bei Bedarf Server",
+    "tech": "Auto Scaling Groups"
+   }
+  },
+  {
+   "id": "prov",
+   "type": "step",
+   "zone": "slack",
+   "col": 0,
+   "row": 1,
+   "widget": "meter",
+   "label": {
+    "simple": "Einrichter",
+    "tech": "provision-service"
+   },
+   "sub": {
+    "simple": "macht neue Server startklar",
+    "tech": "konfiguriert Instanzen"
+   },
+   "meterLabel": {
+    "simple": "Last",
+    "tech": "open files"
+   },
+   "initial": {
+    "meter": 10
+   }
+  },
+  {
+   "id": "tgw",
+   "type": "external",
+   "zone": "external",
+   "col": 0,
+   "row": 0,
+   "widget": "meter",
+   "label": {
+    "simple": "Verkehrsknoten",
+    "tech": "AWS Transit Gateway"
+   },
+   "sub": {
+    "simple": "verbindet unsere Netze",
+    "tech": "VPC-zu-VPC-Routing"
+   },
+   "meterLabel": {
+    "simple": "Last",
+    "tech": "Pakete/s"
+   },
+   "initial": {
+    "meter": 20
+   }
+  },
+  {
+   "id": "db",
+   "type": "store",
+   "zone": "data",
+   "col": 0,
+   "row": 0,
+   "label": {
+    "simple": "Datenspeicher",
+    "tech": "Backend-Dienste"
+   },
+   "sub": {
+    "simple": "hat deine Nachrichten",
+    "tech": "DBs, Caches, Services"
+   }
+  }
+ ],
+ "edges": [
+  {
+   "id": "uw",
+   "from": "user",
+   "to": "web",
+   "verb": {
+    "simple": "öffnet",
+    "tech": "HTTPS"
+   }
+  },
+  {
+   "id": "wu",
+   "from": "web",
+   "to": "user",
+   "verb": {
+    "simple": "zeigt",
+    "tech": "Response"
+   }
+  },
+  {
+   "id": "wt",
+   "from": "web",
+   "to": "tgw",
+   "verb": {
+    "simple": "fragt an",
+    "tech": "Request"
+   }
+  },
+  {
+   "id": "tw",
+   "from": "tgw",
+   "to": "web",
+   "verb": {
+    "simple": "liefert",
+    "tech": "Response"
+   }
+  },
+  {
+   "id": "td",
+   "from": "tgw",
+   "to": "db",
+   "verb": {
+    "simple": "leitet weiter",
+    "tech": "routet"
+   }
+  },
+  {
+   "id": "dt",
+   "from": "db",
+   "to": "tgw",
+   "verb": {
+    "simple": "antwortet",
+    "tech": "Response"
+   }
+  },
+  {
+   "id": "sp",
+   "from": "scaler",
+   "to": "prov",
+   "verb": {
+    "simple": "bestellt",
+    "tech": "Launch"
+   }
+  },
+  {
+   "id": "pw",
+   "from": "prov",
+   "to": "web",
+   "verb": {
+    "simple": "richtet ein",
+    "tech": "provisioniert"
+   }
+  }
+ ],
+ "views": [
+  {
+   "id": "bug",
+   "kind": "bug",
+   "label": "Bug",
+   "headline": {
+    "simple": "Problem: Am ersten Arbeitstag nach den Ferien lud Slack nicht. Warum?",
+    "tech": "Bug: Paketverlust im Transit Gateway, Autoscaling kann nicht nachliefern."
+   },
+   "chain": [
+    {
+     "simple": "Ansturm am Montagmorgen",
+     "tech": "Lastspitze, kalte Caches"
+    },
+    {
+     "simple": "Verkehrsknoten wächst zu langsam",
+     "tech": "TGW skaliert nicht, Paketverlust"
+    },
+    {
+     "simple": "Server warten, 1.200 neue bestellt",
+     "tech": "Webtier gesättigt, Upscale"
+    },
+    {
+     "simple": "Einrichter am Limit",
+     "tech": "provision-service: open files"
+    },
+    {
+     "simple": "Slack lädt nicht",
+     "tech": "Slack nicht erreichbar"
+    }
+   ],
+   "steps": [
+    {
+     "edges": [
+      "uw"
+     ],
+     "text": {
+      "simple": "Ein normaler Tag: Du öffnest Slack.",
+      "tech": "Der Client verbindet sich mit dem Webapp-Tier."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "user",
+        "text": {
+         "simple": "Slack öffnen",
+         "tech": "Client-Start"
+        }
+       }
+      }
+     }
+    },
+    {
+     "edges": [
+      "wt",
+      "td",
+      "dt",
+      "tw"
+     ],
+     "text": {
+      "simple": "Der Slack-Server holt deine Nachrichten über den Verkehrsknoten von AWS.",
+      "tech": "Backend-Calls laufen über das Transit Gateway in die Backend-VPC."
+     },
+     "set": {
+      "tgw": {
+       "status": {
+        "simple": "läuft rund",
+        "tech": "kein Paketverlust"
+       }
+      }
+     }
+    },
+    {
+     "edges": [
+      "wu"
+     ],
+     "text": {
+      "simple": "Du siehst deine Nachrichten.",
+      "tech": "Der Client erhält seine Daten."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "ai",
+        "text": {
+         "simple": "12 neue Nachrichten",
+         "tech": "200 OK"
+        }
+       }
+      }
+     }
+    },
+    {
+     "focus": "user",
+     "chain": 0,
+     "text": {
+      "simple": "Montag, 4. Januar: Nach den Ferien öffnen alle gleichzeitig Slack, und jede App lädt alles neu.",
+      "tech": "Erster Arbeitstag 2021: sprunghafte Last, Clients mit kalten Caches laden viel nach."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "user",
+        "text": {
+         "simple": "Slack öffnen",
+         "tech": "Client-Start"
+        }
+       }
+      },
+      "web": {
+       "meter": 70
+      },
+      "tgw": {
+       "meter": 80
+      }
+     }
+    },
+    {
+     "edges": [
+      "wt"
+     ],
+     "error": true,
+     "chain": 1,
+     "text": {
+      "simple": "Der Verkehrsknoten von AWS wächst nicht schnell genug mit und verliert Anfragen.",
+      "tech": "Das TGW skaliert nicht schnell genug für die Pakete pro Sekunde. Paketverlust im ganzen Netz."
+     },
+     "set": {
+      "tgw": {
+       "meter": 150,
+       "status": {
+        "simple": "verliert Anfragen",
+        "tech": "Paketverlust"
+       },
+       "tone": "bad"
+      }
+     }
+    },
+    {
+     "focus": "scaler",
+     "error": true,
+     "chain": 2,
+     "text": {
+      "simple": "Die Slack-Server warten vergeblich und laufen voll. Der Planer sieht das und bestellt 1.200 neue Server.",
+      "tech": "Threads blockieren auf Backend-Antworten. Nach kurzem Downscale folgt ein Upscale um 1.200 Instanzen."
+     },
+     "set": {
+      "web": {
+       "meter": 140,
+       "status": {
+        "simple": "warten nur noch",
+        "tech": "Threads erschöpft"
+       },
+       "tone": "bad"
+      },
+      "scaler": {
+       "status": {
+        "simple": "bestellt 1.200 Server",
+        "tech": "+1.200 Instanzen"
+       },
+       "tone": "strong"
+      }
+     }
+    },
+    {
+     "edges": [
+      "sp"
+     ],
+     "error": true,
+     "chain": 3,
+     "text": {
+      "simple": "Der Einrichter soll 1.200 Server auf einmal startklar machen und stößt an seine Grenze.",
+      "tech": "Der provision-service erreicht das Linux-Limit für offene Dateien und eine AWS-Quota."
+     },
+     "set": {
+      "prov": {
+       "meter": 160,
+       "status": {
+        "simple": "Grenze erreicht",
+        "tech": "Limit erreicht"
+       },
+       "tone": "bad"
+      }
+     }
+    },
+    {
+     "edges": [
+      "pw"
+     ],
+     "error": true,
+     "labels": {
+      "pw": {
+       "simple": "bleibt hängen",
+       "tech": "scheitert"
+      }
+     },
+     "text": {
+      "simple": "Die meisten neuen Server werden nie fertig eingerichtet und helfen nicht.",
+      "tech": "Die meisten Instanzen bleiben unprovisioniert und nehmen keinen Traffic an."
+     },
+     "set": {
+      "prov": {
+       "state": "dead"
+      },
+      "web": {
+       "state": "dead",
+       "status": {
+        "simple": "neue Server leer",
+        "tech": "nicht provisioniert"
+       }
+      }
+     }
+    },
+    {
+     "edges": [
+      "wu"
+     ],
+     "error": true,
+     "chain": 4,
+     "labels": {
+      "wu": {
+       "simple": "Fehler",
+       "tech": "Error"
+      }
+     },
+     "text": {
+      "simple": "Slack lädt nicht. Du siehst nur eine Fehlermeldung.",
+      "tech": "Der Client erhält Fehler und Timeouts, Slack ist nicht nutzbar."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "ai",
+        "text": {
+         "simple": "Slack lädt nicht …",
+         "tech": "Verbindungsfehler"
+        },
+        "tone": "bad",
+        "note": {
+         "simple": "stundenlang gestört",
+         "tech": "Ausfall ab 6:57 Uhr"
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "fix",
+   "kind": "fix",
+   "label": "Lösung",
+   "headline": {
+    "simple": "Lösung: Der Verkehrsknoten wird vor dem Ansturm vergrößert, und der Einrichter schafft große Mengen.",
+    "tech": "Fix: TGW vorab hochskaliert, provision-service mit höheren Limits und Lasttests."
+   },
+   "chain": [
+    {
+     "simple": "Ansturm am Montagmorgen",
+     "tech": "Lastspitze, kalte Caches"
+    },
+    {
+     "simple": "Verkehrsknoten ist schon groß genug",
+     "tech": "TGW vorab skaliert"
+    },
+    {
+     "simple": "Server antworten weiter",
+     "tech": "kein Paketverlust"
+    },
+    {
+     "simple": "Einrichter schafft große Mengen",
+     "tech": "Limits erhöht, lastgetestet"
+    },
+    {
+     "simple": "Slack läuft",
+     "tech": "kein Ausfall"
+    }
+   ],
+   "mark": {
+    "nodes": {
+     "tgw": "geändert",
+     "prov": "geändert"
+    }
+   },
+   "steps": [
+    {
+     "edges": [
+      "uw"
+     ],
+     "text": {
+      "simple": "Ein normaler Tag: Du öffnest Slack.",
+      "tech": "Der Client verbindet sich mit dem Webapp-Tier."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "user",
+        "text": {
+         "simple": "Slack öffnen",
+         "tech": "Client-Start"
+        }
+       }
+      }
+     }
+    },
+    {
+     "edges": [
+      "wt",
+      "td",
+      "dt",
+      "tw"
+     ],
+     "text": {
+      "simple": "Der Slack-Server holt deine Nachrichten über den Verkehrsknoten von AWS.",
+      "tech": "Backend-Calls laufen über das Transit Gateway in die Backend-VPC."
+     },
+     "set": {
+      "tgw": {
+       "status": {
+        "simple": "läuft rund",
+        "tech": "kein Paketverlust"
+       }
+      }
+     }
+    },
+    {
+     "edges": [
+      "wu"
+     ],
+     "text": {
+      "simple": "Du siehst deine Nachrichten.",
+      "tech": "Der Client erhält seine Daten."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "ai",
+        "text": {
+         "simple": "12 neue Nachrichten",
+         "tech": "200 OK"
+        }
+       }
+      }
+     }
+    },
+    {
+     "focus": "tgw",
+     "tag": "neu",
+     "text": {
+      "simple": "Vor dem Ferienende vergrößert AWS den Verkehrsknoten, weil Slack das vorab bestellt hat.",
+      "tech": "Slack beantragt vor Saisonspitzen ein präventives Upscaling des TGW."
+     },
+     "set": {
+      "tgw": {
+       "status": {
+        "simple": "viel Reserve",
+        "tech": "Kapazität erhöht"
+       },
+       "tone": "ok"
+      }
+     }
+    },
+    {
+     "focus": "user",
+     "chain": 0,
+     "text": {
+      "simple": "Montag, 4. Januar: Nach den Ferien öffnen alle gleichzeitig Slack, und jede App lädt alles neu.",
+      "tech": "Erster Arbeitstag 2021: sprunghafte Last, Clients mit kalten Caches laden viel nach."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "user",
+        "text": {
+         "simple": "Slack öffnen",
+         "tech": "Client-Start"
+        }
+       }
+      },
+      "web": {
+       "meter": 70
+      },
+      "tgw": {
+       "meter": 50
+      }
+     }
+    },
+    {
+     "edges": [
+      "wt",
+      "td",
+      "dt",
+      "tw"
+     ],
+     "chain": 1,
+     "tag": "geändert",
+     "text": {
+      "simple": "Der Verkehrsknoten hat genug Platz, alle Anfragen kommen durch.",
+      "tech": "Das TGW verkraftet die Pakete pro Sekunde, kein Paketverlust."
+     },
+     "set": {
+      "tgw": {
+       "meter": 75,
+       "status": {
+        "simple": "hält stand",
+        "tech": "kein Paketverlust"
+       },
+       "tone": "ok"
+      }
+     }
+    },
+    {
+     "edges": [
+      "wu"
+     ],
+     "chain": 2,
+     "text": {
+      "simple": "Die Slack-Server antworten wie immer, und du siehst deine Nachrichten.",
+      "tech": "Das Webapp-Tier liefert normal aus."
+     },
+     "set": {
+      "user": {
+       "say": {
+        "from": "ai",
+        "text": {
+         "simple": "40 neue Nachrichten",
+         "tech": "200 OK"
+        }
+       }
+      }
+     }
+    },
+    {
+     "focus": "scaler",
+     "tag": "test",
+     "text": {
+      "simple": "Härtetest: Der Planer bestellt trotzdem auf einen Schlag 1.200 neue Server.",
+      "tech": "Lasttest: großer Upscale wie am 4. Januar."
+     },
+     "set": {
+      "scaler": {
+       "status": {
+        "simple": "bestellt 1.200 Server",
+        "tech": "+1.200 Instanzen"
+       },
+       "tone": "strong"
+      }
+     }
+    },
+    {
+     "edges": [
+      "sp",
+      "pw"
+     ],
+     "chain": 3,
+     "tag": "geändert",
+     "text": {
+      "simple": "Der Einrichter macht alle startklar: Seine Grenze ist höher, und er wird regelmäßig unter Last geprobt.",
+      "tech": "Höhere Datei-Limits und regelmäßige Lasttests des provision-service."
+     },
+     "set": {
+      "prov": {
+       "status": {
+        "simple": "schafft es",
+        "tech": "provisioniert"
+       },
+       "tone": "ok",
+       "badge": {
+        "simple": "geprobt",
+        "tech": "lastgetestet"
+       },
+       "meter": 70
+      },
+      "web": {
+       "status": {
+        "simple": "mehr Server bereit",
+        "tech": "+1.200 im LB"
+       },
+       "tone": "ok"
+      }
+     }
+    },
+    {
+     "focus": "user",
+     "chain": 4,
+     "text": {
+      "simple": "Ergebnis: Slack läuft auch am vollsten Morgen des Jahres.",
+      "tech": "Ergebnis: kein Ausfall trotz Lastspitze."
+     },
+     "set": {
+      "user": {
+       "state": "good"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

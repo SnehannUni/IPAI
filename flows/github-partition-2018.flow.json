@@ -1,0 +1,825 @@
+{
+  "title": "GitHub, 21. Oktober 2018: 43 Sekunden ohne Leitung",
+  "subtitle": {
+    "simple": "Wie eine kurze Netzwerk-Unterbrechung zu zwei verschiedenen Datenständen führte.",
+    "tech": "Netzwerk-Partition, Orchestrator-Failover nach US-West, divergente MySQL-Writes."
+  },
+  "zones": [
+    {
+      "id": "du",
+      "label": {
+        "simple": "DU",
+        "tech": "CLIENT"
+      }
+    },
+    {
+      "id": "ost",
+      "label": {
+        "simple": "OSTKÜSTE",
+        "tech": "US-EAST"
+      }
+    },
+    {
+      "id": "west",
+      "label": {
+        "simple": "WESTKÜSTE",
+        "tech": "US-WEST"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "you",
+      "type": "trigger",
+      "zone": "du",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Du",
+        "tech": "Nutzer (Browser)"
+      },
+      "sub": {
+        "simple": "schreibst Kommentare",
+        "tech": "github.com"
+      }
+    },
+    {
+      "id": "app",
+      "type": "step",
+      "zone": "ost",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Webseite",
+        "tech": "Rails-App (Ost)"
+      },
+      "sub": {
+        "simple": "nimmt Kommentare an",
+        "tech": "App-Server US-East"
+      }
+    },
+    {
+      "id": "dbE",
+      "type": "store",
+      "zone": "ost",
+      "col": 1,
+      "row": 0,
+      "widget": "checklist",
+      "label": {
+        "simple": "Datenbank Ost",
+        "tech": "MySQL Ost"
+      },
+      "sub": {
+        "simple": "merkt sich Kommentare",
+        "tech": "Cluster US-East"
+      },
+      "items": [
+        {
+          "simple": "Kommentar 1",
+          "tech": "Write 1"
+        },
+        {
+          "simple": "Kommentar 2",
+          "tech": "Write 2"
+        },
+        {
+          "simple": "Kommentar 3",
+          "tech": "Write 3"
+        }
+      ],
+      "initial": {
+        "badge": {
+          "simple": "Chef",
+          "tech": "Primary"
+        }
+      }
+    },
+    {
+      "id": "dbW",
+      "type": "store",
+      "zone": "west",
+      "col": 0,
+      "row": 0,
+      "widget": "checklist",
+      "label": {
+        "simple": "Datenbank West",
+        "tech": "MySQL West"
+      },
+      "sub": {
+        "simple": "hält eine Kopie",
+        "tech": "Cluster US-West"
+      },
+      "items": [
+        {
+          "simple": "Kommentar 1",
+          "tech": "Write 1"
+        },
+        {
+          "simple": "Kommentar 2",
+          "tech": "Write 2"
+        },
+        {
+          "simple": "Kommentar 3",
+          "tech": "Write 3"
+        }
+      ],
+      "initial": {
+        "badge": {
+          "simple": "Kopie",
+          "tech": "Replica"
+        }
+      }
+    },
+    {
+      "id": "orch",
+      "type": "step",
+      "zone": "west",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Aufseher",
+        "tech": "Orchestrator"
+      },
+      "sub": {
+        "simple": "bestimmt, wer Chef ist",
+        "tech": "Failover per Raft-Quorum"
+      },
+      "initial": {
+        "status": {
+          "simple": "Chef: Osten",
+          "tech": "Primary: US-East"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "ua",
+      "from": "you",
+      "to": "app",
+      "verb": {
+        "simple": "schickt",
+        "tech": "POST"
+      }
+    },
+    {
+      "id": "ay",
+      "from": "app",
+      "to": "you",
+      "verb": {
+        "simple": "zeigt",
+        "tech": "HTML"
+      }
+    },
+    {
+      "id": "ae",
+      "from": "app",
+      "to": "dbE",
+      "verb": {
+        "simple": "schreibt",
+        "tech": "INSERT"
+      }
+    },
+    {
+      "id": "ea",
+      "from": "dbE",
+      "to": "app",
+      "verb": {
+        "simple": "antwortet",
+        "tech": "Result"
+      },
+      "views": [
+        "fix"
+      ]
+    },
+    {
+      "id": "ew",
+      "from": "dbE",
+      "to": "dbW",
+      "verb": {
+        "simple": "kopiert",
+        "tech": "Replikation"
+      },
+      "async": true
+    },
+    {
+      "id": "eo",
+      "from": "dbE",
+      "to": "orch",
+      "verb": {
+        "simple": "meldet sich",
+        "tech": "Heartbeat"
+      },
+      "async": true
+    },
+    {
+      "id": "ow",
+      "from": "orch",
+      "to": "dbW",
+      "verb": {
+        "simple": "ernennt",
+        "tech": "promote"
+      },
+      "views": [
+        "bug"
+      ]
+    },
+    {
+      "id": "aw",
+      "from": "app",
+      "to": "dbW",
+      "verb": {
+        "simple": "schreibt (weit)",
+        "tech": "INSERT (60 ms)"
+      },
+      "route": "above",
+      "views": [
+        "bug"
+      ]
+    },
+    {
+      "id": "wa",
+      "from": "dbW",
+      "to": "app",
+      "verb": {
+        "simple": "antwortet",
+        "tech": "Result"
+      },
+      "route": "below",
+      "views": [
+        "bug"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "bug",
+      "kind": "bug",
+      "label": "Bug",
+      "headline": {
+        "simple": "Problem: Nach 43 Sekunden Leitungsausfall fehlten Kommentare und GitHub war einen Tag lang langsam. Warum?",
+        "tech": "Bug: Partition → Cross-Region-Failover → Split-Brain mit nicht replizierten Writes."
+      },
+      "chain": [
+        {
+          "simple": "Leitung 43 s getrennt",
+          "tech": "Netzwerk-Partition"
+        },
+        {
+          "simple": "Kommentar 2 nur im Osten",
+          "tech": "Write nicht repliziert"
+        },
+        {
+          "simple": "Aufseher macht West zum Chef",
+          "tech": "Failover nach US-West"
+        },
+        {
+          "simple": "Zwei verschiedene Datenstände",
+          "tech": "divergente Writes"
+        },
+        {
+          "simple": "Kommentar fehlt, Seite langsam",
+          "tech": "Inkonsistenz + Latenz"
+        }
+      ],
+      "steps": [
+        {
+          "edges": [
+            "ua",
+            "ae"
+          ],
+          "packet": {
+            "simple": "Kommentar 1",
+            "tech": "Write 1"
+          },
+          "text": {
+            "simple": "Du speicherst Kommentar 1, und die Webseite schreibt ihn in die Datenbank Ost.",
+            "tech": "Die App im Osten schreibt in den MySQL-Primary US-East."
+          },
+          "set": {
+            "dbE": {
+              "check": {
+                "0": "done"
+              }
+            },
+            "you": {
+              "status": {
+                "simple": "Kommentar 1 gespeichert",
+                "tech": "200 OK"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ew"
+          ],
+          "packet": {
+            "simple": "Kopie",
+            "tech": "Binlog"
+          },
+          "text": {
+            "simple": "Die Datenbank Ost ist der Chef und schickt jede Änderung als Kopie in den Westen.",
+            "tech": "Der Primary repliziert asynchron zur Replica in US-West."
+          },
+          "set": {
+            "dbW": {
+              "check": {
+                "0": "done"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "eo"
+          ],
+          "packet": {
+            "simple": "Ich bin da",
+            "tech": "alive"
+          },
+          "text": {
+            "simple": "Außerdem meldet sie dem Aufseher regelmäßig, dass sie noch da ist.",
+            "tech": "Orchestrator prüft laufend die Erreichbarkeit des Primary."
+          },
+          "set": {
+            "orch": {
+              "status": {
+                "simple": "Chef: Osten",
+                "tech": "Primary: US-East"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": [
+            "dbE",
+            "dbW"
+          ],
+          "chain": 0,
+          "labels": {
+            "ew": {
+              "simple": "getrennt",
+              "tech": "Partition"
+            },
+            "eo": {
+              "simple": "getrennt",
+              "tech": "Partition"
+            }
+          },
+          "text": {
+            "simple": "Bei einer Wartung reißt die Leitung zwischen Ost und West ab – für 43 Sekunden.",
+            "tech": "Austausch eines 100G-Glasfasergeräts: 43 Sekunden Partition zwischen den Standorten."
+          }
+        },
+        {
+          "edges": [
+            "ua",
+            "ae"
+          ],
+          "error": true,
+          "chain": 1,
+          "packet": {
+            "simple": "Kommentar 2",
+            "tech": "Write 2"
+          },
+          "text": {
+            "simple": "Du speicherst Kommentar 2. Er landet im Osten, aber die Kopie kommt nicht in den Westen.",
+            "tech": "Write 2 landet auf dem Ost-Primary, wird aber nicht repliziert."
+          },
+          "set": {
+            "dbE": {
+              "check": {
+                "1": "done"
+              }
+            },
+            "dbW": {
+              "check": {
+                "1": "fail"
+              }
+            },
+            "you": {
+              "status": {
+                "simple": "Kommentar 2 gespeichert",
+                "tech": "200 OK"
+              }
+            }
+          }
+        },
+        {
+          "focus": "orch",
+          "error": true,
+          "text": {
+            "simple": "Der Aufseher hört nichts mehr vom Osten und hält ihn für ausgefallen.",
+            "tech": "Orchestrator-Knoten in West und Cloud bilden ein Quorum ohne den Osten."
+          },
+          "set": {
+            "orch": {
+              "status": {
+                "simple": "Osten tot?",
+                "tech": "Primary unreachable"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ow"
+          ],
+          "error": true,
+          "chain": 2,
+          "packet": {
+            "simple": "Du bist jetzt Chef",
+            "tech": "promote"
+          },
+          "text": {
+            "simple": "Er macht die Datenbank West zum neuen Chef. Jetzt gibt es zwei Chefs.",
+            "tech": "Orchestrator befördert die US-West-Replica zum Primary."
+          },
+          "set": {
+            "dbW": {
+              "badge": {
+                "simple": "Chef",
+                "tech": "Primary"
+              }
+            },
+            "orch": {
+              "status": {
+                "simple": "Chef: Westen",
+                "tech": "Primary: US-West"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "focus": [
+            "dbE",
+            "dbW"
+          ],
+          "labels": {
+            "ew": {
+              "simple": "kopiert nicht",
+              "tech": "gestoppt"
+            },
+            "eo": {
+              "simple": "meldet sich",
+              "tech": "Heartbeat"
+            }
+          },
+          "text": {
+            "simple": "Nach 43 Sekunden ist die Leitung wieder da. Doch nur der Osten kennt Kommentar 2.",
+            "tech": "Netz wieder da, aber der Ost-Primary hat Writes, die dem neuen Primary fehlen."
+          }
+        },
+        {
+          "edges": [
+            "ua",
+            "aw"
+          ],
+          "error": true,
+          "chain": 3,
+          "packet": {
+            "simple": "Kommentar 3",
+            "tech": "Write 3"
+          },
+          "text": {
+            "simple": "Kommentar 3 geht jetzt quer übers Land zum neuen Chef im Westen – langsam, und nur dorthin.",
+            "tech": "Die App im Osten schreibt cross-country in den US-West-Primary, mit hoher Latenz."
+          },
+          "set": {
+            "dbW": {
+              "check": {
+                "2": "done"
+              }
+            },
+            "dbE": {
+              "check": {
+                "2": "fail"
+              }
+            },
+            "app": {
+              "status": {
+                "simple": "wartet auf den Westen",
+                "tech": "hohe Latenz"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "wa",
+            "ay"
+          ],
+          "error": true,
+          "chain": 4,
+          "packet": {
+            "wa": {
+              "simple": "1 und 3",
+              "tech": "Writes 1, 3"
+            },
+            "ay": {
+              "simple": "1 und 3",
+              "tech": "Writes 1, 3"
+            }
+          },
+          "text": {
+            "simple": "Die Seite zeigt nur, was der Westen kennt: Kommentar 2 fehlt, und alles lädt zäh.",
+            "tech": "Lesen vom US-West-Primary: Write 2 fehlt, jede Anfrage ist langsam."
+          },
+          "set": {
+            "you": {
+              "status": {
+                "simple": "Kommentar 2 fehlt!",
+                "tech": "inkonsistente Daten"
+              },
+              "tone": "bad"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "kind": "fix",
+      "label": "Lösung",
+      "headline": {
+        "simple": "Lösung: Der Aufseher darf den Chef nicht mehr quer übers Land wechseln. Er wartet ab.",
+        "tech": "Fix: Orchestrator darf Primaries nicht über Regionsgrenzen hinweg befördern."
+      },
+      "chain": [
+        {
+          "simple": "Leitung 43 s getrennt",
+          "tech": "Netzwerk-Partition"
+        },
+        {
+          "simple": "Aufseher wartet ab",
+          "tech": "kein Cross-Region-Failover"
+        },
+        {
+          "simple": "Osten bleibt einziger Chef",
+          "tech": "ein Primary"
+        },
+        {
+          "simple": "Kopie wird nachgeholt",
+          "tech": "Replikation holt auf"
+        },
+        {
+          "simple": "Nichts fehlt, Seite schnell",
+          "tech": "konsistent, niedrige Latenz"
+        }
+      ],
+      "mark": {
+        "nodes": {
+          "orch": "geändert"
+        }
+      },
+      "steps": [
+        {
+          "edges": [
+            "ua",
+            "ae"
+          ],
+          "packet": {
+            "simple": "Kommentar 1",
+            "tech": "Write 1"
+          },
+          "text": {
+            "simple": "Du speicherst Kommentar 1, und die Webseite schreibt ihn in die Datenbank Ost.",
+            "tech": "Die App im Osten schreibt in den MySQL-Primary US-East."
+          },
+          "set": {
+            "dbE": {
+              "check": {
+                "0": "done"
+              }
+            },
+            "you": {
+              "status": {
+                "simple": "Kommentar 1 gespeichert",
+                "tech": "200 OK"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ew"
+          ],
+          "packet": {
+            "simple": "Kopie",
+            "tech": "Binlog"
+          },
+          "text": {
+            "simple": "Die Datenbank Ost ist der Chef und schickt jede Änderung als Kopie in den Westen.",
+            "tech": "Der Primary repliziert asynchron zur Replica in US-West."
+          },
+          "set": {
+            "dbW": {
+              "check": {
+                "0": "done"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "eo"
+          ],
+          "packet": {
+            "simple": "Ich bin da",
+            "tech": "alive"
+          },
+          "text": {
+            "simple": "Außerdem meldet sie dem Aufseher regelmäßig, dass sie noch da ist.",
+            "tech": "Orchestrator prüft laufend die Erreichbarkeit des Primary."
+          },
+          "set": {
+            "orch": {
+              "status": {
+                "simple": "Chef: Osten",
+                "tech": "Primary: US-East"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": [
+            "dbE",
+            "dbW"
+          ],
+          "chain": 0,
+          "tag": "test",
+          "labels": {
+            "ew": {
+              "simple": "getrennt",
+              "tech": "Partition"
+            },
+            "eo": {
+              "simple": "getrennt",
+              "tech": "Partition"
+            }
+          },
+          "text": {
+            "simple": "Härtetest: Bei derselben Wartung reißt die Leitung zwischen Ost und West wieder für 43 Sekunden ab.",
+            "tech": "Dieselbe Partition von 43 Sekunden zwischen den Standorten."
+          }
+        },
+        {
+          "edges": [
+            "ua",
+            "ae"
+          ],
+          "packet": {
+            "simple": "Kommentar 2",
+            "tech": "Write 2"
+          },
+          "text": {
+            "simple": "Du speicherst Kommentar 2. Er landet im Osten, die Kopie für den Westen muss kurz warten.",
+            "tech": "Write 2 landet auf dem Ost-Primary, die Replikation hängt hinterher."
+          },
+          "set": {
+            "dbE": {
+              "check": {
+                "1": "done"
+              }
+            },
+            "you": {
+              "status": {
+                "simple": "Kommentar 2 gespeichert",
+                "tech": "200 OK"
+              }
+            }
+          }
+        },
+        {
+          "focus": "orch",
+          "chain": 1,
+          "tag": "geändert",
+          "text": {
+            "simple": "Der Aufseher hört nichts vom Osten, darf den Chef aber nicht quer übers Land wechseln. Er wartet ab.",
+            "tech": "Orchestrator erkennt den Ausfall, befördert aber keinen Primary in einer anderen Region."
+          },
+          "set": {
+            "orch": {
+              "status": {
+                "simple": "wartet ab – Ost bleibt Chef",
+                "tech": "kein Cross-Region-Promote"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": [
+            "dbE",
+            "dbW"
+          ],
+          "chain": 2,
+          "labels": {
+            "ew": {
+              "simple": "kopiert",
+              "tech": "Replikation"
+            },
+            "eo": {
+              "simple": "meldet sich",
+              "tech": "Heartbeat"
+            }
+          },
+          "text": {
+            "simple": "Nach 43 Sekunden ist die Leitung wieder da. Der Osten ist immer noch der einzige Chef.",
+            "tech": "Netz wieder da, Topologie unverändert: ein Primary in US-East."
+          }
+        },
+        {
+          "edges": [
+            "ew"
+          ],
+          "chain": 3,
+          "packet": {
+            "simple": "Kommentar 2",
+            "tech": "Write 2"
+          },
+          "text": {
+            "simple": "Der Osten schickt die verpasste Kopie von Kommentar 2 nach. Beide Seiten sind wieder gleich.",
+            "tech": "Die Replica holt den Rückstand auf, beide Seiten sind konsistent."
+          },
+          "set": {
+            "dbW": {
+              "check": {
+                "1": "done"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ua",
+            "ae",
+            "ew"
+          ],
+          "packet": {
+            "simple": "Kommentar 3",
+            "tech": "Write 3"
+          },
+          "text": {
+            "simple": "Du speicherst Kommentar 3. Er landet schnell im Osten und wird wie immer kopiert.",
+            "tech": "Write 3 geht lokal an den Ost-Primary und wird normal repliziert."
+          },
+          "set": {
+            "dbE": {
+              "check": {
+                "2": "done"
+              }
+            },
+            "dbW": {
+              "check": {
+                "2": "done"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ea",
+            "ay"
+          ],
+          "packet": {
+            "simple": "1, 2 und 3",
+            "tech": "Writes 1–3"
+          },
+          "text": {
+            "simple": "Die Seite zeigt alle drei Kommentare, so schnell wie immer.",
+            "tech": "Lesen vom lokalen Primary: alle Writes da, normale Latenz."
+          },
+          "set": {
+            "you": {
+              "status": {
+                "simple": "alle 3 Kommentare da",
+                "tech": "konsistent"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "focus": "you",
+          "chain": 4,
+          "text": {
+            "simple": "Ergebnis: Nichts fehlt, und die Seite bleibt schnell.",
+            "tech": "Ergebnis: kein Split-Brain, keine Cross-Country-Latenz."
+          },
+          "set": {
+            "you": {
+              "state": "good"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

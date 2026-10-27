@@ -50,7 +50,7 @@ button.primary:hover{background:#27272a}
 .banner.fix .chain .c.cur{background:var(--ok);border-color:var(--ok);color:#fff}
 
 .stage-outer{position:relative;width:100%}
-.stage{position:absolute;top:0;left:0;width:1200px;transform-origin:0 0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage{position:absolute;top:0;left:0;transform-origin:0 0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .stage svg{position:absolute;inset:0;overflow:visible}
 .stage svg.overlay{pointer-events:none;z-index:3}
 .zone-cap{font-size:11px;font-weight:600;letter-spacing:.08em;fill:var(--text)}
@@ -78,19 +78,25 @@ button.primary:hover{background:#27272a}
 .node>*{flex-shrink:0}
 .node.active{border-color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06)}
 .node.dead{border-color:#fca5a5;background:#fef2f2}
+.node.error{border-color:var(--error)}
 .node.off{background:var(--soft)}
 .node.good{border-color:var(--ok);box-shadow:0 0 0 3px #ecfdf5}
 .node.neu{border:1.5px dashed var(--ok)}
 .node.mod{border:1.5px dashed var(--mod)}
 .node.neu.active,.node.mod.active{border-style:solid}
-.node .type{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap}
+.node .type{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap;min-width:0}
+.node .tn{flex-shrink:0}
+.node.has-badge .tn{display:none}   /* mit Etikett zeigt nur der Farbpunkt den Typ */
 .node .type::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
 .node .label{font-weight:600;font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node .sub{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node .w{margin-top:6px}
 .node .line{margin-top:auto;padding-top:4px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.node .badge{position:absolute;top:9px;right:10px;font-size:10.5px;font-weight:600;color:var(--muted);background:#f4f4f5;border-radius:4px;padding:0 6px}
+.node .badge{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;font-weight:600;color:var(--muted);background:#f4f4f5;border-radius:4px;padding:0 6px}
 .node .badge:empty{display:none}
+.node .badge.bad{color:#b91c1c;background:#fef2f2}.node .badge.ok{color:#047857;background:#ecfdf5}.node .badge.strong{color:#fff;background:var(--text)}
+.node .mline{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slots-more{font-size:11px;color:var(--text);font-weight:600;margin-right:8px}
 .tone-bad{color:var(--error);font-weight:600}
 .tone-ok{color:var(--ok);font-weight:600}
 .tone-strong{color:var(--text);font-weight:600}
@@ -107,12 +113,15 @@ button.primary:hover{background:#27272a}
 .task.done{color:var(--text)}.task.done i{background:var(--text);border-color:var(--text);color:#fff}
 .task.fail{color:var(--error);font-weight:600}.task.fail i{background:var(--error);border-color:var(--error);color:#fff}
 .task.ok{color:var(--ok);font-weight:600}.task.ok i{background:var(--ok);border-color:var(--ok);color:#fff}
+.task.skip{color:var(--faint);text-decoration:line-through}.task.skip i{border-style:dashed}
 
-.meter{position:relative;height:8px;border-radius:4px;background:#f4f4f5;margin:4px 0 2px}
+.meter{position:relative;height:8px;border-radius:4px;background:#f4f4f5;margin:6px 0 4px}
 .meter i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--text);transition:width .6s ease,background .3s}
 .meter.hi i{background:var(--trigger)}
 .meter.over i{background:var(--error)}
-.meter b{position:absolute;left:62.5%;top:-4px;bottom:-4px;width:2px;background:var(--text)}
+.meter.full i{background:var(--ok)}
+.meter b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text)}
+.still *{transition:none!important;animation:none!important}
 
 .node.chat .w{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden}
 .bub{max-width:88%;padding:6px 10px;border-radius:8px;font-size:12.5px;line-height:1.4;color:var(--text);animation:pop .25s ease-out}
@@ -184,7 +193,8 @@ const TYPES = {
 const MARKERS = {idle:'#d4d4d8', done:'#a1a1aa', active:'#18181b', err:'#dc2626', errdim:'#fca5a5',
                  neu:'#059669', neudim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
 const TAGS = {neu:['neu','neu'], 'geändert':['mod','geändert'], test:['test','Test'], fehler:['fehler','Fehler']};
-const TASK_MARK = {todo:'', done:'✓', fail:'✕', ok:'✓'};
+const TASK_MARK = {todo:'', done:'✓', fail:'✕', ok:'✓', skip:'–'};
+const meterMax = n => n.meterMax || 150;   // Balken reicht bis hier, der Strich steht bei 100 %
 
 const $ = id => document.getElementById(id);
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -213,7 +223,7 @@ const L = computeLayout(spec);
 const {W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L, ZONES = L.zones;
 
 // ---------- Aufbau der Bühne ----------
-$('stage').style.height = H + 'px';
+$('stage').style.height = H + 'px'; $('stage').style.width = W + 'px';
 for (const s of [$('svg'), $('overlay')]) { s.setAttribute('width', W); s.setAttribute('height', H); s.setAttribute('viewBox', `0 0 ${W} ${H}`); }
 for (const [id, c] of Object.entries(MARKERS)) {
   const m = svgEl('marker', {id:'m-' + id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse'}, $('defs'));
@@ -231,8 +241,8 @@ for (const n of spec.nodes) {
   const b = BOX[n.id], t = TYPES[n.type] || TYPES.step, d = document.createElement('div');
   d.className = 'node' + (n.widget === 'chat' ? ' chat' : '');
   d.style.cssText = `--c:${t.c};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
-  d.innerHTML = `<div class="type"><span class="tn"></span></div><div class="label"></div><div class="sub"></div>`
-    + `<div class="w">${n.widget === 'meter' ? '<div class="meter"><i></i><b></b></div>' : ''}</div><div class="line"></div><span class="badge"></span>`;
+  d.innerHTML = `<div class="type"><span class="tn"></span><span class="marks"></span><span class="badge"></span></div><div class="label"></div><div class="sub"></div>`
+    + `<div class="w">${n.widget === 'meter' ? `<div class="meter"><i></i><b style="left:${100 / meterMax(n) * 100}%"></b></div><div class="mline"></div>` : ''}</div><div class="line"></div>`;
   $('nodes').appendChild(d); nodeEls[n.id] = d;
 }
 for (const e of spec.edges) {
@@ -242,11 +252,11 @@ for (const e of spec.edges) {
 
 // ---------- Zustand ----------
 let view, steps, mark, pos = 0, activeIdx = -1, playing = false, run = 0, state;
-const blank = () => ({status:null, tone:null, badge:null, state:null, meter:null, slots:0, checks:{}, chat:[]});
+const blank = () => ({status:null, tone:null, badge:null, badgeTone:null, state:null, meter:null, meterText:null, slots:0, checks:{}, chat:[]});
 function apply(st, patch){
   for (const [id, p] of Object.entries(patch || {})) {
     const s = st[id] || (st[id] = blank());
-    for (const k of ['status', 'tone', 'badge', 'state', 'meter', 'slots']) if (k in p) s[k] = p[k];
+    for (const k of ['status', 'tone', 'badge', 'badgeTone', 'state', 'meter', 'meterText', 'slots']) if (k in p) s[k] = p[k];
     if (p.check === 'reset') s.checks = {};
     else if (p.check) Object.assign(s.checks, p.check);
     if (p.clearChat) s.chat = [];
@@ -274,8 +284,7 @@ function renderTexts(){
     el.querySelector('.tn').textContent = (TYPES[n.type] || TYPES.step).name;
     el.querySelector('.label').textContent = tx(n.label);
     el.querySelector('.sub').textContent = tx(n.sub);
-    const old = el.querySelector('.type .pill'); if (old) old.remove();
-    if (m) el.querySelector('.type').insertAdjacentHTML('beforeend', `<span class="pill ${TAGS[m][0]}">${TAGS[m][1]}</span>`);
+    el.querySelector('.marks').innerHTML = m ? `<span class="pill ${TAGS[m][0]}">${TAGS[m][1]}</span>` : '';
   }
   const head = tx(view.headline), i = head.indexOf(':');
   $('head').innerHTML = i > 0 ? `<b>${esc(head.slice(0, i + 1))}</b>${esc(head.slice(i + 1))}` : esc(head);
@@ -311,8 +320,7 @@ function nodeWidget(n, s){
   return null;
 }
 function nodeLine(n, s){
-  let h = s.slots ? '<span class="slot"></span>'.repeat(Math.min(s.slots, 5)) : '';
-  if (n.widget === 'meter' && s.meter != null) h += `${esc(tx(n.meterLabel) || 'Auslastung')}: ${s.meter} %` + (s.status ? ' · ' : '');
+  let h = s.slots ? '<span class="slot"></span>'.repeat(Math.min(s.slots, 8)) + (s.slots > 8 ? `<span class="slots-more">+${s.slots - 8}</span>` : '') : '';
   if (s.status) h += `<span class="tone-${s.tone || ''}">${esc(tx(s.status))}</span>`;
   return h;
 }
@@ -328,20 +336,25 @@ function render(){
     el.hidden = !visible(n);
     el.className = 'node' + (n.widget === 'chat' ? ' chat' : '') + (actN.has(n.id) ? ' active' : '')
       + (s.state ? ' ' + s.state : '') + (m ? ' ' + TAGS[m][0] : '');
-    const wHtml = nodeWidget(n, s), lHtml = nodeLine(n, s), bHtml = esc(tx(s.badge));
+    const wHtml = nodeWidget(n, s), lHtml = nodeLine(n, s), bHtml = esc(tx(s.badge)), badge = el.querySelector('.badge');
     if (wHtml != null && lastHTML[n.id + 'w'] !== wHtml) { el.querySelector('.w').innerHTML = wHtml; lastHTML[n.id + 'w'] = wHtml; }
     if (lastHTML[n.id + 'l'] !== lHtml) { el.querySelector('.line').innerHTML = lHtml; lastHTML[n.id + 'l'] = lHtml; }
-    el.querySelector('.badge').innerHTML = bHtml;
+    badge.innerHTML = bHtml; badge.className = 'badge' + (s.badgeTone ? ' ' + s.badgeTone : '');
+    el.classList.toggle('has-badge', !!bHtml);
     if (n.widget === 'meter') {
-      const v = s.meter || 0, bar = el.querySelector('.meter');
-      bar.className = 'meter' + (v > 100 ? ' over' : v > 80 ? ' hi' : '');
-      bar.querySelector('i').style.width = Math.min(v, 160) / 1.6 + '%';
+      // risk (Standard): ab 80 % orange, ab 100 % rot · progress: 100 % = Ziel (grün), darüber rot
+      const v = s.meter || 0, bar = el.querySelector('.meter'), progress = n.meterMode === 'progress';
+      const bad = progress ? v > 100 : v >= 100;
+      bar.className = 'meter' + (bad ? ' over' : progress ? (v === 100 ? ' full' : '') : (v > 80 ? ' hi' : ''));
+      const value = s.meterText != null ? tx(s.meterText) : s.meter != null ? s.meter + ' %' : '';
+      el.querySelector('.mline').innerHTML = value ? `${esc(tx(n.meterLabel) || 'Auslastung')}: <span class="${bad ? 'tone-bad' : ''}">${esc(value)}</span>` : '';
+      bar.querySelector('i').style.width = Math.min(v, meterMax(n)) / meterMax(n) * 100 + '%';
     }
   }
 
   const reached = steps.slice(0, Math.max(pos, activeIdx + 1));
   const done = new Set(), errDone = new Set();
-  steps.slice(0, pos).forEach(s => (s.edges || []).forEach(id => { done.add(id); if (s.error) errDone.add(id); }));
+  steps.slice(0, pos).forEach(s => (s.edges || []).forEach(id => { done.add(id); if (s.error) errDone.add(id); else errDone.delete(id); }));
   for (const e of spec.edges) {
     const p = edgeEls[e.id], l = labelEls[e.id], vis = edgeVisible(e);
     p.style.display = l.style.display = vis ? '' : 'none';
@@ -352,7 +365,7 @@ function render(){
     const marker = err ? (isA ? 'err' : 'errdim') : mc ? (isA ? mc : mc + 'dim') : isA ? 'active' : isD ? 'done' : 'idle';
     p.setAttribute('marker-end', `url(#m-${marker})`);
     // Pfeiltext: der zuletzt gesetzte Schritt-Text gilt weiter, sonst der Standard
-    const over = reached.reduce((v, s) => (s.labels && s.labels[e.id]) || v, null);
+    const over = reached.reduce((v, s) => (s.labels && e.id in s.labels ? s.labels[e.id] : v), null);
     const verb = tx(over || e.verb), r = ROUTES[e.id], lr = labelRect(r, verb);
     l.innerHTML = verb ? `<rect x="${lr.x}" y="${lr.y}" width="${lr.w}" height="${lr.h}" rx="3"/><text x="${lr.x + lr.w / 2}" y="${r.lab[1]}" text-anchor="middle">${esc(verb)}</text>` : '';
   }
@@ -487,8 +500,12 @@ const fit = () => {
   $('stage').style.transform = `scale(${s})`; $('outer').style.height = H * s + 'px';
 };
 new ResizeObserver(fit).observe($('outer')); fit();
-selectView(spec.views[0]);
-if (spec.autoplay !== false) setTimeout(play, 700);
+const hash = new URLSearchParams(location.hash.slice(1));
+if (hash.has('still')) document.body.classList.add('still');
+if (hash.get('mode') === 'tech' && hasTech) $('mode').children[1].click();
+selectView(spec.views.find(v => v.id === hash.get('view')) || spec.views[0]);
+if (hash.has('step')) jump(+hash.get('step'));
+else if (spec.autoplay !== false) setTimeout(play, 700);
 })();
 </script>
 </body>

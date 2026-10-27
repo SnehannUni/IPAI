@@ -30,7 +30,8 @@ Keine Abhängigkeiten, nur Node ≥ 20.
 | `src/build.mjs`, `bin/flowviz.mjs` | Baut eine eigenständige HTML-Datei, Kommandozeile |
 | `examples/` | Vorlagen: normaler Ablauf mit Fehlerfall, Bug + Lösung |
 | `.claude/skills/flow-diagram/` | Skill, mit dem Claude Code Diagramme selbstständig erzeugt |
-| `flows/` | Ablage für erzeugte Specs |
+| `flows/` | Erzeugte Specs, darunter 10 echte Postmortems (Cloudflare, CrowdStrike, GitHub, Facebook, Roblox, Slack, Knight Capital, Sentry), die von Agenten ohne Vorwissen erstellt wurden und als Regressionstest dienen |
+| `test/` | Validator- und Build-Tests sowie ein Durchlauf des Viewers für jeden Schritt jeder Spec |
 | `prototypes/` | Die ersten handgebauten Entwürfe |
 
 ## Bausteine in einem Satz

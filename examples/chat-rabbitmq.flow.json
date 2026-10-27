@@ -170,7 +170,10 @@
       "verb": {
         "simple": "bestätigt",
         "tech": "202"
-      }
+      },
+      "views": [
+        "normal"
+      ]
     },
     {
       "id": "e2",
@@ -239,7 +242,10 @@
       "verb": {
         "simple": "notiert",
         "tech": "INSERT"
-      }
+      },
+      "views": [
+        "normal"
+      ]
     },
     {
       "id": "e8",

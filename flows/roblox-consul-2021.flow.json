@@ -1,0 +1,837 @@
+{
+  "title": "Roblox-Ausfall: 73 Stunden offline (28.10.2021)",
+  "subtitle": {
+    "simple": "Warum ein überlastetes Telefonbuch alle Spiele lahmgelegt hat.",
+    "tech": "Consul-Streaming und BoltDB-Freelist legen Consul, Nomad und Vault lahm."
+  },
+  "zones": [
+    {
+      "id": "frontend",
+      "label": {
+        "simple": "SPIELER",
+        "tech": "CLIENT"
+      }
+    },
+    {
+      "id": "backend",
+      "label": {
+        "simple": "SPIEL-DIENSTE",
+        "tech": "BACKEND"
+      }
+    },
+    {
+      "id": "core",
+      "label": {
+        "simple": "GRUNDDIENSTE",
+        "tech": "HASHICORP-STACK"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "player",
+      "type": "trigger",
+      "zone": "frontend",
+      "col": 0,
+      "row": 1,
+      "rows": 2,
+      "widget": "chat",
+      "label": {
+        "simple": "Spieler",
+        "tech": "Roblox-Client"
+      },
+      "sub": {
+        "simple": "will ein Spiel starten",
+        "tech": "Game-Join"
+      }
+    },
+    {
+      "id": "services",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Spiel-Dienste",
+        "tech": "Backend-Services"
+      },
+      "sub": {
+        "simple": "starten Spiele, Chat, Avatare",
+        "tech": "Microservices"
+      }
+    },
+    {
+      "id": "nomad",
+      "type": "step",
+      "zone": "core",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Verteiler",
+        "tech": "Nomad"
+      },
+      "sub": {
+        "simple": "startet Programme auf Servern",
+        "tech": "Container-Scheduler"
+      }
+    },
+    {
+      "id": "consul",
+      "type": "step",
+      "zone": "core",
+      "col": 0,
+      "row": 1,
+      "widget": "meter",
+      "label": {
+        "simple": "Vermittlung",
+        "tech": "Consul"
+      },
+      "sub": {
+        "simple": "weiß, wo welcher Dienst ist",
+        "tech": "Service Discovery + KV"
+      },
+      "meterLabel": {
+        "simple": "Last",
+        "tech": "Latenz"
+      },
+      "initial": {
+        "meter": 15,
+        "status": {
+          "simple": "antwortet sofort",
+          "tech": "p50 ≈ 300 ms"
+        }
+      }
+    },
+    {
+      "id": "vault",
+      "type": "step",
+      "zone": "core",
+      "col": 0,
+      "row": 2,
+      "label": {
+        "simple": "Schlüsselkasten",
+        "tech": "Vault"
+      },
+      "sub": {
+        "simple": "gibt Passwörter heraus",
+        "tech": "Secrets-Management"
+      }
+    },
+    {
+      "id": "log",
+      "type": "store",
+      "zone": "core",
+      "col": 1,
+      "row": 1,
+      "widget": "meter",
+      "label": {
+        "simple": "Logbuch",
+        "tech": "BoltDB (Raft-Log)"
+      },
+      "sub": {
+        "simple": "schreibt jede Änderung auf",
+        "tech": "Raft-Log auf Platte"
+      },
+      "meterLabel": {
+        "simple": "Aufwand",
+        "tech": "Freelist"
+      },
+      "initial": {
+        "meter": 60,
+        "status": {
+          "simple": "viele leere Seiten",
+          "tech": "4,2 GB Datei"
+        }
+      }
+    },
+    {
+      "id": "monitor",
+      "type": "step",
+      "zone": "core",
+      "col": 1,
+      "row": 0,
+      "views": [
+        "fix"
+      ],
+      "label": {
+        "simple": "Frühwarnung",
+        "tech": "Monitoring + Alerts"
+      },
+      "sub": {
+        "simple": "schlägt Alarm bei Ballast",
+        "tech": "BoltDB-Telemetrie"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "ps",
+      "from": "player",
+      "to": "services",
+      "verb": {
+        "simple": "startet Spiel",
+        "tech": "Join"
+      }
+    },
+    {
+      "id": "sc",
+      "from": "services",
+      "to": "consul",
+      "verb": {
+        "simple": "wo ist …?",
+        "tech": "Lookup"
+      }
+    },
+    {
+      "id": "cs",
+      "from": "consul",
+      "to": "services",
+      "verb": {
+        "simple": "Adresse",
+        "tech": "Endpoint"
+      }
+    },
+    {
+      "id": "sp",
+      "from": "services",
+      "to": "player",
+      "verb": {
+        "simple": "lässt spielen",
+        "tech": "Session"
+      }
+    },
+    {
+      "id": "nc",
+      "from": "nomad",
+      "to": "consul",
+      "verb": {
+        "simple": "meldet",
+        "tech": "registriert"
+      }
+    },
+    {
+      "id": "cl",
+      "from": "consul",
+      "to": "log",
+      "verb": {
+        "simple": "schreibt auf",
+        "tech": "Append"
+      }
+    },
+    {
+      "id": "lc",
+      "from": "log",
+      "to": "consul",
+      "verb": {
+        "simple": "fertig",
+        "tech": "fsync ok"
+      }
+    },
+    {
+      "id": "vc",
+      "from": "vault",
+      "to": "consul",
+      "verb": {
+        "simple": "holt Schlüssel",
+        "tech": "KV-Read"
+      }
+    },
+    {
+      "id": "cv",
+      "from": "consul",
+      "to": "vault",
+      "verb": {
+        "simple": "liefert",
+        "tech": "KV-Wert"
+      },
+      "views": [
+        "fix"
+      ]
+    },
+    {
+      "id": "ml",
+      "from": "monitor",
+      "to": "log",
+      "verb": {
+        "simple": "misst",
+        "tech": "überwacht"
+      },
+      "async": true,
+      "views": [
+        "fix"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "bug",
+      "kind": "bug",
+      "label": "Bug",
+      "headline": {
+        "simple": "Problem: Roblox war 73 Stunden lang nicht erreichbar. Warum?",
+        "tech": "Bug: Consul-Ausfall reißt Nomad, Vault und alle Dienste mit (73 h)."
+      },
+      "chain": [
+        {
+          "simple": "Neue Funktion + mehr Server",
+          "tech": "Streaming an, +50 % Nodes"
+        },
+        {
+          "simple": "Logbuch schleppt Ballast mit",
+          "tech": "BoltDB-Freelist riesig"
+        },
+        {
+          "simple": "Vermittlung wird langsam",
+          "tech": "Writes 2 s statt 300 ms"
+        },
+        {
+          "simple": "Verteiler und Schlüsselkasten hängen",
+          "tech": "Nomad + Vault fallen aus"
+        },
+        {
+          "simple": "Roblox offline",
+          "tech": "73 h Ausfall"
+        }
+      ],
+      "steps": [
+        {
+          "edges": [
+            "ps"
+          ],
+          "text": {
+            "simple": "Ein Spieler startet ein Spiel.",
+            "tech": "Der Client schickt einen Join-Request an das Backend."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "user",
+                "text": {
+                  "simple": "Spiel starten",
+                  "tech": "Join"
+                }
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "sc",
+            "cs"
+          ],
+          "text": {
+            "simple": "Die Spiel-Dienste fragen die Vermittlung, wo der passende Server steht, und bekommen sofort die Adresse.",
+            "tech": "Service Discovery über Consul liefert den Endpoint."
+          }
+        },
+        {
+          "edges": [
+            "sp"
+          ],
+          "text": {
+            "simple": "Das Spiel läuft. So geht es jeden Tag millionenfach.",
+            "tech": "Die Session steht. Normalbetrieb."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "ai",
+                "text": {
+                  "simple": "Willkommen im Spiel!",
+                  "tech": "Session aktiv"
+                }
+              }
+            }
+          }
+        },
+        {
+          "focus": [
+            "nomad",
+            "vault"
+          ],
+          "text": {
+            "simple": "Im Hintergrund arbeiten Verteiler und Schlüsselkasten ständig mit der Vermittlung zusammen.",
+            "tech": "Nomad und Vault nutzen Consul als Registry bzw. Storage-Backend."
+          },
+          "set": {
+            "nomad": {
+              "status": {
+                "simple": "läuft",
+                "tech": "plant Container"
+              }
+            },
+            "vault": {
+              "status": {
+                "simple": "läuft",
+                "tech": "unsealed"
+              }
+            }
+          }
+        },
+        {
+          "focus": "consul",
+          "chain": 0,
+          "text": {
+            "simple": "Das Team schaltet bei der Vermittlung eine neue Funktion ein und schließt 50 % mehr Server an.",
+            "tech": "Consul-Streaming wird aktiviert, der Dienst bekommt 50 % mehr Nodes."
+          },
+          "set": {
+            "consul": {
+              "badge": {
+                "simple": "Funktion an",
+                "tech": "Streaming an"
+              },
+              "meter": 50,
+              "status": {
+                "simple": "viel mehr Anfragen",
+                "tech": "mehr Reads und Writes"
+              },
+              "tone": "strong"
+            }
+          }
+        },
+        {
+          "edges": [
+            "nc",
+            "cl",
+            "lc"
+          ],
+          "text": {
+            "simple": "Der Verteiler meldet neue Programme. Die Vermittlung schreibt jede Änderung ins Logbuch.",
+            "tech": "Nomad registriert Container. Consul hängt jeden Write an das Raft-Log."
+          }
+        },
+        {
+          "edges": [
+            "cl"
+          ],
+          "error": true,
+          "chain": 1,
+          "text": {
+            "simple": "Das Logbuch wirft leere Seiten nie weg. Bei jedem Eintrag schreibt es die riesige Liste leerer Seiten komplett neu.",
+            "tech": "BoltDB schrumpft nicht. Jeder Append schreibt die Freelist mit fast einer Million Seiten neu."
+          },
+          "set": {
+            "log": {
+              "meter": 140,
+              "status": {
+                "simple": "riesige Liste",
+                "tech": "Freelist 7,8 MB"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "lc"
+          ],
+          "error": true,
+          "chain": 2,
+          "labels": {
+            "lc": {
+              "simple": "nach 2 s",
+              "tech": "2 s"
+            }
+          },
+          "text": {
+            "simple": "Jede Änderung dauert jetzt Sekunden statt einen Wimpernschlag. Die Vermittlung staut sich.",
+            "tech": "Write-Latenz steigt von 300 ms auf 2 s. Consul staut sich (Backpressure)."
+          },
+          "set": {
+            "consul": {
+              "meter": 150,
+              "status": {
+                "simple": "staut sich",
+                "tech": "p50 ≈ 2 s"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "vc"
+          ],
+          "error": true,
+          "chain": 3,
+          "text": {
+            "simple": "Der Schlüsselkasten bekommt keine Antwort mehr. Er und der Verteiler bleiben hängen.",
+            "tech": "Vault erreicht sein Storage-Backend nicht. Auch Nomad kann nicht mehr planen."
+          },
+          "set": {
+            "vault": {
+              "state": "dead",
+              "status": {
+                "simple": "keine Passwörter",
+                "tech": "sealed / Timeout"
+              },
+              "tone": "bad"
+            },
+            "nomad": {
+              "state": "dead",
+              "status": {
+                "simple": "steht still",
+                "tech": "keine Allocs"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ps",
+            "sc"
+          ],
+          "error": true,
+          "text": {
+            "simple": "Ein Spieler will ein neues Spiel starten, doch die Spiel-Dienste finden über die Vermittlung keinen Server mehr.",
+            "tech": "Neuer Join: Service Discovery liefert Timeouts, Dienste finden sich nicht."
+          },
+          "set": {
+            "consul": {
+              "state": "dead"
+            },
+            "services": {
+              "state": "dead",
+              "status": {
+                "simple": "finden nichts",
+                "tech": "Timeouts"
+              },
+              "tone": "bad"
+            }
+          },
+          "setBefore": {
+            "player": {
+              "say": {
+                "from": "user",
+                "text": {
+                  "simple": "Neues Spiel starten",
+                  "tech": "Join"
+                }
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "sp"
+          ],
+          "error": true,
+          "chain": 4,
+          "labels": {
+            "sp": {
+              "simple": "Fehler",
+              "tech": "Error"
+            }
+          },
+          "text": {
+            "simple": "Der Spieler kommt nicht ins Spiel. Roblox bleibt 73 Stunden offline.",
+            "tech": "Kein Join möglich. Vollständiger Ausfall vom 28. bis 31.10.2021."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "ai",
+                "text": {
+                  "simple": "Verbindung fehlgeschlagen",
+                  "tech": "Join failed"
+                },
+                "tone": "bad",
+                "note": {
+                  "simple": "73 Std. offline",
+                  "tech": "73 h Ausfall"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "kind": "fix",
+      "label": "Lösung",
+      "headline": {
+        "simple": "Lösung: Das Logbuch wird aufgeräumt und überwacht, die neue Funktion bleibt aus.",
+        "tech": "Fix: BoltDB kompaktiert (später bbolt), Streaming aus, Freelist-Monitoring."
+      },
+      "chain": [
+        {
+          "simple": "Mehr Server, Funktion bleibt aus",
+          "tech": "+50 % Nodes, Streaming aus"
+        },
+        {
+          "simple": "Logbuch ohne Ballast",
+          "tech": "BoltDB kompaktiert"
+        },
+        {
+          "simple": "Vermittlung bleibt schnell",
+          "tech": "Writes ≈ 300 ms"
+        },
+        {
+          "simple": "Schlüsselkasten antwortet",
+          "tech": "Vault + Nomad gesund"
+        },
+        {
+          "simple": "Spieler spielen",
+          "tech": "kein Ausfall"
+        }
+      ],
+      "mark": {
+        "nodes": {
+          "monitor": "neu",
+          "log": "geändert",
+          "consul": "geändert"
+        },
+        "edges": {
+          "ml": "neu"
+        }
+      },
+      "steps": [
+        {
+          "edges": [
+            "ps"
+          ],
+          "text": {
+            "simple": "Ein Spieler startet ein Spiel.",
+            "tech": "Der Client schickt einen Join-Request an das Backend."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "user",
+                "text": {
+                  "simple": "Spiel starten",
+                  "tech": "Join"
+                }
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "sc",
+            "cs"
+          ],
+          "text": {
+            "simple": "Die Spiel-Dienste fragen die Vermittlung, wo der passende Server steht, und bekommen sofort die Adresse.",
+            "tech": "Service Discovery über Consul liefert den Endpoint."
+          }
+        },
+        {
+          "edges": [
+            "sp"
+          ],
+          "text": {
+            "simple": "Das Spiel läuft. So geht es jeden Tag millionenfach.",
+            "tech": "Die Session steht. Normalbetrieb."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "ai",
+                "text": {
+                  "simple": "Willkommen im Spiel!",
+                  "tech": "Session aktiv"
+                }
+              }
+            }
+          }
+        },
+        {
+          "focus": [
+            "nomad",
+            "vault"
+          ],
+          "text": {
+            "simple": "Im Hintergrund arbeiten Verteiler und Schlüsselkasten ständig mit der Vermittlung zusammen.",
+            "tech": "Nomad und Vault nutzen Consul als Registry bzw. Storage-Backend."
+          },
+          "set": {
+            "nomad": {
+              "status": {
+                "simple": "läuft",
+                "tech": "plant Container"
+              }
+            },
+            "vault": {
+              "status": {
+                "simple": "läuft",
+                "tech": "unsealed"
+              }
+            }
+          }
+        },
+        {
+          "focus": "consul",
+          "chain": 0,
+          "tag": "geändert",
+          "text": {
+            "simple": "Das Team schließt 50 % mehr Server an. Die neue Funktion bleibt aus, bis sie unter Last getestet ist.",
+            "tech": "+50 % Nodes, aber Streaming bleibt aus, bis HashiCorp den Engpass behebt."
+          },
+          "set": {
+            "consul": {
+              "badge": {
+                "simple": "Funktion aus",
+                "tech": "Streaming aus"
+              },
+              "meter": 30,
+              "status": {
+                "simple": "mehr Anfragen",
+                "tech": "mehr Reads und Writes"
+              },
+              "tone": "strong"
+            }
+          }
+        },
+        {
+          "focus": [
+            "log",
+            "monitor"
+          ],
+          "chain": 1,
+          "tag": "geändert",
+          "text": {
+            "simple": "Das Logbuch wurde aufgeräumt: Leere Seiten sind weg, die Datei ist wieder klein.",
+            "tech": "BoltDB wurde kompaktiert, langfristig ersetzt durch bbolt."
+          },
+          "set": {
+            "log": {
+              "meter": 10,
+              "badge": {
+                "simple": "aufgeräumt",
+                "tech": "kompaktiert"
+              },
+              "status": {
+                "simple": "kein Ballast",
+                "tech": "0,5 GB Datei"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ml"
+          ],
+          "tag": "neu",
+          "text": {
+            "simple": "Neu: Eine Frühwarnung misst ständig, ob sich wieder Ballast sammelt.",
+            "tech": "Neue Alerts auf Dateigröße und Freelist, unabhängig von Consul."
+          },
+          "set": {
+            "monitor": {
+              "status": {
+                "simple": "alles in Ordnung",
+                "tech": "keine Alerts"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "nc",
+            "cl",
+            "lc"
+          ],
+          "chain": 2,
+          "tag": "test",
+          "text": {
+            "simple": "Härtetest: Der Verteiler meldet viele neue Programme. Das Logbuch schreibt alles sofort auf.",
+            "tech": "Lasttest: viele Registrierungen, Writes bleiben bei rund 300 ms."
+          },
+          "set": {
+            "consul": {
+              "meter": 35,
+              "status": {
+                "simple": "antwortet sofort",
+                "tech": "p50 ≈ 300 ms"
+              },
+              "tone": "ok"
+            },
+            "log": {
+              "meter": 15
+            }
+          }
+        },
+        {
+          "edges": [
+            "vc",
+            "cv"
+          ],
+          "chain": 3,
+          "text": {
+            "simple": "Der Schlüsselkasten fragt nach Passwörtern und bekommt sie sofort.",
+            "tech": "Vault liest Secrets aus dem Consul-KV ohne Verzögerung."
+          },
+          "set": {
+            "vault": {
+              "status": {
+                "simple": "läuft",
+                "tech": "unsealed"
+              },
+              "tone": "ok"
+            },
+            "nomad": {
+              "status": {
+                "simple": "läuft",
+                "tech": "plant Container"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ps",
+            "sc",
+            "cs",
+            "sp"
+          ],
+          "text": {
+            "simple": "Ein Spieler will ein neues Spiel starten, und die Spiel-Dienste finden über die Vermittlung sofort einen Server.",
+            "tech": "Neuer Join: Service Discovery antwortet sofort, die Session steht."
+          },
+          "set": {
+            "player": {
+              "say": {
+                "from": "ai",
+                "text": {
+                  "simple": "Willkommen im Spiel!",
+                  "tech": "Session aktiv"
+                }
+              }
+            }
+          },
+          "setBefore": {
+            "player": {
+              "say": {
+                "from": "user",
+                "text": {
+                  "simple": "Neues Spiel starten",
+                  "tech": "Join"
+                }
+              }
+            }
+          }
+        },
+        {
+          "focus": "player",
+          "chain": 4,
+          "text": {
+            "simple": "Ergebnis: Trotz mehr Servern spielen alle Spieler ohne Unterbrechung.",
+            "tech": "Ergebnis: kein Ausfall, Consul bleibt unter Last stabil."
+          },
+          "set": {
+            "player": {
+              "state": "good"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
