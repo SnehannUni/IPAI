@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1400px;margin:0 auto;padding:14px 20px 12px}
+.wrap{max-width:1560px;margin:0 auto;padding:10px 12px 10px}
 header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
 header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
 header p{margin:0;color:var(--muted);font-size:13px}
@@ -177,7 +177,7 @@ button.primary:hover{background:#27272a}
 .card .big{font-size:16px;font-weight:500;margin-top:2px;letter-spacing:-.01em}
 .card.err .big{color:#b91c1c}
 .main{display:block}
-@media (min-width:1000px){
+@media (min-width:1500px){
   .main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
   .main .card{margin-top:0;height:auto;min-height:150px;padding:12px 14px}
   .main .card .big,.main .card .detail{display:block;-webkit-line-clamp:unset}
@@ -593,14 +593,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') next();
   if (e.key === 'ArrowLeft') jump(pos - 1);
 });
+// Das Diagramm nutzt immer die volle Breite. Nach der Höhe wird nicht verkleinert: Eingebettet (z. B. im Chat)
+// ist die Fensterhöhe unbekannt oder wächst mit dem Inhalt – dann wäre das Diagramm unnötig klein.
 const fit = () => {
   const outer = $('outer');
-  const side = getComputedStyle($('main')).display === 'grid';
-  const below = (side ? 0 : $('card').offsetHeight) + document.querySelector('.bottom').offsetHeight + 30;
-  const top = outer.getBoundingClientRect().top + (window.scrollY || 0);
-  const byWidth = outer.clientWidth / W;
-  const byHeight = window.innerHeight > 320 ? (window.innerHeight - top - below) / H : Infinity;
-  const s = Math.max(.35, Math.min(1, byWidth, Math.max(byHeight, .65)));
+  const s = Math.max(.3, Math.min(1.15, outer.clientWidth / W));
   const left = Math.max(0, (outer.clientWidth - W * s) / 2);
   $('stage').style.transform = `translateX(${left}px) scale(${s})`;
   outer.style.height = H * s + 'px';
