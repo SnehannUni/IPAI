@@ -1,0 +1,709 @@
+{
+  "title": "Chat mit Claude über eine RabbitMQ-Warteschlange",
+  "subtitle": {
+    "simple": "Was passiert zwischen „Senden“ und der Antwort.",
+    "tech": "Request-Pfad über Queue, Worker und WebSocket."
+  },
+  "nodes": [
+    {
+      "id": "btn",
+      "type": "trigger",
+      "zone": "frontend",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Frage stellen",
+        "tech": "Chat-Input"
+      },
+      "sub": {
+        "simple": "Eingabefeld im Chat",
+        "tech": "UI-Event: submit"
+      },
+      "initial": {
+        "status": "„Was ist RabbitMQ?“"
+      }
+    },
+    {
+      "id": "result",
+      "type": "result",
+      "zone": "frontend",
+      "col": 0,
+      "row": 1,
+      "rows": 2,
+      "widget": "chat",
+      "label": {
+        "simple": "Antwort im Chat",
+        "tech": "Chat-UI"
+      },
+      "sub": {
+        "simple": "dein Chatfenster",
+        "tech": "Message-Liste"
+      }
+    },
+    {
+      "id": "api",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Empfang",
+        "tech": "REST-API"
+      },
+      "sub": {
+        "simple": "nimmt Fragen an",
+        "tech": "POST /messages"
+      }
+    },
+    {
+      "id": "qreq",
+      "type": "store",
+      "zone": "backend",
+      "col": 1,
+      "row": 0,
+      "label": {
+        "simple": "Warteliste: Fragen",
+        "tech": "RabbitMQ Queue"
+      },
+      "sub": {
+        "simple": "Fragen warten hier",
+        "tech": "chat.requests"
+      },
+      "initial": {
+        "status": "leer"
+      }
+    },
+    {
+      "id": "db",
+      "type": "store",
+      "zone": "backend",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Archiv",
+        "tech": "PostgreSQL"
+      },
+      "sub": {
+        "simple": "merkt sich den Chat",
+        "tech": "Tabelle messages"
+      },
+      "initial": {
+        "status": {
+          "simple": "0 Einträge",
+          "tech": "0 rows"
+        }
+      }
+    },
+    {
+      "id": "worker",
+      "type": "step",
+      "zone": "backend",
+      "col": 1,
+      "row": 1,
+      "label": {
+        "simple": "Bearbeiter",
+        "tech": "Worker"
+      },
+      "sub": {
+        "simple": "kümmert sich um Fragen",
+        "tech": "Consumer · LLM-Client"
+      },
+      "initial": {
+        "status": {
+          "simple": "bereit",
+          "tech": "idle"
+        }
+      }
+    },
+    {
+      "id": "gw",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 2,
+      "label": {
+        "simple": "Zusteller",
+        "tech": "WebSocket-Gateway"
+      },
+      "sub": {
+        "simple": "bringt Antworten zu dir",
+        "tech": "chat.responses → WebSocket"
+      },
+      "initial": {
+        "status": {
+          "simple": "mit dir verbunden",
+          "tech": "1 Client verbunden"
+        },
+        "tone": "ok"
+      }
+    },
+    {
+      "id": "anth",
+      "type": "external",
+      "zone": "external",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Claude",
+        "tech": "Anthropic API"
+      },
+      "sub": {
+        "simple": "KI von Anthropic",
+        "tech": "Messages API"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "btn",
+      "to": "api",
+      "verb": {
+        "simple": "gibt ab",
+        "tech": "POST"
+      }
+    },
+    {
+      "id": "ack",
+      "from": "api",
+      "to": "btn",
+      "verb": {
+        "simple": "bestätigt",
+        "tech": "202"
+      }
+    },
+    {
+      "id": "e2",
+      "from": "api",
+      "to": "db",
+      "verb": {
+        "simple": "notiert",
+        "tech": "INSERT"
+      }
+    },
+    {
+      "id": "e3",
+      "from": "api",
+      "to": "qreq",
+      "verb": {
+        "simple": "legt ab",
+        "tech": "publish"
+      },
+      "async": true
+    },
+    {
+      "id": "e4",
+      "from": "qreq",
+      "to": "worker",
+      "verb": {
+        "simple": "nimmt",
+        "tech": "consume"
+      },
+      "async": true
+    },
+    {
+      "id": "er",
+      "from": "worker",
+      "to": "qreq",
+      "verb": {
+        "simple": "legt zurück",
+        "tech": "requeue"
+      },
+      "async": true,
+      "views": [
+        "fehler"
+      ]
+    },
+    {
+      "id": "e5",
+      "from": "worker",
+      "to": "anth",
+      "verb": {
+        "simple": "fragt",
+        "tech": "request"
+      }
+    },
+    {
+      "id": "e6",
+      "from": "anth",
+      "to": "worker",
+      "verb": {
+        "simple": "antwortet",
+        "tech": "response"
+      }
+    },
+    {
+      "id": "e7",
+      "from": "worker",
+      "to": "db",
+      "verb": {
+        "simple": "notiert",
+        "tech": "INSERT"
+      }
+    },
+    {
+      "id": "e8",
+      "from": "worker",
+      "to": "gw",
+      "verb": {
+        "simple": "gibt ab",
+        "tech": "publish"
+      },
+      "async": true
+    },
+    {
+      "id": "e10",
+      "from": "gw",
+      "to": "result",
+      "verb": {
+        "simple": "bringt",
+        "tech": "push"
+      },
+      "async": true
+    }
+  ],
+  "views": [
+    {
+      "id": "normal",
+      "label": "Normal",
+      "steps": [
+        {
+          "edges": [
+            "e1"
+          ],
+          "packet": "„Was ist RabbitMQ?“",
+          "text": {
+            "simple": "Du tippst deine Frage ein und drückst auf Senden. Die Frage geht an den Empfang.",
+            "tech": "Das submit-Event löst POST /messages an die REST-API aus."
+          },
+          "set": {
+            "btn": {
+              "status": {
+                "simple": "gesendet",
+                "tech": "sent"
+              }
+            },
+            "result": {
+              "say": {
+                "from": "user",
+                "text": "Was ist RabbitMQ?"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e2"
+          ],
+          "text": {
+            "simple": "Der Empfang schreibt die Frage ins Archiv. So geht der Chat nicht verloren.",
+            "tech": "Die API speichert die Nachricht per INSERT in PostgreSQL."
+          },
+          "set": {
+            "db": {
+              "status": {
+                "simple": "1 Eintrag",
+                "tech": "1 row"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e3"
+          ],
+          "packet": {
+            "simple": "Auftrag",
+            "tech": "job #42"
+          },
+          "text": {
+            "simple": "Der Empfang wartet nicht auf Claude. Er legt die Frage auf die Warteliste und ist sofort frei.",
+            "tech": "Die API publiziert einen Job in chat.requests und blockiert nicht."
+          },
+          "set": {
+            "qreq": {
+              "slots": 1,
+              "status": {
+                "simple": "1 wartend",
+                "tech": "1 Message"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ack"
+          ],
+          "packet": {
+            "simple": "angekommen",
+            "tech": "202 Accepted"
+          },
+          "text": {
+            "simple": "Du bekommst sofort Bescheid, dass deine Frage angekommen ist.",
+            "tech": "Die API antwortet sofort mit 202 Accepted."
+          },
+          "set": {
+            "btn": {
+              "status": {
+                "simple": "Claude schreibt …",
+                "tech": "typing …"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e4"
+          ],
+          "text": {
+            "simple": "Ein Bearbeiter nimmt sich die Frage von der Warteliste.",
+            "tech": "Ein Worker konsumiert den Job aus chat.requests."
+          },
+          "set": {
+            "qreq": {
+              "slots": 0,
+              "status": "leer"
+            },
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              },
+              "tone": "strong"
+            }
+          }
+        },
+        {
+          "edges": [
+            "e5"
+          ],
+          "packet": {
+            "simple": "Frage + bisheriger Chat",
+            "tech": "POST /v1/messages"
+          },
+          "text": {
+            "simple": "Der Bearbeiter gibt die Frage mit dem bisherigen Chat an Claude und wartet.",
+            "tech": "Der Worker ruft die Messages API mit dem Verlauf auf."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "wartet auf Claude",
+                "tech": "await response"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e6"
+          ],
+          "text": {
+            "simple": "Claude schickt die fertige Antwort zurück.",
+            "tech": "Die API liefert 200 OK mit dem Antworttext."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e7"
+          ],
+          "text": {
+            "simple": "Auch die Antwort kommt ins Archiv.",
+            "tech": "Der Worker speichert die Assistant-Nachricht."
+          },
+          "set": {
+            "db": {
+              "status": {
+                "simple": "2 Einträge",
+                "tech": "2 rows"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e8"
+          ],
+          "text": {
+            "simple": "Der Bearbeiter gibt die Antwort an den Zusteller und ist wieder frei.",
+            "tech": "Der Worker publiziert das Ergebnis in chat.responses und ackt den Job."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "bereit",
+                "tech": "idle"
+              },
+              "tone": null
+            }
+          }
+        },
+        {
+          "edges": [
+            "e10"
+          ],
+          "text": {
+            "simple": "Über die offene Leitung bringt der Zusteller die Antwort zu dir.",
+            "tech": "Push über die bestehende WebSocket-Verbindung."
+          },
+          "set": {
+            "result": {
+              "say": {
+                "from": "ai",
+                "text": "RabbitMQ ist ein Message-Broker: Er verteilt Nachrichten über Warteschlangen."
+              }
+            },
+            "btn": {
+              "status": {
+                "simple": "fertig",
+                "tech": "done"
+              }
+            }
+          }
+        },
+        {
+          "focus": "result",
+          "text": {
+            "simple": "Die Antwort steht in deinem Chat.",
+            "tech": "Das Frontend rendert die Assistant-Nachricht."
+          },
+          "set": {
+            "result": {
+              "state": "good"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fehler",
+      "label": "Fehlerfall",
+      "headline": {
+        "simple": "Fehlerfall: Claude ist überlastet – die Frage geht trotzdem nicht verloren.",
+        "tech": "Fehlerfall: 529 Overloaded, Retry über die Queue."
+      },
+      "steps": [
+        {
+          "edges": [
+            "e1"
+          ],
+          "packet": "„Was ist RabbitMQ?“",
+          "text": {
+            "simple": "Du tippst deine Frage ein und drückst auf Senden.",
+            "tech": "POST /messages an die REST-API."
+          },
+          "set": {
+            "result": {
+              "say": {
+                "from": "user",
+                "text": "Was ist RabbitMQ?"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e2",
+            "e3"
+          ],
+          "packet": {
+            "simple": "Auftrag",
+            "tech": "job #42"
+          },
+          "text": {
+            "simple": "Der Empfang notiert die Frage und legt sie auf die Warteliste.",
+            "tech": "INSERT in PostgreSQL, dann publish in chat.requests."
+          },
+          "set": {
+            "qreq": {
+              "slots": 1,
+              "status": {
+                "simple": "1 wartend",
+                "tech": "1 Message"
+              }
+            },
+            "db": {
+              "status": {
+                "simple": "1 Eintrag",
+                "tech": "1 row"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e4"
+          ],
+          "text": {
+            "simple": "Ein Bearbeiter nimmt sich die Frage.",
+            "tech": "Ein Worker konsumiert den Job."
+          },
+          "set": {
+            "qreq": {
+              "slots": 0,
+              "status": "leer"
+            },
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              },
+              "tone": "strong"
+            }
+          }
+        },
+        {
+          "edges": [
+            "e5"
+          ],
+          "text": {
+            "simple": "Er fragt Claude.",
+            "tech": "LLM-Request an die Messages API."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "wartet auf Claude",
+                "tech": "await response"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e6"
+          ],
+          "error": true,
+          "packet": {
+            "simple": "überlastet",
+            "tech": "529 Overloaded"
+          },
+          "labels": {
+            "e6": {
+              "simple": "überlastet",
+              "tech": "529"
+            }
+          },
+          "text": {
+            "simple": "Claude ist gerade überlastet und sagt ab.",
+            "tech": "Die API antwortet mit 529 overloaded_error."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "Fehler",
+                "tech": "Fehler 529"
+              },
+              "tone": "bad"
+            }
+          }
+        },
+        {
+          "edges": [
+            "er"
+          ],
+          "error": true,
+          "text": {
+            "simple": "Der Bearbeiter legt die Frage zurück auf die Warteliste, um es gleich nochmal zu versuchen.",
+            "tech": "Nack mit Requeue über eine Delay-Queue."
+          },
+          "set": {
+            "qreq": {
+              "slots": 1,
+              "status": {
+                "simple": "1 wartend",
+                "tech": "1 Message"
+              }
+            },
+            "worker": {
+              "status": {
+                "simple": "bereit",
+                "tech": "idle"
+              },
+              "tone": null
+            }
+          }
+        },
+        {
+          "edges": [
+            "e4",
+            "e5",
+            "e6"
+          ],
+          "labels": {
+            "e6": {
+              "simple": "antwortet",
+              "tech": "response"
+            }
+          },
+          "text": {
+            "simple": "Nach einer kurzen Pause klappt der zweite Versuch.",
+            "tech": "Retry nach Backoff: 200 OK."
+          },
+          "set": {
+            "qreq": {
+              "slots": 0,
+              "status": "leer"
+            },
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              },
+              "tone": "strong",
+              "badge": {
+                "simple": "Versuch 2",
+                "tech": "retry=2"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "e8",
+            "e10"
+          ],
+          "text": {
+            "simple": "Der Zusteller bringt die Antwort zu dir.",
+            "tech": "Publish und Push wie im Normalfall."
+          },
+          "set": {
+            "result": {
+              "say": {
+                "from": "ai",
+                "text": "RabbitMQ ist ein Message-Broker: Er verteilt Nachrichten über Warteschlangen."
+              }
+            },
+            "worker": {
+              "status": {
+                "simple": "bereit",
+                "tech": "idle"
+              },
+              "tone": null
+            }
+          }
+        },
+        {
+          "focus": "result",
+          "text": {
+            "simple": "Die Antwort steht in deinem Chat – nur etwas später.",
+            "tech": "Ergebnis zugestellt, kein Datenverlust."
+          },
+          "set": {
+            "result": {
+              "state": "good"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

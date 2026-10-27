@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ablauf</title>
+<style>
+:root{
+  --bg:#ffffff; --soft:#fafafa; --line:#e4e4e7; --line2:#d4d4d8; --text:#18181b; --muted:#71717a; --faint:#a1a1aa;
+  --trigger:#d97706; --step:#2563eb; --store:#059669; --external:#7c3aed; --result:#db2777;
+  --error:#dc2626; --ok:#059669; --mod:#2563eb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:32px 20px 40px}
+header h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em}
+header p{margin:4px 0 0;color:var(--muted)}
+header p:empty{display:none}
+
+.controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:20px 0 16px}
+button{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{background:var(--soft);border-color:var(--line2)}
+button.primary{background:var(--text);border-color:var(--text);color:#fff;min-width:96px}
+button.primary:hover{background:#27272a}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 12px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--soft);color:var(--text);font-weight:500}
+.seg.big{margin-right:10px}
+.seg.big button{padding:7px 18px;font-size:14px}
+.seg.big button.on.bug{color:var(--error)}
+.seg.big button.on.fix{color:var(--ok)}
+.right{margin-left:auto}
+[hidden]{display:none!important}
+
+.banner{border-radius:10px;padding:14px 18px;margin-bottom:14px;background:var(--soft)}
+.banner .head{font-size:15px}
+.banner .head b{font-weight:600}
+.banner.bug{background:#fef2f2}.banner.bug .head b{color:#b91c1c}
+.banner.fix{background:#ecfdf5}.banner.fix .head b{color:#047857}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.chain:empty{display:none}
+.chain .c{font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid transparent;background:#fff;color:var(--faint);transition:all .3s}
+.chain .arr{color:var(--faint);font-size:12px}
+.chain .c.on{color:var(--text);border-color:var(--line2)}
+.chain .c.cur{background:var(--text);border-color:var(--text);color:#fff}
+.banner.bug .chain .c.on{color:#991b1b;border-color:#fca5a5}
+.banner.bug .chain .c.cur{background:var(--error);border-color:var(--error);color:#fff}
+.banner.fix .chain .c.on{color:#065f46;border-color:#6ee7b7}
+.banner.fix .chain .c.cur{background:var(--ok);border-color:var(--ok);color:#fff}
+
+.stage-outer{position:relative;width:100%}
+.stage{position:absolute;top:0;left:0;width:1200px;transform-origin:0 0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage svg{position:absolute;inset:0;overflow:visible}
+.stage svg.overlay{pointer-events:none;z-index:3}
+.zone-cap{font-size:11px;font-weight:600;letter-spacing:.08em;fill:var(--text)}
+.zone-div{stroke:var(--line);stroke-width:1}
+
+.edge{fill:none;stroke:var(--line2);stroke-width:1.5;transition:stroke .3s}
+.edge.async{stroke-dasharray:5 5}
+.edge.done{stroke:var(--faint)}
+.edge.active{stroke:var(--text)}
+.edge.async.active{animation:march .8s linear infinite}
+.edge.neu{stroke:#a7f3d0}.edge.neu.done{stroke:#6ee7b7}.edge.neu.active{stroke:var(--ok)}
+.edge.mod{stroke:#bfdbfe}.edge.mod.done{stroke:#93c5fd}.edge.mod.active{stroke:var(--mod)}
+.edge.err.done{stroke:#fca5a5}.edge.err.active{stroke:var(--error)}
+@keyframes march{to{stroke-dashoffset:-10}}
+.elab rect{fill:#fff}
+.elab text{fill:var(--faint);font-size:11.5px;transition:fill .3s}
+.elab.done text{fill:var(--muted)}
+.elab.active text{fill:var(--text);font-weight:600}
+.elab.neu text{fill:var(--ok)}.elab.mod text{fill:var(--mod)}
+.elab.err.active text{fill:var(--error)}
+.pk rect{fill:#fff;stroke-width:1.2}
+.pk text{font-size:11.5px;font-weight:600}
+
+.node{position:absolute;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;line-height:1.3;transition:border-color .3s,box-shadow .3s,background .3s,opacity .3s}
+.node>*{flex-shrink:0}
+.node.active{border-color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06)}
+.node.dead{border-color:#fca5a5;background:#fef2f2}
+.node.off{background:var(--soft)}
+.node.good{border-color:var(--ok);box-shadow:0 0 0 3px #ecfdf5}
+.node.neu{border:1.5px dashed var(--ok)}
+.node.mod{border:1.5px dashed var(--mod)}
+.node.neu.active,.node.mod.active{border-style:solid}
+.node .type{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap}
+.node .type::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.node .label{font-weight:600;font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .sub{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .w{margin-top:6px}
+.node .line{margin-top:auto;padding-top:4px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .badge{position:absolute;top:9px;right:10px;font-size:10.5px;font-weight:600;color:var(--muted);background:#f4f4f5;border-radius:4px;padding:0 6px}
+.node .badge:empty{display:none}
+.tone-bad{color:var(--error);font-weight:600}
+.tone-ok{color:var(--ok);font-weight:600}
+.tone-strong{color:var(--text);font-weight:600}
+.pill{font-size:10.5px;font-weight:600;padding:0 6px;border-radius:4px}
+.pill.neu{background:#ecfdf5;color:#047857}.pill.mod{background:#eff6ff;color:#1d4ed8}
+.pill.test{background:#f4f4f5;color:#52525b}.pill.fehler{background:#fef2f2;color:#b91c1c}
+.slot{display:inline-block;width:14px;height:10px;border-radius:2px;background:var(--text);margin-right:4px;vertical-align:-1px;animation:pop .3s ease-out}
+.slot:last-of-type{margin-right:8px}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+.tasks{display:grid;gap:1px}
+.task{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden}
+.task i{font-style:normal;flex:0 0 14px;height:14px;border-radius:50%;border:1.5px solid var(--line2);display:grid;place-items:center;font-size:9px;line-height:1}
+.task.done{color:var(--text)}.task.done i{background:var(--text);border-color:var(--text);color:#fff}
+.task.fail{color:var(--error);font-weight:600}.task.fail i{background:var(--error);border-color:var(--error);color:#fff}
+.task.ok{color:var(--ok);font-weight:600}.task.ok i{background:var(--ok);border-color:var(--ok);color:#fff}
+
+.meter{position:relative;height:8px;border-radius:4px;background:#f4f4f5;margin:4px 0 2px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--text);transition:width .6s ease,background .3s}
+.meter.hi i{background:var(--trigger)}
+.meter.over i{background:var(--error)}
+.meter b{position:absolute;left:62.5%;top:-4px;bottom:-4px;width:2px;background:var(--text)}
+
+.node.chat .w{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden}
+.bub{max-width:88%;padding:6px 10px;border-radius:8px;font-size:12.5px;line-height:1.4;color:var(--text);animation:pop .25s ease-out}
+.bub.me{align-self:flex-end;background:#f4f4f5}
+.bub.ai{align-self:flex-start;border:1px solid var(--line)}
+.bub.bad{border-color:var(--error);background:#fef2f2}
+.bub.ok{border-color:var(--ok);background:#ecfdf5}
+.bub small{display:block;font-size:10.5px;font-weight:600;margin-top:2px}
+.bub.bad small{color:var(--error)}.bub.ok small{color:var(--ok)}
+
+.card{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:16px 20px;min-height:92px}
+.card .no{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.card .big{font-size:18px;font-weight:500;margin-top:4px;letter-spacing:-.01em}
+.card.err .big{color:#b91c1c}
+.timeline{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:14px}
+.tl{width:26px;height:26px;border-radius:50%;padding:0;font-size:11.5px;color:var(--faint);display:grid;place-items:center}
+.tl.done{color:var(--text)}
+.tl.cur{background:var(--text);border-color:var(--text);color:#fff}
+.tl.err{border-color:#fecaca}
+.tl.err.cur{background:var(--error);border-color:var(--error)}
+.tl-line{flex:0 0 8px;height:1px;background:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;color:var(--muted);font-size:12.5px;margin-top:14px}
+.legend .it{display:flex;gap:7px;align-items:center}
+.legend .sw{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.legend .sep{width:1px;height:14px;background:var(--line)}
+.legend svg{display:block}
+.fatal{border:1px solid #fca5a5;background:#fef2f2;color:#991b1b;border-radius:10px;padding:16px 20px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1 id="title"></h1><p id="subtitle"></p></header>
+  <div class="controls">
+    <div class="seg big" id="views"></div>
+    <button class="primary" id="play">Abspielen</button>
+    <button id="prev" title="Schritt zurück (←)">Zurück</button>
+    <button id="next" title="Schritt weiter (→)">Weiter</button>
+    <div class="seg right" id="mode"><button data-m="0" class="on">Einfach</button><button data-m="1">Technisch</button></div>
+  </div>
+  <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div></div>
+  <div class="stage-outer" id="outer">
+    <div class="stage" id="stage">
+      <svg id="svg"><defs id="defs"></defs><g id="zones"></g><g id="edges"></g><g id="labels"></g></svg>
+      <div id="nodes"></div>
+      <svg class="overlay" id="overlay"><g id="packets"></g></svg>
+    </div>
+  </div>
+  <div class="card" id="card"></div>
+  <div class="timeline" id="timeline"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<script type="application/json" id="flow-spec">__FLOW_SPEC__</script>
+<script>
+(() => {
+'use strict';
+
+// ---------- Layout (aus src/layout.mjs, beim Build eingesetzt) ----------
+/*__LAYOUT__*/
+
+// ---------- Grundwerte ----------
+const TYPES = {
+  trigger:  {name:'Auslöser',       c:'var(--trigger)'},
+  step:     {name:'Schritt',        c:'var(--step)'},
+  store:    {name:'Speicher',       c:'var(--store)'},
+  external: {name:'Fremder Dienst', c:'var(--external)'},
+  result:   {name:'Ergebnis',       c:'var(--result)'},
+};
+const MARKERS = {idle:'#d4d4d8', done:'#a1a1aa', active:'#18181b', err:'#dc2626', errdim:'#fca5a5',
+                 neu:'#059669', neudim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
+const TAGS = {neu:['neu','neu'], 'geändert':['mod','geändert'], test:['test','Test'], fehler:['fehler','Fehler']};
+const TASK_MARK = {todo:'', done:'✓', fail:'✕', ok:'✓'};
+
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const svgEl = (tag, attrs, parent) => {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+// Text ist entweder ein String oder {simple, tech}
+let mode = 0;
+const tx = v => v == null ? '' : typeof v === 'string' ? v : (mode ? (v.tech ?? v.simple) : (v.simple ?? v.tech)) ?? '';
+
+let spec;
+try { spec = JSON.parse($('flow-spec').textContent); }
+catch (err) { document.querySelector('.wrap').innerHTML = `<div class="fatal">Flow-Spec konnte nicht gelesen werden:\n${esc(err.message)}</div>`; return; }
+
+const NODES = Object.fromEntries(spec.nodes.map(n => [n.id, n]));
+const EDGES = Object.fromEntries(spec.edges.map(e => [e.id, e]));
+const hasTech = JSON.stringify(spec).includes('"tech"');
+
+// ---------- Layout ----------
+const L = computeLayout(spec);
+const {W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L, ZONES = L.zones;
+
+// ---------- Aufbau der Bühne ----------
+$('stage').style.height = H + 'px';
+for (const s of [$('svg'), $('overlay')]) { s.setAttribute('width', W); s.setAttribute('height', H); s.setAttribute('viewBox', `0 0 ${W} ${H}`); }
+for (const [id, c] of Object.entries(MARKERS)) {
+  const m = svgEl('marker', {id:'m-' + id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse'}, $('defs'));
+  svgEl('path', {d:'M0,1 L9,5 L0,9 z', fill:c}, m);
+}
+ZONES.forEach((z, i) => {
+  const {x, w} = ZX[z.id];
+  if (ZONES.length > 1 && (i === 0 || i === ZONES.length - 1)) svgEl('rect', {x, y:0, width:w, height:H, fill:'#fafafa'}, $('zones'));
+  if (i) svgEl('line', {class:'zone-div', x1:x, y1:0, x2:x, y2:H}, $('zones'));
+  svgEl('text', {class:'zone-cap', x:x + 24, y:32, 'data-z':i}, $('zones'));
+});
+
+const nodeEls = {}, edgeEls = {}, labelEls = {};
+for (const n of spec.nodes) {
+  const b = BOX[n.id], t = TYPES[n.type] || TYPES.step, d = document.createElement('div');
+  d.className = 'node' + (n.widget === 'chat' ? ' chat' : '');
+  d.style.cssText = `--c:${t.c};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
+  d.innerHTML = `<div class="type"><span class="tn"></span></div><div class="label"></div><div class="sub"></div>`
+    + `<div class="w">${n.widget === 'meter' ? '<div class="meter"><i></i><b></b></div>' : ''}</div><div class="line"></div><span class="badge"></span>`;
+  $('nodes').appendChild(d); nodeEls[n.id] = d;
+}
+for (const e of spec.edges) {
+  edgeEls[e.id] = svgEl('path', {d:ROUTES[e.id].d, class:'edge' + (e.async ? ' async' : '')}, $('edges'));
+  labelEls[e.id] = svgEl('g', {class:'elab'}, $('labels'));
+}
+
+// ---------- Zustand ----------
+let view, steps, mark, pos = 0, activeIdx = -1, playing = false, run = 0, state;
+const blank = () => ({status:null, tone:null, badge:null, state:null, meter:null, slots:0, checks:{}, chat:[]});
+function apply(st, patch){
+  for (const [id, p] of Object.entries(patch || {})) {
+    const s = st[id] || (st[id] = blank());
+    for (const k of ['status', 'tone', 'badge', 'state', 'meter', 'slots']) if (k in p) s[k] = p[k];
+    if (p.check === 'reset') s.checks = {};
+    else if (p.check) Object.assign(s.checks, p.check);
+    if (p.clearChat) s.chat = [];
+    if (p.say) [].concat(p.say).forEach(m => s.chat.push(m));
+  }
+}
+function stateAt(n, withBeforeOf){
+  const st = {};
+  spec.nodes.forEach(nd => { st[nd.id] = blank(); apply(st, {[nd.id]: nd.initial || {}}); });
+  for (let j = 0; j < n; j++) { apply(st, steps[j].setBefore); apply(st, steps[j].set); }
+  if (withBeforeOf != null) apply(st, steps[withBeforeOf].setBefore);
+  return st;
+}
+const visible = (item) => !item.views || item.views.includes(view.id);
+const edgeVisible = e => visible(e) && visible(NODES[e.from]) && visible(NODES[e.to]);
+
+// ---------- Darstellung ----------
+function renderTexts(){
+  $('title').textContent = tx(spec.title);
+  $('subtitle').textContent = tx(view.subtitle ?? spec.subtitle);
+  document.title = tx(spec.title) || 'Ablauf';
+  document.querySelectorAll('[data-z]').forEach(t => t.textContent = tx(ZONES[+t.dataset.z].label));
+  for (const n of spec.nodes) {
+    const el = nodeEls[n.id], m = mark.nodes[n.id];
+    el.querySelector('.tn').textContent = (TYPES[n.type] || TYPES.step).name;
+    el.querySelector('.label').textContent = tx(n.label);
+    el.querySelector('.sub').textContent = tx(n.sub);
+    const old = el.querySelector('.type .pill'); if (old) old.remove();
+    if (m) el.querySelector('.type').insertAdjacentHTML('beforeend', `<span class="pill ${TAGS[m][0]}">${TAGS[m][1]}</span>`);
+  }
+  const head = tx(view.headline), i = head.indexOf(':');
+  $('head').innerHTML = i > 0 ? `<b>${esc(head.slice(0, i + 1))}</b>${esc(head.slice(i + 1))}` : esc(head);
+  $('chain').innerHTML = (view.chain || []).map((c, k) => (k ? '<span class="arr">→</span>' : '') + `<span class="c" data-i="${k}">${esc(tx(c))}</span>`).join('');
+  $('banner').hidden = !head && !(view.chain || []).length;
+  $('banner').className = 'banner ' + (view.kind || '');
+  $('timeline').innerHTML = '';
+  renderLegend();
+}
+
+function renderLegend(){
+  const used = new Set(spec.nodes.filter(visible).map(n => n.type));
+  let h = Object.entries(TYPES).filter(([k]) => used.has(k)).map(([, t]) => `<div class="it"><span class="sw" style="--c:${t.c}"></span>${t.name}</div>`).join('');
+  const line = (dash, c, label) => `<div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="${c}" stroke-width="1.5"${dash ? ' stroke-dasharray="5 5"' : ''}/></svg>${label}</div>`;
+  h += '<span class="sep"></span>';
+  const vis = spec.edges.filter(edgeVisible);
+  if (vis.some(e => !e.async)) h += line(false, '#71717a', tx({simple:'wartet auf Antwort', tech:'synchron'}));
+  if (vis.some(e => e.async)) h += line(true, '#71717a', tx({simple:'läuft nebenher', tech:'asynchron'}));
+  if (steps.some(s => s.error)) h += line(false, '#dc2626', 'Fehler');
+  if (Object.values(mark.edges).includes('neu') || Object.values(mark.nodes).includes('neu')) h += line(false, '#059669', 'neu');
+  if (Object.values(mark.edges).includes('geändert') || Object.values(mark.nodes).includes('geändert')) h += line(false, '#2563eb', 'geändert');
+  $('legend').innerHTML = h;
+}
+
+const lastHTML = {};
+function nodeWidget(n, s){
+  if (n.widget === 'chat') return s.chat.map(m =>
+    `<div class="bub ${m.from === 'user' ? 'me' : 'ai'} ${m.tone || ''}">${esc(tx(m.text))}${m.note ? `<small>${esc(tx(m.note))}</small>` : ''}</div>`).join('');
+  if (n.widget === 'checklist') return '<div class="tasks">' + (n.items || []).map((it, i) => {
+    const c = s.checks[i] || 'todo';
+    return `<div class="task ${c}"><i>${TASK_MARK[c] || ''}</i>${esc(tx(it))}</div>`;
+  }).join('') + '</div>';
+  return null;
+}
+function nodeLine(n, s){
+  let h = s.slots ? '<span class="slot"></span>'.repeat(Math.min(s.slots, 5)) : '';
+  if (n.widget === 'meter' && s.meter != null) h += `${esc(tx(n.meterLabel) || 'Auslastung')}: ${s.meter} %` + (s.status ? ' · ' : '');
+  if (s.status) h += `<span class="tone-${s.tone || ''}">${esc(tx(s.status))}</span>`;
+  return h;
+}
+
+function render(){
+  const cur = steps[activeIdx];
+  const actE = new Set(cur && cur.edges ? cur.edges : []);
+  const actN = new Set(); actE.forEach(id => { actN.add(EDGES[id].from); actN.add(EDGES[id].to); });
+  if (cur && cur.focus) [].concat(cur.focus).forEach(id => actN.add(id));
+
+  for (const n of spec.nodes) {
+    const el = nodeEls[n.id], s = state[n.id], m = mark.nodes[n.id];
+    el.hidden = !visible(n);
+    el.className = 'node' + (n.widget === 'chat' ? ' chat' : '') + (actN.has(n.id) ? ' active' : '')
+      + (s.state ? ' ' + s.state : '') + (m ? ' ' + TAGS[m][0] : '');
+    const wHtml = nodeWidget(n, s), lHtml = nodeLine(n, s), bHtml = esc(tx(s.badge));
+    if (wHtml != null && lastHTML[n.id + 'w'] !== wHtml) { el.querySelector('.w').innerHTML = wHtml; lastHTML[n.id + 'w'] = wHtml; }
+    if (lastHTML[n.id + 'l'] !== lHtml) { el.querySelector('.line').innerHTML = lHtml; lastHTML[n.id + 'l'] = lHtml; }
+    el.querySelector('.badge').innerHTML = bHtml;
+    if (n.widget === 'meter') {
+      const v = s.meter || 0, bar = el.querySelector('.meter');
+      bar.className = 'meter' + (v > 100 ? ' over' : v > 80 ? ' hi' : '');
+      bar.querySelector('i').style.width = Math.min(v, 160) / 1.6 + '%';
+    }
+  }
+
+  const reached = steps.slice(0, Math.max(pos, activeIdx + 1));
+  const done = new Set(), errDone = new Set();
+  steps.slice(0, pos).forEach(s => (s.edges || []).forEach(id => { done.add(id); if (s.error) errDone.add(id); }));
+  for (const e of spec.edges) {
+    const p = edgeEls[e.id], l = labelEls[e.id], vis = edgeVisible(e);
+    p.style.display = l.style.display = vis ? '' : 'none';
+    if (!vis) continue;
+    const isA = actE.has(e.id), isD = done.has(e.id) && !isA, err = isA ? !!cur.error : errDone.has(e.id);
+    const mk = mark.edges[e.id], mc = mk ? TAGS[mk][0] : null;
+    for (const [k, v] of [['active', isA], ['done', isD], ['err', err], ['neu', mc === 'neu'], ['mod', mc === 'mod']]) { p.classList.toggle(k, v); l.classList.toggle(k, v); }
+    const marker = err ? (isA ? 'err' : 'errdim') : mc ? (isA ? mc : mc + 'dim') : isA ? 'active' : isD ? 'done' : 'idle';
+    p.setAttribute('marker-end', `url(#m-${marker})`);
+    // Pfeiltext: der zuletzt gesetzte Schritt-Text gilt weiter, sonst der Standard
+    const over = reached.reduce((v, s) => (s.labels && s.labels[e.id]) || v, null);
+    const verb = tx(over || e.verb), r = ROUTES[e.id], lr = labelRect(r, verb);
+    l.innerHTML = verb ? `<rect x="${lr.x}" y="${lr.y}" width="${lr.w}" height="${lr.h}" rx="3"/><text x="${lr.x + lr.w / 2}" y="${r.lab[1]}" text-anchor="middle">${esc(verb)}</text>` : '';
+  }
+
+  const reachedChain = new Set(reached.map(s => s.chain).filter(v => v != null));
+  document.querySelectorAll('#chain .c').forEach(c => {
+    const i = +c.dataset.i;
+    c.classList.toggle('on', reachedChain.has(i)); c.classList.toggle('cur', !!cur && cur.chain === i);
+  });
+
+  const card = $('card');
+  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} Schritte</div><div class="big">${esc(tx(view.intro) || 'Auf „Abspielen“ klicken.')}</div>`; }
+  else {
+    const t = cur.tag && TAGS[cur.tag] ? `<span class="pill ${TAGS[cur.tag][0]}">${TAGS[cur.tag][1]}</span>` : '';
+    card.className = 'card' + (cur.error ? ' err' : '');
+    card.innerHTML = `<div class="no">Schritt ${activeIdx + 1} von ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>`;
+  }
+
+  const tl = $('timeline');
+  if (tl.childElementCount !== steps.length * 2 - 1) {
+    tl.innerHTML = '';
+    steps.forEach((s, i) => {
+      if (i) tl.insertAdjacentHTML('beforeend', '<span class="tl-line"></span>');
+      const b = document.createElement('button'); b.className = 'tl' + (s.error ? ' err' : '');
+      b.textContent = i + 1; b.title = tx(s.text); b.onclick = () => jump(i + 1); tl.appendChild(b);
+    });
+  }
+  [...tl.querySelectorAll('.tl')].forEach((b, i) => { b.classList.toggle('done', i < pos); b.classList.toggle('cur', i === activeIdx); });
+  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Nochmal' : 'Abspielen');
+}
+
+// ---------- Animation ----------
+const wait = (ms, id) => new Promise(r => setTimeout(() => r(id === run), ms));
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+function animatePacket(path, color, label, id){
+  return new Promise(resolve => {
+    const len = path.getTotalLength(), dur = 700 + len * 2.4;
+    const g = svgEl('g', {}, $('packets'));
+    svgEl('circle', {r:5, fill:color}, g);
+    let lab = null, w = 0;
+    if (label) {
+      w = label.length * 6.4 + 14;
+      lab = svgEl('g', {class:'pk'}, g);
+      svgEl('rect', {x:-w / 2, y:-10, width:w, height:20, rx:5, stroke:color}, lab);
+      svgEl('text', {y:4, 'text-anchor':'middle', fill:color}, lab).textContent = label;
+    }
+    const t0 = performance.now();
+    (function tick(now){
+      if (id !== run) { g.remove(); return resolve(false); }
+      const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength(ease(k) * len);
+      g.setAttribute('transform', `translate(${pt.x},${pt.y})`);
+      if (lab) {   // Beschriftung bleibt innerhalb der Bühne
+        const dx = Math.max(8 - (pt.x - w / 2), 0) + Math.min(W - 8 - (pt.x + w / 2), 0);
+        lab.setAttribute('transform', `translate(${dx},-20)`);
+      }
+      if (k < 1) requestAnimationFrame(tick); else { g.remove(); resolve(true); }
+    })(t0);
+  });
+}
+function packetLabel(s, edgeId){
+  if (!s.packet) return null;
+  if (typeof s.packet === 'string' || s.packet.simple || s.packet.tech) return tx(s.packet);
+  return s.packet[edgeId] ? tx(s.packet[edgeId]) : null;
+}
+
+async function runStep(i, id){
+  const s = steps[i];
+  activeIdx = i; state = stateAt(i, i); render();
+  if (!await wait(350, id)) return false;
+  for (const e of s.edges || []) {
+    const mk = mark.edges[e];
+    const color = s.error ? MARKERS.err : mk ? MARKERS[TAGS[mk][0]] : MARKERS.active;
+    if (!await animatePacket(edgeEls[e], color, packetLabel(s, e), id)) return false;
+  }
+  if (!(s.edges || []).length && !await wait(500, id)) return false;
+  state = stateAt(i + 1); render();
+  return true;
+}
+function jump(n){
+  run++; playing = false; $('packets').innerHTML = '';
+  pos = Math.max(0, Math.min(steps.length, n)); activeIdx = pos - 1;
+  state = stateAt(pos); render();
+}
+async function play(){
+  if (pos >= steps.length) jump(0);
+  const id = ++run; playing = true; render();
+  while (pos < steps.length) {
+    if (!await runStep(pos, id)) return;
+    pos++; render();
+    if (pos < steps.length && !await wait(spec.pause ?? 1400, id)) return;
+  }
+  playing = false; render();
+}
+const pause = () => jump(pos);
+async function next(){
+  if (pos >= steps.length) return;
+  jump(pos); const id = run;
+  if (await runStep(pos, id)) { pos++; render(); }
+}
+
+// ---------- Ansichten und Bedienung ----------
+function selectView(v){
+  view = v; steps = v.steps || [];
+  mark = {nodes: (v.mark && v.mark.nodes) || {}, edges: (v.mark && v.mark.edges) || {}};
+  [...$('views').children].forEach(b => b.classList.toggle('on', b.dataset.v === v.id));
+  renderTexts(); jump(0);
+}
+spec.views.forEach(v => {
+  const b = document.createElement('button');
+  b.dataset.v = v.id; b.textContent = tx(v.label) || v.id; b.className = v.kind || '';
+  b.onclick = () => { if (v !== view) { selectView(v); setTimeout(play, 400); } };
+  $('views').appendChild(b);
+});
+$('views').hidden = spec.views.length < 2;
+$('mode').hidden = !hasTech;
+$('mode').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = +b.dataset.m; [...$('mode').children].forEach(x => x.classList.toggle('on', x === b));
+  [...$('views').children].forEach(x => x.textContent = tx(spec.views.find(v => v.id === x.dataset.v).label) || x.dataset.v);
+  renderTexts(); render();
+};
+$('play').onclick = () => playing ? pause() : play();
+$('next').onclick = next;
+$('prev').onclick = () => jump(pos - 1);
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); playing ? pause() : play(); }
+  if (e.key === 'ArrowRight') next();
+  if (e.key === 'ArrowLeft') jump(pos - 1);
+});
+const fit = () => {
+  const s = Math.min(1, $('outer').clientWidth / W);
+  $('stage').style.transform = `scale(${s})`; $('outer').style.height = H * s + 'px';
+};
+new ResizeObserver(fit).observe($('outer')); fit();
+selectView(spec.views[0]);
+if (spec.autoplay !== false) setTimeout(play, 700);
+})();
+</script>
+</body>
+</html>
