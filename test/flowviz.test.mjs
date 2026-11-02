@@ -201,8 +201,12 @@ test('demo: the demo is the first zone, the system stands beside it', () => {
   assert.ok(L.boxes.api.x > L.demo.x + L.demo.w, 'boxes right of the demo');
   assert.ok(L.H >= L.demo.y + L.demo.h, 'stage as tall as the demo');
   assert.ok(L.routes.save.demo && L.routes.save.pts[0][0] < L.demo.x + L.demo.w, 'arrow starts inside the demo');
-  const measured = computeLayout(spec, 'planned', {'@toggle': {x: 60, y: 120, w: 20, h: 20}});
-  assert.deepEqual(measured.routes.save.pts[0], [82, 130]);
+  // A button with room to its right leaves from its bottom and runs below its row, past its neighbours
+  const button = computeLayout(spec, 'planned', {'@toggle': {x: 60, y: 120, w: 20, h: 20}});
+  assert.deepEqual(button.routes.save.pts.slice(0, 2), [[70, 142], [70, 145]]);
+  // An element that reaches the window's edge has nothing beside it: straight out of its side
+  const D = L.demo, wide = {x: D.x + 10, y: 300, w: D.w - 12, h: 40};
+  assert.deepEqual(computeLayout(spec, 'planned', {'@toggle': wide}).routes.save.pts[0], [wide.x + wide.w + 2, 320]);
 });
 
 test('demo: a view can hide the demo, and then on is an error', () => {

@@ -103,7 +103,11 @@ export function computeLayout(spec, viewId, elBoxes) {
     return demoRect && {x: demoRect.x + demoRect.w / 2 - 20, y: demoRect.y + demoRect.h / 2 - 10, w: 40, h: 20};
   };
   const nodeOf = e => isDemoEnd(e.from) ? e.to : e.from;
-  const rowOf = e => { const E = elBox(isDemoEnd(e.from) ? e.from : e.to); return E ? E.y + E.h / 2 : 0; };
+  // An element that does not reach the window's right edge may have neighbours beside it (a user name, a button):
+  // its arrow leaves from its bottom and runs just below its row, so it does not strike them through
+  const clearRight = E => E.x + E.w >= demoRect.x + demoRect.w - 28;
+  const rowY = E => clearRight(E) ? E.y + E.h / 2 : E.y + E.h + 5;
+  const rowOf = e => { const E = elBox(isDemoEnd(e.from) ? e.from : e.to); return E && demoRect ? rowY(E) : 0; };
   // No crossings among them: the arrows at one box meet it in the order of their elements' rows, and of the arrows
   // that go down (or up), the one that starts higher (lower) takes the lane nearer the box.
   const port = {}, laneOf = {};
@@ -123,8 +127,9 @@ export function computeLayout(spec, viewId, elBoxes) {
     if (!demoRect || !E || !B) return null;
     const off = port[e.id];
     const lane = demoRect.x + demoRect.w + 16 + laneOf[e.id] * 12;
-    const ey = E.y + E.h / 2, ty = B.cy + off;
-    const pts = Math.abs(ey - ty) < 3 ? [[E.x + E.w, ty], [B.x, ty]] : [[E.x + E.w, ey], [lane, ey], [lane, ty], [B.x, ty]];
+    const ey = rowY(E), ty = B.cy + off;
+    const start = clearRight(E) ? [[E.x + E.w, ey]] : [[E.x + E.w - 10, E.y + E.h], [E.x + E.w - 10, ey]];
+    const pts = Math.abs(ey - ty) < 3 ? [...start, [B.x, ty]] : [...start, [lane, ey], [lane, ty], [B.x, ty]];
     if (!out) pts.reverse();
     pts[0] = shorten(pts[0], pts[1], 2);
     pts[pts.length - 1] = shorten(pts[pts.length - 1], pts[pts.length - 2], 4);
