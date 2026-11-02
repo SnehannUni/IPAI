@@ -165,6 +165,35 @@ A mock of the screen the plan changes. It is the leftmost zone of the diagram an
 ]
 ```
 
+## theme
+
+The viewer's colours, font and corners, so a diagram looks like the app that shows it. A theme is not part of the spec: the app sets it once, in one place, and every diagram it shows gets the same one. Agents never write it.
+
+| Key | Meaning |
+|---|---|
+| `scheme` | `light` · `dark` (form controls and scrollbars) |
+| `bg`, `surface` | page background; boxes, cards and the stage |
+| `text` | main text. Lines, muted and faint text, tints and chips are mixed from `text` and `surface` |
+| `accent`, `onAccent` | the active arrow and box, the Play button, the current step; the text on it |
+| `error`, `ok`, `mod` | error, new, changed. Their light backgrounds, borders and text are mixed from them |
+| `trigger`, `step`, `store`, `external`, `result`, `screen` | the type dots |
+| `font`, `radius` | font family; corner radius (px or a CSS length) |
+| `soft`, `chip`, `line`, `line2`, `faint`, `muted`, `body`, `errorSoft`, `errorLine`, `errorText`, `okSoft`, `okLine`, `okText`, `modSoft`, `modLine`, `modText` | the mixed colours, to set one exactly |
+| `stage`, `zone`, `zoneEdge` | the diagram's area (default `surface`); the zones in the middle (default none) and at the edges (default `soft`) |
+| `node`, `card`, `banner` | the boxes (default `surface`); the step card (default none); the headline banner (default `soft`) |
+| `button`, `buttonText`, `buttonBorder`, `buttonHover`, `segmentOn`, `controlRadius` | Back, Next and the switches: background, text, border, hover, the chosen part of a switch, corners |
+| `primary`, `onPrimary` | the Play button and its text (default `accent`, `onAccent`) |
+| `labelFont`, `labelTransform`, `labelTracking` | the labels' voice (zone captions, box types, step counter, legend, buttons): font, `uppercase` or `none`, letter spacing (px or a CSS length) |
+
+In a dark theme the darkest surface is usually the page, and raised things are lighter. Give `stage` and `node` the host's card and raised colours then, or the middle of the diagram reads as a hole. An app that keeps its accent for the one action on a screen gives `primary` its secondary button's colours: a chat with three diagrams would otherwise show three of them.
+
+Three ways in, all through `src/theme.mjs`:
+- **At build time:** `flowviz build x.flow.json --theme theme.json` writes it into the page.
+- **Into a built page:** insert `<script type="application/json" data-ipai-theme>{…}</script>` right before `<script type="application/json" id="flow-spec">`. Blocks are read in page order and later ones win, so there it beats a theme the build wrote. `themeBlock(theme)` in `src/build.mjs` writes it.
+- **Into an open page:** `frame.postMessage({type: "ipai-theme", theme}, "*")` switches it live, e.g. when the app goes dark.
+
+The demo keeps its own look: it shows the product being planned, not the app around the diagram. Only its window, cursor and click outlines follow the theme.
+
 ## Jump straight to a step
 
 `out/file.html#view=bug&step=6&still&mode=tech` opens the view `bug` in the state after step 6, without animation (`still`) and in technical mode. Meant for visual checks and screenshots.

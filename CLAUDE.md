@@ -20,6 +20,7 @@ Use the `flow-diagram` skill (`.claude/skills/flow-diagram/SKILL.md`). In short:
 
 - No npm dependencies. The viewer is a single HTML file without external resources.
 - Design: white and plain. Red = error, green = new, blue = changed stay reserved for those signals. Other colour is welcome where it carries meaning: a zone or box in its product's colour (`color`), and a demo in the product's own look. No glow, no emojis.
+- The viewer names no colour itself: every colour is a theme variable (`src/theme.mjs`, FORMAT.md "theme"), so the app that shows a diagram sets its look once. A test fails on a hex value outside the defaults.
 - Spec texts are in the language of the people who read the diagram; `lang` switches the viewer's own words (`en`, `de`). Every text exists as `{simple, tech}`. Code, docs and the viewer's source stay in English.
 - New rules: describe them in `docs/RULES.md`, check them in `src/validate.mjs` with the same ID and cover them in `test/`.
 - `src/layout.mjs` is inlined into the viewer at build time (`export` is stripped). Only browser-compatible JavaScript without imports there.

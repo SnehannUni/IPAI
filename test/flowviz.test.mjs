@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync, readdirSync} from 'node:fs';
 import vm from 'node:vm';
 import {validateSpec} from '../src/validate.mjs';
-import {buildHtml} from '../src/build.mjs';
+import {buildHtml, themeBlock} from '../src/build.mjs';
 import {computeLayout} from '../src/layout.mjs';
+import {checkTheme, themeDeclarations, THEME_VARS} from '../src/theme.mjs';
 
 const load = name => JSON.parse(readFileSync(new URL(`../examples/${name}`, import.meta.url), 'utf8'));
 const examples = readdirSync(new URL('../examples/', import.meta.url)).filter(f => f.endsWith('.flow.json'));
@@ -215,4 +216,42 @@ test('demo: the build keeps the mock out of the viewer page and inside the spec'
   assert.ok(html.includes('attachShadow'));
   const json = html.match(/<script type="application\/json" id="flow-spec">([\s\S]*?)<\/script>/)[1];
   assert.ok(JSON.parse(json).demo.html.includes("data-ipai='toggle'"));
+});
+
+test('theme: keys and values are checked', () => {
+  assert.deepEqual(checkTheme({scheme: 'dark', surface: '#11161d', accent: 'rgb(45 212 191)', radius: 14}), []);
+  const problems = checkTheme({colour: 'red', accent: 'red;}body{display:none', radius: true, scheme: 'blue'});
+  assert.ok(problems.some(p => p.includes('unknown key "colour"')));
+  assert.ok(problems.some(p => p.startsWith('accent contains')));
+  assert.ok(problems.some(p => p.startsWith('radius must be')));
+  assert.ok(problems.some(p => p.startsWith('scheme must be')));
+});
+
+test('theme: declarations name the viewer variables and drop what could break out', () => {
+  assert.deepEqual(themeDeclarations({onAccent: '#000', radius: 12, scheme: 'dark', accent: 'x;y', nope: '#fff'}),
+    [['--on-accent', '#000'], ['--radius', '12px'], ['color-scheme', 'dark']]);
+});
+
+test('theme: the parts are settable and every key names a variable the viewer uses', () => {
+  assert.deepEqual(themeDeclarations({stage: '#1e2120', zoneEdge: '#232625', buttonText: '#fff', controlRadius: 8}),
+    [['--stage', '#1e2120'], ['--zone-edge', '#232625'], ['--button-text', '#fff'], ['--control-radius', '8px']]);
+  const viewer = readFileSync(new URL('../src/viewer.html', import.meta.url), 'utf8');
+  const unused = Object.keys(THEME_VARS).filter(k => !viewer.includes(`var(--${THEME_VARS[k]})`));
+  assert.deepEqual(unused, []);
+});
+
+test('theme: the build writes the block, a host can add its own, the viewer reads every one', () => {
+  const plain = buildHtml(load('sidebar-demo.flow.json'));
+  assert.ok(!plain.includes('data-ipai-theme>') && !plain.includes('__THEME'), 'no theme, no block, no placeholder');
+  const themed = buildHtml(load('sidebar-demo.flow.json'), {theme: {accent: '#0f766e'}});
+  assert.ok(themed.includes('<script type="application/json" data-ipai-theme>'));
+  assert.ok(themeBlock({font: 'a</script>'}).includes('a<\\/script>'), 'a value cannot end the block');
+  assert.ok(plain.includes("querySelectorAll('script[data-ipai-theme]')"));
+});
+
+test('theme: no colour is left hard-coded in the viewer outside the defaults', () => {
+  const viewer = readFileSync(new URL('../src/viewer.html', import.meta.url), 'utf8');
+  const css = viewer.slice(viewer.indexOf('<style>'), viewer.indexOf('</style>'));
+  const rest = css.replace(/:root\{[\s\S]*?\n\}/, '').replace(/\.win\.phone\{[^}]*\}/, '');
+  assert.deepEqual(rest.match(/#[0-9a-fA-F]{3,8}\b/g) || [], []);
 });
