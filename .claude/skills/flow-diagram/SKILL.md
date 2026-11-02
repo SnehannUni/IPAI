@@ -12,6 +12,7 @@ You describe the flow as a **flow spec** (JSON). The `flowviz` tool checks it an
 1. **Read** `docs/RULES.md` (mandatory, it governs abstraction and order) and `docs/FORMAT.md`. Take a matching example as a template:
    - normal flow with a failure case: `examples/chat-rabbitmq.flow.json`
    - bug and fix: `examples/k8s-bugfix.flow.json`
+   - a feature you can see, as a clickable demo that is the diagram's frontend: `examples/sidebar-demo.flow.json`; a chat on a phone with streaming, stop and retry: `examples/chat-demo.flow.json`; a form with an error at its field: `examples/signup-demo.flow.json`
    - ten real postmortems with bug and fix in `flows/*.flow.json`, e.g.
      - `knight-capital-2012` (meter as progress)
      - `cloudflare-leapsecond-2017` (red badge with a value)
@@ -23,13 +24,14 @@ You describe the flow as a **flow spec** (JSON). The `flowviz` tool checks it an
      - Prefer 4–5 columns over 6.
    - Which steps are there? One or two short sentences each, in the order trigger → way there → processing → way back → result.
    - Does mainly the UI change? Then start with a before/after view (`kind: "compare"`) with `screen` boxes and a concrete person, technology afterwards (RULES.md R16).
+   - Is the look itself the point (sidebar, dark mode, a new form)? Then build a `demo`: the screen in the product's own look, as the diagram's frontend. Arrows start at the clicked element (`"@toggle"`) and land on the element the answer changes; every click (`data-ipai` + `on`) plays what it causes, and the mock shows the answer as `demo` states (RULES.md R17). Read the project's styles and labels first.
    - For bugs:
      - Does the cause make sense to laypeople?
      - Where can you see it in the picture (checklist, meter, red badge, duplicated bubble)?
 3. **Write** `flows/<topic>.flow.json`.
    - Every bug/fix/compare view gets an `explain` (2–4 paragraphs), every important step a `detail` (why, and what follows) – see RULES.md R15.
    - Feature plans: "Today" as `bug`, "Planned" as `fix`.
-   - All texts as `{"simple", "tech"}`, in English.
+   - All texts as `{"simple", "tech"}`, in the user's language. Set `lang` to match (`en`, `de`) so the buttons speak it too.
    - Edit the JSON directly with the edit tool; no script is needed.
 4. **Check** with `node bin/flowviz.mjs validate flows/<topic>.flow.json`.
    - Always fix errors.

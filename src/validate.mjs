@@ -1,6 +1,6 @@
 // Checks a flow spec for errors (rendering breaks) and rule violations (rendering becomes unclear).
 // The rules are described in docs/RULES.md; the IDs used here (R1, R2 …) refer to them.
-import {computeLayout, labelRect, segmentHitsBox, rectsOverlap, segmentsOverlap, textWidth, LAYOUT} from './layout.mjs';
+import {computeLayout, labelRect, segmentHitsBox, rectsOverlap, segmentsOverlap, textWidth, LAYOUT, isDemoEnd, demoOf} from './layout.mjs';
 
 export const NODE_TYPES = ['trigger', 'step', 'store', 'external', 'result', 'screen'];
 export const WIDGETS = ['chat', 'checklist', 'meter', 'menu'];
@@ -15,6 +15,12 @@ export const TONES = ['ok', 'bad', 'muted', 'strong', null];
 export const ROUTES = ['above', 'below', 'h-first', 'v-first'];
 export const SPEAKERS = ['user', 'ai', 'system'];
 export const METER_MODES = ['risk', 'progress'];
+export const DEVICES = ['desktop', 'phone'];
+export const LANGS = ['en', 'de'];
+// A CSS colour: #hex, a name, or rgb()/hsl()
+const COLOR = /^(#[0-9a-f]{3,8}|[a-z]+|(rgb|hsl)a?\([\d\s.,%/-]+\))$/i;
+const DEMO_ID = /^[\w-]+$/;
+const DEMO_MAX = 60000;
 
 const DEFAULT_ZONES = ['frontend', 'backend', 'external'];
 const LIMITS = {nodesPerView: 8, wordsPerStep: 25, sentencesPerStep: 2, wordsPerDetail: 55, sentencesPerDetail: 3, wordsPerExplain: 70, edgesPerStep: 4, columns: 6, labelChars: 26};
@@ -25,8 +31,8 @@ const variants = v => typeof v === 'string' ? [v] : v && typeof v === 'object' ?
 const longest = v => variants(v).reduce((a, b) => (b.length > a.length ? b : a), '');
 const words = s => s.trim().split(/\s+/).filter(Boolean).length;
 // Count sentence ends; abbreviations (e.g., approx.) and numbers with a dot (1.8.2012, $3.5) are not
-const ABBR = /\b(e\.g|i\.e|etc|vs|approx|ca|no|Dr|Mr|Mrs|Ms|Inc|Ltd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Mio|Mrd)\./gi;
-const sentences = s => (s.replace(ABBR, m => m.replace(/\./g, '')).replace(/\d\./g, '0').match(/[.!?](\s+[A-Z"“‘']|\s*$)/g) || []).length;
+const ABBR = /\b(e\.g|i\.e|etc|vs|approx|ca|no|Dr|Mr|Mrs|Ms|Inc|Ltd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Mio|Mrd|z\.\s?B|d\.\s?h|u\.\s?a|bzw|usw|ggf|inkl|evtl|vgl|Nr)\./gi;
+const sentences = s => (s.replace(ABBR, m => m.replace(/\./g, '')).replace(/\d\./g, '0').match(/[.!?](\s+[A-ZÄÖÜ"“‘„']|\s*$)/g) || []).length;
 const same = (a, b) => JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
 
 export function validateSpec(spec) {
@@ -36,6 +42,7 @@ export function validateSpec(spec) {
 
   if (!spec || typeof spec !== 'object') return {errors: ['spec is not an object'], warnings};
   if (!isText(spec.title)) err('title', 'missing or not a text');
+  if (spec.lang != null && !LANGS.includes(spec.lang)) err('lang', `must be one of ${LANGS.join(', ')} (the viewer's own words; your texts can be in any language)`);
 
   // Zones
   const zoneIds = spec.zones?.length ? spec.zones.map(z => z.id) : DEFAULT_ZONES;
@@ -43,6 +50,7 @@ export function validateSpec(spec) {
     if (!z.id) err(`zones[${i}]`, 'id missing');
     if (!isText(z.label)) err(`zones[${i}]`, 'label missing');
     if (z.tone !== undefined && !ZONE_TONES.includes(z.tone)) err(`zones[${i}]`, 'tone must be "bug" or "fix"');
+    if (z.color != null && !COLOR.test(z.color)) err(`zones[${i}]`, 'color must be a CSS colour (#hex, name, rgb(), hsl())');
   });
   if (new Set(zoneIds).size !== zoneIds.length) err('zones', 'duplicate id');
 
@@ -64,6 +72,7 @@ export function validateSpec(spec) {
     if (n.widget === 'checklist' && n.items?.length > 5) warn('R3', w, 'more than 5 list items do not fit into the box');
     if (n.meterMode != null && !METER_MODES.includes(n.meterMode)) err(w, `meterMode must be ${METER_MODES.join(' or ')}`);
     if (n.meterMax != null && !(typeof n.meterMax === 'number' && n.meterMax > 100)) err(w, 'meterMax must be a number above 100');
+    if (n.color != null && !COLOR.test(n.color)) err(w, 'color must be a CSS colour (#hex, name, rgb(), hsl())');
   });
 
   // Same cell used twice?
@@ -83,7 +92,9 @@ export function validateSpec(spec) {
     if (c > LIMITS.columns) warn('R4', v.id ? `view "${v.id}"` : 'layout', `${c} columns – more than ${LIMITS.columns} get cluttered`);
   }
 
-  // Arrows
+  // Arrows. An end is a box id or "@id", an element of the demo (data-ipai="id")
+  const demoIds = d => new Set([...String(d?.html || '').matchAll(/data-ipai\s*=\s*["']?([^"'\s>]+)/g)].map(m => m[1]));
+  const anyDemoId = new Set([spec.demo, ...(spec.views || []).map(v => v.demo)].filter(d => d && typeof d === 'object').flatMap(d => [...demoIds(d)]));
   const edges = Array.isArray(spec.edges) ? spec.edges : [];
   const edgeById = {};
   edges.forEach((e, i) => {
@@ -91,12 +102,34 @@ export function validateSpec(spec) {
     if (!e.id) return err(w, 'id missing');
     if (edgeById[e.id]) err(w, 'duplicate id');
     edgeById[e.id] = e;
-    if (!nodeById[e.from]) err(w, `from "${e.from}" does not exist`);
-    if (!nodeById[e.to]) err(w, `to "${e.to}" does not exist`);
+    for (const end of ['from', 'to']) {
+      const id = e[end];
+      if (isDemoEnd(id)) { if (!anyDemoId.has(id.slice(1))) err(w, `${end} "${id}": no demo has an element with data-ipai="${id.slice(1)}"`); }
+      else if (!nodeById[id]) err(w, `${end} "${id}" does not exist`);
+    }
+    if (isDemoEnd(e.from) && isDemoEnd(e.to)) err(w, 'runs from one demo element to another – one end must be a box');
     if (!isText(e.verb)) err(w, 'verb missing (every arrow needs a verb)');
     if (variants(e.verb).some(t => t.length > LIMITS.labelChars)) warn('R5', w, `verb "${longest(e.verb)}" is too long – use a short verb`);
     if (e.route != null && !ROUTES.includes(e.route)) err(w, `route must be one of ${ROUTES.join(', ')}`);
   });
+
+  // Demo (R17): a mock of the screen as the first zone; a click on a data-ipai element starts the step with that `on`
+  const checkDemo = (d, w) => {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return err(w, 'must be an object (in a view: false hides the demo there)');
+    if (typeof d.html !== 'string' || !d.html.trim()) err(w, 'html missing');
+    if (d.css != null && typeof d.css !== 'string') err(w, 'css must be a string');
+    if (d.label != null && !isText(d.label)) err(w, 'label (the zone caption) is not a text');
+    if (d.device != null && !DEVICES.includes(d.device)) err(w, `device must be ${DEVICES.join(' or ')}`);
+    for (const k of ['width', 'height']) if (d[k] != null && !(typeof d[k] === 'number' && d[k] >= 160 && d[k] <= 1200)) err(w, `${k} must be a number of px between 160 and 1200`);
+    if (d.title != null && !isText(d.title)) err(w, 'title is not a text');
+    if (d.state != null && typeof d.state !== 'string') err(w, 'state must be a string of states, e.g. "collapsed"');
+    const html = String(d.html || ''), code = html + String(d.css || '');
+    if (/<script|\son[a-z]+\s*=|javascript:/i.test(html)) err(w, 'no scripts or event handlers – clicks go through data-ipai, changes through demo states');
+    if (/(src|href)\s*=\s*["']?\s*(https?:)?\/\/|url\(\s*["']?\s*(https?:)?\/\/|@import/i.test(code)) err(w, 'no external files – the page runs offline: images as data: URLs, system fonts');
+    if (code.length > DEMO_MAX) warn('R17', w, `${code.length} characters – keep it under ${DEMO_MAX}: only the area that changes, with enough around it to recognise the screen`);
+    for (const id of demoIds(d)) if (!DEMO_ID.test(id)) err(w, `data-ipai "${id}" may only use letters, digits, - and _`);
+  };
+  if (spec.demo != null) checkDemo(spec.demo, 'demo');
 
   // Views and steps
   const views = Array.isArray(spec.views) ? spec.views : [];
@@ -105,7 +138,8 @@ export function validateSpec(spec) {
   if (new Set(viewIds).size !== viewIds.length) err('views', 'duplicate id');
   [...nodes, ...edges].forEach(x => (x.views || []).forEach(v => { if (!viewIds.includes(v)) err(`"${x.id}"`, `views contains unknown view "${v}"`); }));
   const inView = (x, v) => !x || !x.views || x.views.includes(v.id);
-  const edgeInView = (e, v) => inView(e, v) && inView(nodeById[e.from], v) && inView(nodeById[e.to], v);
+  const endInView = (id, v) => isDemoEnd(id) ? demoIds(demoOf(spec, v)).has(id.slice(1)) : inView(nodeById[id], v);
+  const edgeInView = (e, v) => inView(e, v) && endInView(e.from, v) && endInView(e.to, v);
 
   const usesTech = JSON.stringify(spec).includes('"tech"');
   // All texts a box can show while a view plays (for the width check); "*" = initial state
@@ -127,6 +161,8 @@ export function validateSpec(spec) {
     if (v.kind != null && !VIEW_KINDS.includes(v.kind)) err(vw, `kind must be one of ${VIEW_KINDS.join(', ')}`);
     const steps = Array.isArray(v.steps) ? v.steps : [];
     if (!steps.length) err(vw, 'no steps');
+    if (v.demo != null && v.demo !== false) checkDemo(v.demo, `${vw} demo`);
+    const vd = demoOf(spec, v);
     const chain = v.chain || [];
     for (const [kind, map] of [['nodes', v.mark?.nodes], ['edges', v.mark?.edges]]) for (const [id, t] of Object.entries(map || {})) {
       if (!(kind === 'nodes' ? nodeById : edgeById)[id]) err(`${vw} mark.${kind}`, `"${id}" does not exist`);
@@ -150,7 +186,7 @@ export function validateSpec(spec) {
       }
       // Key steps (chain link, error, change) need an explanation of what it means
       if (!s.detail && (s.chain != null || s.error || s.tag)) warn('R15', w, 'key step without detail – explain in 1–3 sentences why it happens and what it means for the user');
-      if (!stepEdges.length && !focus.length) err(w, 'needs edges or focus');
+      if (!stepEdges.length && !focus.length && s.on == null) err(w, 'needs edges or focus');
       stepEdges.forEach(id => {
         const e = edgeById[id];
         if (!e) return err(w, `arrow "${id}" does not exist`);
@@ -186,6 +222,18 @@ export function validateSpec(spec) {
       }
       for (const id of Object.keys(s.labels || {})) if (!edgeById[id]) err(`${w} labels`, `arrow "${id}" does not exist`);
       if (s.tag != null && !TAGS.includes(s.tag)) err(w, `tag must be one of ${TAGS.join(', ')}`);
+      if (s.on != null) {
+        if (!vd) err(w, 'on needs a demo in this view');
+        else if (!demoIds(vd).has(s.on)) err(w, `on "${s.on}": the demo has no element with data-ipai="${s.on}"`);
+        else {
+          const start = stepEdges[0] ? edgeById[stepEdges[0]]?.from : null;
+          if (start && start !== '@' + s.on) warn('R17', w, `a click starts at what was clicked – let the first arrow leave "@${s.on}"`);
+        }
+      }
+      if (s.demo != null) {
+        if (typeof s.demo !== 'string') err(w, 'demo must be a string of states, e.g. "collapsed saving" ("" for none)');
+        if (!vd) err(w, 'demo needs a demo in this view');
+      }
       if (s.chain != null) {
         if (!(Number.isInteger(s.chain) && s.chain >= 0 && s.chain < chain.length)) err(w, `chain ${s.chain} does not exist (chain counts from 0, has ${chain.length} links)`);
         else if (s.chain < lastChain) warn('R12', w, 'chain runs backwards – light up links in the order of the steps');
@@ -204,13 +252,24 @@ export function validateSpec(spec) {
         if (first && first.type !== 'trigger') warn('R9', w, `first step should start at the trigger, not at "${first.id}"`);
       } else if (stepEdges.length) {
         const from = edgeById[stepEdges[0]]?.from;
-        if (from && !seen.has(from) && nodeById[from]?.type !== 'trigger')
+        if (from && !seen.has(from) && nodeById[from]?.type !== 'trigger' && !isDemoEnd(from))
           warn('R10', w, `jump: "${from}" acts but has not appeared yet – introduce "${from}" with focus in this step or request it first`);
       }
       stepEdges.forEach(id => { const e = edgeById[id]; if (e) { seen.add(e.from); seen.add(e.to); involved.add(e.from); involved.add(e.to); } });
       focus.forEach(id => involved.add(id));
       if (usesTech && typeof s.text === 'string') warn('R6', w, 'text has no technical variant ({simple, tech})');
     });
+
+    if (vd) {
+      if (steps.length && !steps[0].on) warn('R17', vw, 'with a demo the first step starts with a click (on)');
+      const ons = steps.map(s => s.on).filter(Boolean);
+      const ends = new Set(steps.flatMap(s => (s.edges || []).flatMap(id => edgeById[id] ? [edgeById[id].from, edgeById[id].to] : [])));
+      for (const id of demoIds(vd)) if (!ons.includes(id) && !ends.has('@' + id)) warn('R17', vw, `data-ipai "${id}" is neither clicked (on) nor an arrow end ("@${id}") – remove the attribute or use it`);
+      if (![...ends].some(isDemoEnd)) warn('R17', vw, 'no arrow leaves or reaches the demo – let clicks start at "@id" and answers land where the screen changes');
+      const states = new Set([vd.state, ...steps.map(s => s.demo)].filter(t => typeof t === 'string').flatMap(t => t.split(/\s+/)).filter(Boolean));
+      for (const t of states) if (!String(vd.css || '').includes(t)) warn('R17', vw, `state "${t}" does not appear in the demo's css – style it with [data-state~="${t}"]`);
+      if (!steps.some(s => s.demo != null)) warn('R17', vw, 'the demo never changes – show what the user sees after the click with demo states');
+    }
 
     visNodes.forEach(n => { if (!involved.has(n.id)) warn('R2', vw, `box "${n.id}" appears in no step – drop it, hide it with views or use it`); });
     edges.filter(e => edgeInView(e, v) && !usedEdges.has(e.id) && !e.showUnused).forEach(e =>
@@ -244,7 +303,7 @@ export function validateSpec(spec) {
     if (steps.length && v.kind !== 'compare') {
       const last = steps[steps.length - 1];
       const ends = [...(last.edges || []).map(id => edgeById[id]?.to), ...[].concat(last.focus || [])];
-      if (!ends.some(id => ['trigger', 'result'].includes(nodeById[id]?.type))) warn('R9', vw, 'last step should end at the user or the result');
+      if (!ends.some(id => isDemoEnd(id) || ['trigger', 'result'].includes(nodeById[id]?.type))) warn('R9', vw, 'last step should end at the user or the result');
     }
   });
 
@@ -264,7 +323,8 @@ function checkGeometry({spec, nodes, edges, views, inView, edgeInView, shown, me
   for (const v of views) {
     const {boxes, routes} = layouts[v.id];
     const visNodes = nodes.filter(n => inView(n, v));
-    const visEdges = edges.filter(e => edgeInView(e, v));
+    // Arrows to demo elements are routed in the browser, where the elements are measured: only the visual check sees them
+    const visEdges = edges.filter(e => edgeInView(e, v) && !isDemoEnd(e.from) && !isDemoEnd(e.to));
     const labels = [];
     for (const e of visEdges) {
       const r = routes[e.id];

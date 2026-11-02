@@ -1,0 +1,47 @@
+{
+  "title": "Registrierung: der Fehler steht am Feld, nicht ganz oben",
+  "subtitle": "Klick auf „Konto anlegen“: erst mit einer vergebenen Adresse, dann mit einer neuen",
+  "lang": "de",
+  "demo": {
+    "title": "Konto anlegen – geplant",
+    "width": 400,
+    "height": 340,
+    "html": "<div class='page'><h2>Konto anlegen</h2><label>Name<div class='f'>Mira Kaya</div></label><label>E-Mail<div class='f mail'><span class='old'>mira@firma.de</span><span class='new'>m.kaya@firma.de</span></div><p class='err' data-ipai='emailErr'>Diese Adresse hat schon ein Konto. <a class='alt' data-ipai='alt'>Andere verwenden</a></p></label><button class='go' data-ipai='submit'><span class='l'>Konto anlegen</span><span class='w'>Prüft …</span></button><div class='ok' data-ipai='ok'>✓ Konto angelegt. Wir haben dir eine Mail geschickt.</div></div>",
+    "css": ".page{padding:20px 24px;height:100%;background:#fff}h2{margin:0 0 14px;font-size:18px;color:#1e293b}label{display:block;font-size:12px;color:#475569;margin-bottom:12px}.f{margin-top:4px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;color:#0f172a}.new,.err,.ok,.w{display:none}.err{margin:5px 0 0;font-size:12px;color:#b91c1c}.alt{color:#4338ca;text-decoration:underline;cursor:pointer}.go{width:100%;margin-top:4px;padding:10px;border:0;border-radius:8px;background:#4338ca;color:#fff;font:inherit;font-size:14px;font-weight:600}.ok{margin-top:12px;padding:10px 12px;border-radius:8px;background:#ecfdf5;color:#065f46;font-size:12.5px}[data-state~=checking] .l{display:none}[data-state~=checking] .w{display:inline}[data-state~=checking] .go{opacity:.7}[data-state~=taken] .mail{border-color:#dc2626;background:#fef2f2}[data-state~=taken] .err{display:block}[data-state~=fixed] .old{display:none}[data-state~=fixed] .new{display:inline}[data-state~=fixed] .mail{border-color:#cbd5e1;background:#fff}[data-state~=fixed] .err{display:none}[data-state~=done] .ok{display:block}[data-state~=done] .go{background:#94a3b8}"
+  },
+  "nodes": [
+    {"id": "api", "type": "step", "zone": "backend", "col": 0, "row": 0, "label": {"simple": "Anmeldung", "tech": "Signup-API"}, "sub": {"simple": "prüft und legt an", "tech": "POST /users"}},
+    {"id": "db", "type": "store", "zone": "backend", "col": 1, "row": 0, "label": {"simple": "Kundenkartei", "tech": "users"}, "sub": {"simple": "alle Konten", "tech": "unique(email)"}, "initial": {"status": {"simple": "kennt mira@firma.de", "tech": "1 Treffer"}}},
+    {"id": "mail", "type": "external", "zone": "external", "col": 0, "row": 0, "label": {"simple": "Postdienst", "tech": "Mail-Provider"}, "sub": {"simple": "verschickt Mails", "tech": "SMTP-API"}}
+  ],
+  "edges": [
+    {"id": "submit", "from": "@submit", "to": "api", "verb": "schickt"},
+    {"id": "check", "from": "api", "to": "db", "verb": "fragt nach"},
+    {"id": "answer", "from": "db", "to": "api", "verb": "antwortet"},
+    {"id": "taken", "from": "api", "to": "@emailErr", "verb": "meldet"},
+    {"id": "create", "from": "api", "to": "mail", "verb": "bestellt Mail", "async": true, "route": "above"},
+    {"id": "done", "from": "api", "to": "@ok", "verb": "fertig"}
+  ],
+  "views": [
+    {
+      "id": "planned",
+      "label": "Geplant",
+      "kind": "normal",
+      "headline": "Plan: Ist die Adresse vergeben, steht der Hinweis direkt am E-Mail-Feld, mit einem Ausweg.",
+      "explain": [
+        "Heute erscheint oben „Fehler 409“, und das Formular ist leer. Wer schon ein Konto hat, weiß nicht, was falsch war.",
+        "Geplant: Die Prüfung meldet genau das Feld zurück. Das Feld wird rot, darunter steht, was los ist, und ein Klick führt weiter."
+      ],
+      "steps": [
+        {"on": "submit", "edges": ["submit"], "packet": {"simple": "Daten", "tech": "POST"}, "text": {"simple": "Mira klickt auf „Konto anlegen“.", "tech": "Das Formular sendet POST /users."}, "demo": "checking"},
+        {"edges": ["check", "answer"], "packet": {"check": "mira@firma.de?", "answer": {"simple": "schon da", "tech": "409"}}, "error": true, "text": {"simple": "Die Kartei kennt die Adresse schon.", "tech": "Der Unique-Index auf email schlägt an."}, "detail": {"simple": "Mira hat sich vor einem Jahr schon einmal angemeldet und es vergessen.", "tech": "Kein Duplikat wird angelegt; die API mappt den Fehler auf das Feld email."}, "set": {"api": {"status": {"simple": "Adresse vergeben", "tech": "409 email"}, "tone": "bad"}}},
+        {"edges": ["taken"], "packet": {"simple": "E-Mail vergeben", "tech": "errors.email"}, "error": true, "tag": "new", "text": {"simple": "Der Hinweis landet genau am E-Mail-Feld.", "tech": "Die Antwort trägt errors.email; das Formular markiert das Feld."}, "detail": {"simple": "Der Rest des Formulars bleibt ausgefüllt, und der Link zeigt den Ausweg.", "tech": "Feldfehler statt globalem Banner; die Eingaben bleiben erhalten."}, "demo": "taken"},
+        {"on": "alt", "focus": "api", "text": {"simple": "Mira nimmt ihre andere Adresse.", "tech": "Der Link fokussiert das Feld; sie tippt eine neue Adresse."}, "demo": "fixed", "set": {"api": {"status": null, "tone": null}}},
+        {"on": "submit", "edges": ["submit"], "packet": {"simple": "Daten", "tech": "POST"}, "text": {"simple": "Sie klickt noch einmal auf „Konto anlegen“.", "tech": "Das Formular sendet POST /users erneut."}, "demo": "fixed checking"},
+        {"edges": ["check", "answer"], "packet": {"check": "m.kaya@firma.de?", "answer": {"simple": "frei", "tech": "angelegt"}}, "labels": {"answer": {"simple": "legt an", "tech": "INSERT"}}, "text": {"simple": "Die Adresse ist frei, die Kartei legt das Konto an.", "tech": "INSERT in users klappt."}, "set": {"db": {"status": {"simple": "+1 Konto", "tech": "+1 row"}, "tone": "ok"}}},
+        {"edges": ["create"], "packet": {"simple": "Willkommen", "tech": "send"}, "text": {"simple": "Die Anmeldung bestellt die Willkommens-Mail.", "tech": "Ein Job an den Mail-Provider, ohne darauf zu warten."}},
+        {"edges": ["done"], "packet": "✓", "text": {"simple": "Mira sieht: Konto angelegt.", "tech": "201 Created; das Formular zeigt die Bestätigung."}, "demo": "fixed done"}
+      ]
+    }
+  ]
+}

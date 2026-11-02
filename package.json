@@ -8,7 +8,7 @@
   },
   "scripts": {
     "validate": "node bin/flowviz.mjs validate examples/*.flow.json",
-    "build:examples": "node bin/flowviz.mjs build examples/chat-rabbitmq.flow.json -o out/chat-rabbitmq.html && node bin/flowviz.mjs build examples/k8s-bugfix.flow.json -o out/k8s-bugfix.html",
+    "build:examples": "node bin/flowviz.mjs build examples/chat-rabbitmq.flow.json -o out/chat-rabbitmq.html && node bin/flowviz.mjs build examples/k8s-bugfix.flow.json -o out/k8s-bugfix.html && node bin/flowviz.mjs build examples/sidebar-demo.flow.json -o out/sidebar-demo.html && node bin/flowviz.mjs build examples/chat-demo.flow.json -o out/chat-demo.html && node bin/flowviz.mjs build examples/signup-demo.flow.json -o out/signup-demo.html",
     "test": "node --test"
   },
   "engines": {

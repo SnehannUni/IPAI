@@ -1,0 +1,511 @@
+{
+  "title": "Chat: Antworten kommen Wort für Wort und lassen sich stoppen",
+  "subtitle": "Schick die Frage ab, stopp die Antwort und lass sie neu schreiben",
+  "lang": "de",
+  "demo": {
+    "title": "Assistent – geplant",
+    "device": "phone",
+    "html": "<div class='chat'><header class='top'><b>Assistent</b><span class='on'>online</span></header><div class='msgs'><div class='b ai'>Hallo! Wobei kann ich helfen?</div><div class='b me' data-ipai='mine'>Fasse die Rechnungen vom Mai zusammen.<i class='tick'> ✓</i></div><div class='b ai ans' data-ipai='answer'><span class='typing'><i></i><i></i><i></i></span><span class='t1'>Im Mai gab es 14 Rechnungen über 18.420 €.</span><span class='t2'> Drei sind noch offen, die älteste seit 41 Tagen.</span><span class='tag'>Gestoppt</span></div><button class='retry' data-ipai='retry'>↻ Neu schreiben</button></div><footer class='bar'><div class='input'><span class='q'>Fasse die Rechnungen vom Mai zusammen.</span><span class='ph'>Nachricht …</span></div><button class='send' data-ipai='send'>➤</button><button class='stop' data-ipai='stop'>■</button></footer></div>",
+    "css": ".chat{height:100%;display:flex;flex-direction:column;background:#f1f5f9}.top{display:flex;align-items:baseline;gap:8px;padding:14px 14px 10px;background:#0f766e;color:#fff}.top b{font-size:15px}.on{font-size:11px;opacity:.8}.msgs{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden}.b{max-width:84%;padding:8px 11px;border-radius:14px;font-size:13px;line-height:1.4}.ai{align-self:flex-start;background:#fff;border:1px solid #e2e8f0;border-bottom-left-radius:4px}.me{align-self:flex-end;background:#0f766e;color:#fff;border-bottom-right-radius:4px}.tick{font-style:normal;font-size:11px;opacity:.85}.typing i{display:inline-block;width:6px;height:6px;margin-right:3px;border-radius:50%;background:#94a3b8;animation:blink 1s infinite}.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}@keyframes blink{50%{opacity:.2}}.tag{margin-left:6px;font-size:11px;font-weight:600;color:#b45309}.retry{align-self:flex-start;border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;color:#0f766e}.bar{display:flex;gap:8px;align-items:center;padding:10px;background:#fff;border-top:1px solid #e2e8f0}.input{flex:1;font-size:12.5px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph{color:#94a3b8}.send,.stop{width:34px;height:34px;border-radius:50%;border:0;color:#fff;font:inherit;display:grid;place-items:center}.send{background:#0f766e}.stop{background:#334155}.me,.ans,.retry,.stop,.tick,.t1,.t2,.tag,.ph{display:none}[data-state~=sent] .me,[data-state~=sent] .ans{display:block}[data-state~=sent] .q{display:none}[data-state~=sent] .ph{display:inline}[data-state~=sent] .send{display:none}[data-state~=sent] .stop{display:grid}[data-state~=ack] .tick{display:inline}[data-state~=answering] .typing{display:none}[data-state~=answering] .t1{display:inline}[data-state~=stopping] .stop{opacity:.4}[data-state~=stopped] .typing,[data-state~=done] .typing{display:none}[data-state~=stopped] .t1,[data-state~=stopped] .tag,[data-state~=done] .t1,[data-state~=done] .t2{display:inline}[data-state~=stopped] .retry{display:block}[data-state~=stopped] .stop,[data-state~=done] .stop{display:none}[data-state~=stopped] .send,[data-state~=done] .send{display:grid}"
+  },
+  "nodes": [
+    {
+      "id": "api",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Empfang",
+        "tech": "Chat-API"
+      },
+      "sub": {
+        "simple": "nimmt Fragen an",
+        "tech": "POST /messages"
+      }
+    },
+    {
+      "id": "queue",
+      "type": "store",
+      "zone": "backend",
+      "col": 1,
+      "row": 0,
+      "label": {
+        "simple": "Warteliste",
+        "tech": "RabbitMQ"
+      },
+      "sub": {
+        "simple": "offene Fragen",
+        "tech": "queue: prompts"
+      }
+    },
+    {
+      "id": "worker",
+      "type": "step",
+      "zone": "backend",
+      "col": 2,
+      "row": 0,
+      "label": {
+        "simple": "Arbeiter",
+        "tech": "Worker-Pod"
+      },
+      "sub": {
+        "simple": "holt die Antwort",
+        "tech": "consumer"
+      }
+    },
+    {
+      "id": "db",
+      "type": "store",
+      "zone": "backend",
+      "col": 3,
+      "row": 0,
+      "label": {
+        "simple": "Archiv",
+        "tech": "PostgreSQL"
+      },
+      "sub": {
+        "simple": "alle Antworten",
+        "tech": "messages"
+      }
+    },
+    {
+      "id": "gateway",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 1,
+      "label": {
+        "simple": "Bote",
+        "tech": "WebSocket-Gateway"
+      },
+      "sub": {
+        "simple": "bringt Wörter live",
+        "tech": "push an den Client"
+      }
+    },
+    {
+      "id": "claude",
+      "type": "external",
+      "zone": "external",
+      "col": 0,
+      "row": 1,
+      "label": "Claude",
+      "sub": {
+        "simple": "schreibt die Antwort",
+        "tech": "Messages API, stream"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "send",
+      "from": "@send",
+      "to": "api",
+      "verb": "schickt"
+    },
+    {
+      "id": "ack",
+      "from": "api",
+      "to": "@mine",
+      "verb": "angenommen"
+    },
+    {
+      "id": "stop",
+      "from": "@stop",
+      "to": "api",
+      "verb": "stoppt"
+    },
+    {
+      "id": "retry",
+      "from": "@retry",
+      "to": "api",
+      "verb": "nochmal"
+    },
+    {
+      "id": "enqueue",
+      "from": "api",
+      "to": "queue",
+      "verb": "reiht ein",
+      "async": true
+    },
+    {
+      "id": "pick",
+      "from": "queue",
+      "to": "worker",
+      "verb": "holt ab"
+    },
+    {
+      "id": "abort",
+      "from": "api",
+      "to": "worker",
+      "verb": "bricht ab",
+      "route": "above"
+    },
+    {
+      "id": "ask",
+      "from": "worker",
+      "to": "claude",
+      "verb": "fragt"
+    },
+    {
+      "id": "stream",
+      "from": "claude",
+      "to": "worker",
+      "verb": "streamt"
+    },
+    {
+      "id": "push",
+      "from": "worker",
+      "to": "gateway",
+      "verb": "leitet weiter"
+    },
+    {
+      "id": "show",
+      "from": "gateway",
+      "to": "@answer",
+      "verb": "zeigt"
+    },
+    {
+      "id": "save",
+      "from": "worker",
+      "to": "db",
+      "verb": "speichert"
+    }
+  ],
+  "views": [
+    {
+      "id": "planned",
+      "label": "Geplant",
+      "kind": "normal",
+      "headline": "Plan: Antworten erscheinen Wort für Wort, und du kannst sie mittendrin stoppen.",
+      "explain": [
+        "Heute wartet man bis zu 20 Sekunden auf eine Antwort, ohne zu sehen, ob etwas passiert. Wer merkt, dass die Frage falsch war, kann nur warten.",
+        "Geplant: Die Antwort kommt Wort für Wort über eine Live-Verbindung. Ein Stopp-Knopf bricht die Arbeit im System wirklich ab, und „Neu schreiben“ startet sie neu."
+      ],
+      "steps": [
+        {
+          "on": "send",
+          "edges": [
+            "send"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "POST"
+          },
+          "text": {
+            "simple": "Du schickst die Frage ab. Sie steht sofort im Chat.",
+            "tech": "Die App zeigt die Nachricht optimistisch und sendet POST /messages."
+          },
+          "demo": "sent"
+        },
+        {
+          "edges": [
+            "ack"
+          ],
+          "packet": "✓",
+          "text": {
+            "simple": "Der Empfang bestätigt: Frage ist angekommen.",
+            "tech": "Die API antwortet 202 Accepted mit der Message-ID."
+          },
+          "demo": "sent ack"
+        },
+        {
+          "edges": [
+            "enqueue"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "job"
+          },
+          "text": {
+            "simple": "Der Empfang legt die Frage auf die Warteliste.",
+            "tech": "Die API publiziert einen Job in die Queue."
+          },
+          "set": {
+            "queue": {
+              "slots": 1
+            }
+          }
+        },
+        {
+          "edges": [
+            "pick"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "job"
+          },
+          "text": {
+            "simple": "Ein freier Arbeiter holt sie ab.",
+            "tech": "Ein Worker konsumiert den Job."
+          },
+          "set": {
+            "queue": {
+              "slots": 0
+            },
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "ask"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "stream: true"
+          },
+          "text": {
+            "simple": "Der Arbeiter fragt Claude.",
+            "tech": "Der Worker ruft die Messages API mit stream: true."
+          }
+        },
+        {
+          "edges": [
+            "stream",
+            "push"
+          ],
+          "packet": {
+            "stream": {
+              "simple": "Wörter",
+              "tech": "deltas"
+            },
+            "push": {
+              "simple": "Wörter",
+              "tech": "deltas"
+            }
+          },
+          "text": {
+            "simple": "Claude schreibt, und jedes Wort geht gleich weiter zum Boten.",
+            "tech": "Jedes Text-Delta geht sofort an das Gateway."
+          },
+          "tag": "new",
+          "detail": {
+            "simple": "Niemand wartet auf die ganze Antwort. Darum siehst du nach einer Sekunde schon die ersten Wörter.",
+            "tech": "Kein Puffern im Worker: Time-to-first-token statt Gesamtdauer bestimmt die Wartezeit."
+          }
+        },
+        {
+          "edges": [
+            "show"
+          ],
+          "packet": {
+            "simple": "Wörter",
+            "tech": "ws: delta"
+          },
+          "text": {
+            "simple": "Der Bote bringt die Wörter live in deinen Chat.",
+            "tech": "Das Gateway pusht die Deltas über den WebSocket."
+          },
+          "tag": "new",
+          "demo": "sent ack answering",
+          "detail": {
+            "simple": "Du siehst die Antwort wachsen, statt auf eine leere Blase zu starren.",
+            "tech": "Der Client hängt jedes Delta an die Nachricht an."
+          }
+        },
+        {
+          "on": "stop",
+          "edges": [
+            "stop"
+          ],
+          "packet": {
+            "simple": "Stopp",
+            "tech": "DELETE"
+          },
+          "text": {
+            "simple": "Du drückst Stopp, mitten in der Antwort.",
+            "tech": "Die App sendet DELETE /messages/:id/stream."
+          },
+          "tag": "new",
+          "demo": "sent ack answering stopping",
+          "detail": {
+            "simple": "Die halbe Antwort bleibt stehen, damit du siehst, was schon da war.",
+            "tech": "Der Client zeigt bis zur Bestätigung einen gedimmten Stopp-Knopf."
+          }
+        },
+        {
+          "edges": [
+            "abort"
+          ],
+          "packet": {
+            "simple": "Stopp",
+            "tech": "cancel"
+          },
+          "text": {
+            "simple": "Der Empfang sagt dem Arbeiter: aufhören.",
+            "tech": "Die API schickt ein Cancel an den Worker."
+          },
+          "tag": "new",
+          "detail": {
+            "simple": "Der Arbeiter hört wirklich auf. Es wird nichts weiter geschrieben, und nichts kostet weiter.",
+            "tech": "Der Worker bricht den Stream zu Claude ab; es fallen keine weiteren Tokens an."
+          },
+          "set": {
+            "worker": {
+              "status": {
+                "simple": "gestoppt",
+                "tech": "cancelled"
+              },
+              "tone": "muted"
+            }
+          }
+        },
+        {
+          "edges": [
+            "push",
+            "show"
+          ],
+          "labels": {
+            "push": {
+              "simple": "meldet Ende",
+              "tech": "done"
+            },
+            "show": {
+              "simple": "beendet",
+              "tech": "ws: stopped"
+            }
+          },
+          "packet": {
+            "simple": "Ende",
+            "tech": "stopped"
+          },
+          "text": {
+            "simple": "Der Bote meldet das Ende, die Antwort bleibt halb stehen.",
+            "tech": "Das Gateway sendet stopped; die App markiert die Nachricht."
+          },
+          "demo": "sent ack stopped"
+        },
+        {
+          "on": "retry",
+          "edges": [
+            "retry"
+          ],
+          "labels": {
+            "push": null,
+            "show": null
+          },
+          "packet": {
+            "simple": "nochmal",
+            "tech": "POST"
+          },
+          "text": {
+            "simple": "Du lässt die Antwort neu schreiben.",
+            "tech": "Die App sendet POST /messages/:id/retry."
+          },
+          "tag": "new",
+          "demo": "sent ack",
+          "detail": {
+            "simple": "Die Frage muss nicht neu getippt werden.",
+            "tech": "Retry verwendet dieselbe Message-ID und denselben Prompt."
+          }
+        },
+        {
+          "edges": [
+            "enqueue"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "job"
+          },
+          "text": {
+            "simple": "Die Frage kommt wieder auf die Warteliste.",
+            "tech": "Die API publiziert den Job erneut."
+          },
+          "set": {
+            "queue": {
+              "slots": 1
+            }
+          }
+        },
+        {
+          "edges": [
+            "pick",
+            "ask"
+          ],
+          "packet": {
+            "simple": "Frage",
+            "tech": "job"
+          },
+          "text": {
+            "simple": "Ein Arbeiter holt sie und fragt Claude.",
+            "tech": "Ein Worker konsumiert den Job und ruft die API."
+          },
+          "set": {
+            "queue": {
+              "slots": 0
+            },
+            "worker": {
+              "status": {
+                "simple": "arbeitet",
+                "tech": "busy"
+              },
+              "tone": null
+            }
+          }
+        },
+        {
+          "edges": [
+            "stream",
+            "push"
+          ],
+          "packet": {
+            "simple": "Wörter",
+            "tech": "deltas"
+          },
+          "text": {
+            "simple": "Claude schreibt die Antwort diesmal ganz zu Ende.",
+            "tech": "Alle Deltas bis message_stop gehen ans Gateway."
+          }
+        },
+        {
+          "edges": [
+            "save"
+          ],
+          "packet": {
+            "simple": "Antwort",
+            "tech": "INSERT"
+          },
+          "text": {
+            "simple": "Der Arbeiter legt die fertige Antwort ins Archiv.",
+            "tech": "Der Worker speichert die Nachricht in messages."
+          },
+          "set": {
+            "db": {
+              "status": {
+                "simple": "+1 Antwort",
+                "tech": "+1 row"
+              },
+              "tone": "ok"
+            },
+            "worker": {
+              "status": {
+                "simple": "frei",
+                "tech": "idle"
+              }
+            }
+          }
+        },
+        {
+          "edges": [
+            "show"
+          ],
+          "packet": {
+            "simple": "Wörter",
+            "tech": "ws: delta"
+          },
+          "text": {
+            "simple": "Die ganze Antwort steht in deinem Chat.",
+            "tech": "Das Gateway pusht die letzten Deltas und done."
+          },
+          "demo": "sent ack done"
+        }
+      ]
+    }
+  ]
+}

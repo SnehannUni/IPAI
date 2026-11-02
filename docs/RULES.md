@@ -95,6 +95,19 @@ If mainly **what you see** changes (menu, form, page), show the screen first, no
 - **Real labels** (menu items, buttons), no invented role names. Show clicks with `cursor` and the result with `active`.
 - **Technology afterwards**, in views of their own (`kind: "normal"`, label "Tech"). The other rules apply there.
 - 4–6 steps per comparison; only moments you can see on the screen.
+- When the look itself is the point (a sidebar, dark mode, a new form), show a **demo** instead of a `menu` box: the real screen, clickable, as the diagram's frontend (R17).
+
+## 4d. Demo: the screen and what a click does (R17)
+
+A `demo` is a mock of the screen as the leftmost zone of the diagram. The user clicks in it and watches the click travel through the system; the answer lands where the screen changes.
+
+- **Make it look like the product.** Its real colours, fonts, spacing and labels, read from the project's styles and texts. Only the part that changes, with enough around it to recognise the screen.
+- **The demo is the frontend.** No box for "the page" beside it: arrows start at the element that was clicked (`"from": "@toggle"`) and end at the element the answer changes (`"to": "@saving"`, `"to": "@list"`). Then you see which spot on the screen touches which part of the system.
+- **Every click is a part of the flow.** An element with `data-ipai` starts the step with that `on`; that step's first arrow leaves `@<id>`, and the steps up to the next `on` show what the click causes. The first step of a view with a demo is a click.
+- **The mock shows the answer.** Use `demo` states for what the user sees while the system works and afterwards: a spinner, a saved hint, a new row, an error. A click whose result never shows in the mock is missing its point. Every state appears in the css.
+- **Look at the arrows.** The validator cannot measure the mock, so arrows at elements are not checked for crossings. Open the built page and check the steps that use them.
+- **Nothing runs in the mock.** No scripts, no event handlers, no external files. Clicks go through `data-ipai`, changes through states. Then the diagram and the mock cannot drift apart.
+- Before/after: a "Today" view with its own `demo` and a "Planned" view with the new one.
 
 ## 5. Presenting bugs
 

@@ -144,7 +144,7 @@ button.primary:hover{background:#27272a}
 .mi.bad .mnote{color:var(--error)}
 .mi.cursor{box-shadow:inset 0 0 0 2px var(--step);animation:pulse 1.2s ease-in-out infinite}
 .mi.cursor .chev{visibility:hidden}
-.mi.cursor::after{content:"Click";position:absolute;right:6px;font-size:9.5px;font-weight:700;color:#fff;background:var(--step);padding:0 5px;border-radius:3px;line-height:14px}
+.mi.cursor::after{content:var(--click,"Click");position:absolute;right:6px;font-size:9.5px;font-weight:700;color:#fff;background:var(--step);padding:0 5px;border-radius:3px;line-height:14px}
 @keyframes pulse{50%{box-shadow:inset 0 0 0 2px #93c5fd}}
 .mfade{position:absolute;left:0;right:0;bottom:0;height:52px;background:linear-gradient(rgba(255,255,255,0),#fff 70%);display:flex;align-items:flex-end;justify-content:center;font-size:10.5px;color:var(--muted);padding-bottom:2px}
 .menu.slide-r{animation:slideR .35s ease-out}.menu.slide-l{animation:slideL .35s ease-out}
@@ -209,6 +209,26 @@ button.primary:hover{background:#27272a}
 .legend .sw{width:6px;height:6px;border-radius:50%;background:var(--c)}
 .legend .sep{width:1px;height:14px;background:var(--line)}
 .legend svg{display:block}
+.node.colored{border-top:3px solid var(--c)}
+
+/* Demo: a mock of the screen as the leftmost zone of the stage; clicks in it play the steps, arrows leave and reach
+   its elements (docs/FORMAT.md#demo) */
+#demoLayer{position:absolute;inset:0;pointer-events:none;z-index:2}
+.win{position:absolute;pointer-events:auto;border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.win .bar{height:26px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--soft);border-bottom:1px solid var(--line);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.win .bar i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line2)}
+.win .bar span{margin-left:6px;overflow:hidden;text-overflow:ellipsis}
+.win.phone{border:7px solid #27272a;border-radius:28px}
+.win.phone .bar{display:none}
+#demoHost{display:block;overflow:auto}
+.demo-hint{position:absolute;font-size:12.5px;color:var(--muted);text-align:center}
+.edge.demo{stroke-width:1.75}
+#topEdges{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff)}
+.fcursor{position:absolute;left:50%;top:60%;width:18px;height:18px;z-index:2;pointer-events:none;opacity:0;transition:left .6s ease,top .6s ease,opacity .2s}
+.fcursor.on{opacity:1}
+.fcursor::before{content:"";position:absolute;inset:0;background:#18181b;clip-path:polygon(0 0,0 85%,24% 64%,40% 100%,55% 94%,40% 58%,72% 58%)}
+.fcursor.tap::after{content:"";position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:50%;border:2px solid var(--step);animation:tap .35s ease-out}
+@keyframes tap{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
 .fatal{border:1px solid #fca5a5;background:#fef2f2;color:#991b1b;border-radius:10px;padding:16px 20px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
 </style>
 </head>
@@ -218,8 +238,8 @@ button.primary:hover{background:#27272a}
   <div class="controls">
     <div class="seg big" id="views"></div>
     <button class="primary" id="play">Play</button>
-    <button id="prev" title="Previous step (←)">Back</button>
-    <button id="next" title="Next step (→)">Next</button>
+    <button id="prev">Back</button>
+    <button id="next">Next</button>
     <div class="seg right" id="mode"><button data-m="0" class="on">Simple</button><button data-m="1">Technical</button></div>
   </div>
   <div class="banner" id="banner"><div class="head" id="head"></div><div class="chain" id="chain"></div><details class="explain" id="explain"><summary id="explainSum"></summary><div id="explainBody"></div></details></div>
@@ -228,7 +248,11 @@ button.primary:hover{background:#27272a}
     <div class="stage" id="stage">
       <svg id="svg"><defs id="defs"></defs><g id="zones"></g><g id="edges"></g><g id="labels"></g></svg>
       <div id="nodes"></div>
-      <svg class="overlay" id="overlay"><g id="packets"></g></svg>
+      <div id="demoLayer" hidden>
+        <div class="win" id="win"><div class="bar"><i></i><i></i><i></i><span id="demoTitle"></span></div><div id="demoHost"></div><div class="fcursor" id="cursor"></div></div>
+        <div class="demo-hint" id="demoHint"></div>
+      </div>
+      <svg class="overlay" id="overlay"><g id="topEdges"></g><g id="topLabels"></g><g id="packets"></g></svg>
     </div>
   </div>
   <div class="card" id="card"></div>
@@ -246,16 +270,40 @@ button.primary:hover{background:#27272a}
 
 // ---------- Basics ----------
 const TYPES = {
-  trigger:  {name:'Trigger',        c:'var(--trigger)'},
-  step:     {name:'Step',           c:'var(--step)'},
-  store:    {name:'Storage',        c:'var(--store)'},
-  external: {name:'External service', c:'var(--external)'},
-  result:   {name:'Result',         c:'var(--result)'},
-  screen:   {name:'Screen',         c:'var(--screen)'},
+  trigger:  {c:'var(--trigger)'},
+  step:     {c:'var(--step)'},
+  store:    {c:'var(--store)'},
+  external: {c:'var(--external)'},
+  result:   {c:'var(--result)'},
+  screen:   {c:'var(--screen)'},
 };
 const MARKERS = {idle:'#d4d4d8', done:'#a1a1aa', active:'#18181b', err:'#dc2626', errdim:'#fca5a5',
                  new:'#059669', newdim:'#6ee7b7', mod:'#2563eb', moddim:'#93c5fd'};
 const TAGS = {new:['new','new'], changed:['mod','changed'], test:['test','test'], error:['error','error']};
+// The viewer's own words, in the spec's language (lang); English for any other
+const STRINGS = {
+  en: {play:'Play', pause:'Pause', replay:'Replay', back:'Back', next:'Next', simple:'Simple', tech:'Technical',
+    prevTitle:'Previous step (←)', nextTitle:'Next step (→)', step:(i, n) => `Step ${i} of ${n}`, steps:n => `${n} steps`,
+    press:'Press “Play”.', explainBug:'What is this about? The problem explained', explainFix:'What changes? The solution explained',
+    explainAny:'What is this about?', click:'Click', scroll:{simple:'scroll for more ▾', tech:'scroll ▾'},
+    waits:{simple:'waits for an answer', tech:'synchronous'}, along:{simple:'runs alongside', tech:'asynchronous'},
+    tags:{new:'new', changed:'changed', test:'test', error:'error'},
+    types:{trigger:'Trigger', step:'Step', store:'Storage', external:'External service', result:'Result', screen:'Screen'},
+    zones:{frontend:{simple:'YOU', tech:'FRONTEND'}, backend:{simple:'OUR SYSTEM', tech:'BACKEND'}, external:{simple:'OTHER COMPANIES', tech:'EXTERNAL'}},
+    tryIt:'Click the highlighted spot on the screen, or Play for a tour.', again:'That was all. Click again or Replay.',
+    clickNext:'Next: click the highlighted spot.', running:'Watch the diagram …', fatal:'Could not read the flow spec'},
+  de: {play:'Abspielen', pause:'Pause', replay:'Nochmal', back:'Zurück', next:'Weiter', simple:'Einfach', tech:'Technisch',
+    prevTitle:'Schritt zurück (←)', nextTitle:'Nächster Schritt (→)', step:(i, n) => `Schritt ${i} von ${n}`, steps:n => `${n} Schritte`,
+    press:'Drück auf „Abspielen“.', explainBug:'Worum geht es? Das Problem erklärt', explainFix:'Was ändert sich? Die Lösung erklärt',
+    explainAny:'Worum geht es?', click:'Klick', scroll:{simple:'weiter scrollen ▾', tech:'scrollen ▾'},
+    waits:{simple:'wartet auf Antwort', tech:'synchron'}, along:{simple:'läuft nebenher', tech:'asynchron'},
+    tags:{new:'neu', changed:'geändert', test:'Test', error:'Fehler'},
+    types:{trigger:'Auslöser', step:'Schritt', store:'Speicher', external:'Fremder Dienst', result:'Ergebnis', screen:'Bildschirm'},
+    zones:{frontend:{simple:'DU', tech:'FRONTEND'}, backend:{simple:'UNSER SYSTEM', tech:'BACKEND'}, external:{simple:'ANDERE FIRMEN', tech:'EXTERN'}},
+    tryIt:'Klick im Bildschirm auf die markierte Stelle – oder Abspielen für einen Rundgang.', again:'Das war alles. Klick nochmal oder Nochmal.',
+    clickNext:'Weiter: Klick auf die markierte Stelle.', running:'Schau aufs Diagramm …', fatal:'Die Flow-Spec ist nicht lesbar'},
+};
+let T = STRINGS.en;
 const TASK_MARK = {todo:'', done:'✓', fail:'✕', ok:'✓', skip:'–'};
 const meterMax = n => n.meterMax || 150;   // the bar ends here, the limit line sits at 100 %
 
@@ -275,7 +323,15 @@ const tx = v => v == null ? '' : typeof v === 'string' ? v : (mode ? (v.tech ?? 
 
 let spec;
 try { spec = JSON.parse($('flow-spec').textContent); }
-catch (err) { document.querySelector('.wrap').innerHTML = `<div class="fatal">Could not read the flow spec:\n${esc(err.message)}</div>`; return; }
+catch (err) { document.querySelector('.wrap').innerHTML = `<div class="fatal">${T.fatal}:\n${esc(err.message)}</div>`; return; }
+T = STRINGS[spec.lang] || STRINGS.en;
+if (spec.lang) document.documentElement.lang = spec.lang;
+document.body.style.setProperty('--click', JSON.stringify(T.click));
+$('prev').textContent = T.back; $('prev').title = T.prevTitle;
+$('next').textContent = T.next; $('next').title = T.nextTitle;
+$('mode').children[0].textContent = T.simple; $('mode').children[1].textContent = T.tech;
+// Default zones speak the spec's language; zones of its own keep their labels
+const zoneLabel = z => z.id === '@demo' ? z.label || T.zones.frontend : spec.zones && spec.zones.length ? z.label : T.zones[z.id] || z.label;
 
 const NODES = Object.fromEntries(spec.nodes.map(n => [n.id, n]));
 const EDGES = Object.fromEntries(spec.edges.map(e => [e.id, e]));
@@ -288,34 +344,49 @@ for (const [id, c] of Object.entries(MARKERS)) {
   const m = svgEl('marker', {id:'m-' + id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse'}, $('defs'));
   svgEl('path', {d:'M0,1 L9,5 L0,9 z', fill:c}, m);
 }
+let DEMO_RECT = null;
 function buildStage(viewId){
   const L = computeLayout(spec, viewId);
-  ({W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L); ZONES = L.zones;
+  ({W, H, zx: ZX, boxes: BOX, routes: ROUTES} = L); ZONES = L.zones; DEMO_RECT = L.demo;
   for (const k of [nodeEls, edgeEls, labelEls, lastHTML, menuAnim, menuLevel]) for (const id in k) delete k[id];
-  for (const id of ['zones', 'edges', 'labels', 'nodes', 'packets']) $(id).innerHTML = '';
+  for (const id of ['zones', 'edges', 'labels', 'nodes', 'packets', 'topEdges', 'topLabels']) $(id).innerHTML = '';
+  // The demo window stands in its zone; the arrows to its elements are drawn above it
+  $('demoLayer').hidden = !L.demo;
+  const clip = document.getElementById('clip-demo');
+  if (clip) clip.remove();
+  if (L.demo) {
+    const c = svgEl('clipPath', {id:'clip-demo', clipPathUnits:'userSpaceOnUse'}, $('defs'));
+    svgEl('rect', {x:L.demo.x + L.demo.w, y:0, width:W, height:H}, c);
+    const d = L.demo, s = L.demoSize, phone = d.h === s.h + 2 * DEMO.FRAME;
+    $('win').classList.toggle('phone', phone);
+    $('win').style.cssText = `left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px`;
+    demoHost.style.width = s.w + 'px'; demoHost.style.height = s.h + 'px';
+    $('demoHint').style.cssText = `left:${d.x}px;top:${d.y + d.h + 8}px;width:${d.w}px`;
+  }
   $('stage').style.height = H + 'px'; $('stage').style.width = W + 'px';
   for (const s of [$('svg'), $('overlay')]) { s.setAttribute('width', W); s.setAttribute('height', H); s.setAttribute('viewBox', `0 0 ${W} ${H}`); }
   const TINT = {bug:'#fef7f7', fix:'#f3fbf7'};
   ZONES.forEach((z, i) => {
     const {x, w} = ZX[z.id];
-    const fill = TINT[z.tone] || (ZONES.length > 1 && (i === 0 || i === ZONES.length - 1) ? '#fafafa' : null);
-    if (fill) svgEl('rect', {x, y:0, width:w, height:H, fill}, $('zones'));
+    const fill = z.color || TINT[z.tone] || (ZONES.length > 1 && (i === 0 || i === ZONES.length - 1) ? '#fafafa' : null);
+    if (fill) svgEl('rect', {x, y:0, width:w, height:H, fill, 'fill-opacity':z.color ? .07 : 1}, $('zones'));
     if (i) svgEl('line', {class:'zone-div', x1:x, y1:0, x2:x, y2:H}, $('zones'));
-    svgEl('text', {class:'zone-cap ' + (z.tone || ''), x:x + 24, y:32, 'data-z':i}, $('zones'));
+    svgEl('text', {class:'zone-cap ' + (z.tone || ''), x:x + 24, y:32, 'data-z':i, ...(z.color ? {style:`fill:${z.color}`} : {})}, $('zones'));
   });
   for (const n of spec.nodes) {
   if (!BOX[n.id]) continue;
   const b = BOX[n.id], t = TYPES[n.type] || TYPES.step, d = document.createElement('div');
   d.className = 'node' + (n.widget === 'chat' ? ' chat' : n.widget === 'menu' ? ' menu' : '');
-  d.style.cssText = `--c:${t.c};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
+  d.style.cssText = `--c:${n.color || t.c};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
   d.innerHTML = `<div class="type"><span class="tn"></span><span class="marks"></span><span class="badge"></span></div><div class="label"></div><div class="sub"></div>`
     + `<div class="w">${n.widget === 'meter' ? `<div class="meter"><i></i><b style="left:${100 / meterMax(n) * 100}%"></b></div><div class="mline"></div>` : ''}</div><div class="line"></div>`;
   $('nodes').appendChild(d); nodeEls[n.id] = d;
   }
   for (const e of spec.edges) {
     if (!ROUTES[e.id]) continue;
-    edgeEls[e.id] = svgEl('path', {d:ROUTES[e.id].d, class:'edge' + (e.async ? ' async' : '')}, $('edges'));
-    labelEls[e.id] = svgEl('g', {class:'elab'}, $('labels'));
+    const top = ROUTES[e.id].demo;
+    edgeEls[e.id] = svgEl('path', {d:ROUTES[e.id].d, class:'edge' + (e.async ? ' async' : '') + (top ? ' demo' : '')}, $(top ? 'topEdges' : 'edges'));
+    labelEls[e.id] = svgEl('g', {class:'elab'}, $(top ? 'topLabels' : 'labels'));
   }
 }
 
@@ -340,28 +411,30 @@ function stateAt(n, withBeforeOf){
   return st;
 }
 const visible = (item) => !item.views || item.views.includes(view.id);
-const edgeVisible = e => visible(e) && visible(NODES[e.from]) && visible(NODES[e.to]);
+// An arrow end is a box or a demo element ("@id"); an element exists while the view shows a demo
+const endVisible = id => isDemoEnd(id) ? !!demo : visible(NODES[id]);
+const edgeVisible = e => visible(e) && endVisible(e.from) && endVisible(e.to);
 
 // ---------- Rendering ----------
 function renderTexts(){
   $('title').textContent = tx(spec.title);
   $('subtitle').textContent = tx(view.subtitle ?? spec.subtitle);
   document.title = tx(spec.title) || 'Flow';
-  document.querySelectorAll('[data-z]').forEach(t => t.textContent = tx(ZONES[+t.dataset.z].label));
+  document.querySelectorAll('[data-z]').forEach(t => t.textContent = tx(zoneLabel(ZONES[+t.dataset.z])));
   for (const n of spec.nodes) {
     const el = nodeEls[n.id], m = mark.nodes[n.id];
     if (!el) continue;
-    el.querySelector('.tn').textContent = (TYPES[n.type] || TYPES.step).name;
+    el.querySelector('.tn').textContent = T.types[n.type] || T.types.step;
     el.querySelector('.label').textContent = tx(n.label);
     el.querySelector('.sub').textContent = tx(n.sub);
-    el.querySelector('.marks').innerHTML = m ? `<span class="pill ${TAGS[m][0]}">${TAGS[m][1]}</span>` : '';
+    el.querySelector('.marks').innerHTML = m ? `<span class="pill ${TAGS[m][0]}">${T.tags[m]}</span>` : '';
   }
   const head = tx(view.headline), i = head.indexOf(':');
   $('head').innerHTML = i > 0 ? `<b>${esc(head.slice(0, i + 1))}</b>${esc(head.slice(i + 1))}` : esc(head);
   $('chain').innerHTML = (view.chain || []).map((c, k) => (k ? '<span class="arr">→</span>' : '') + `<span class="c" data-i="${k}">${esc(tx(c))}</span>`).join('');
   const ex = [].concat(view.explain || []).map(tx).filter(Boolean);
   $('explain').hidden = !ex.length;
-  $('explainSum').textContent = tx(view.explainLabel) || (view.kind === 'bug' ? 'What is this about? The problem explained' : view.kind === 'fix' ? 'What changes? The solution explained' : 'What is this about?');
+  $('explainSum').textContent = tx(view.explainLabel) || (view.kind === 'bug' ? T.explainBug : view.kind === 'fix' ? T.explainFix : T.explainAny);
   $('explainBody').innerHTML = ex.map(p => p.startsWith('>') ? `<blockquote>${esc(p.slice(1).trim())}</blockquote>` : `<p>${esc(p)}</p>`).join('');
   $('explain').open = false;
   $('banner').hidden = !head && !(view.chain || []).length && !ex.length;
@@ -372,15 +445,15 @@ function renderTexts(){
 
 function renderLegend(){
   const used = new Set(spec.nodes.filter(visible).map(n => n.type));
-  let h = Object.entries(TYPES).filter(([k]) => used.has(k)).map(([, t]) => `<div class="it"><span class="sw" style="--c:${t.c}"></span>${t.name}</div>`).join('');
+  let h = Object.entries(TYPES).filter(([k]) => used.has(k)).map(([k, t]) => `<div class="it"><span class="sw" style="--c:${t.c}"></span>${T.types[k]}</div>`).join('');
   const line = (dash, c, label) => `<div class="it"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="${c}" stroke-width="1.5"${dash ? ' stroke-dasharray="5 5"' : ''}/></svg>${label}</div>`;
   h += '<span class="sep"></span>';
   const vis = spec.edges.filter(edgeVisible);
-  if (vis.some(e => !e.async)) h += line(false, '#71717a', tx({simple:'waits for an answer', tech:'synchronous'}));
-  if (vis.some(e => e.async)) h += line(true, '#71717a', tx({simple:'runs alongside', tech:'asynchronous'}));
-  if (steps.some(s => s.error)) h += line(false, '#dc2626', 'error');
-  if (Object.values(mark.edges).includes('new') || Object.values(mark.nodes).includes('new')) h += line(false, '#059669', 'new');
-  if (Object.values(mark.edges).includes('changed') || Object.values(mark.nodes).includes('changed')) h += line(false, '#2563eb', 'changed');
+  if (vis.some(e => !e.async)) h += line(false, '#71717a', tx(T.waits));
+  if (vis.some(e => e.async)) h += line(true, '#71717a', tx(T.along));
+  if (steps.some(s => s.error)) h += line(false, '#dc2626', T.tags.error);
+  if (Object.values(mark.edges).includes('new') || Object.values(mark.nodes).includes('new')) h += line(false, '#059669', T.tags.new);
+  if (Object.values(mark.edges).includes('changed') || Object.values(mark.nodes).includes('changed')) h += line(false, '#2563eb', T.tags.changed);
   $('legend').innerHTML = h;
 }
 
@@ -400,7 +473,7 @@ function menuHtml(n, s){
     const note = it.note ? `<span class="mnote">${esc(tx(it.note))}</span>` : '';
     return `<div class="mi ${kind}${it.active ? ' active' : ''}${it.cursor ? ' cursor' : ''}${it.tone ? ' ' + it.tone : ''}">${icon}<span class="mt">${esc(tx(it.text))}</span>${note}${chev}</div>`;
   }).join('');
-  return `<div class="menu ${menuAnim[n.id] || ''}">${items}</div>${m.scroll ? `<div class="mfade">${esc(tx(m.scroll === true ? {simple:'scroll for more ▾', tech:'scroll ▾'} : m.scroll))}</div>` : ''}`;
+  return `<div class="menu ${menuAnim[n.id] || ''}">${items}</div>${m.scroll ? `<div class="mfade">${esc(tx(m.scroll === true ? T.scroll : m.scroll))}</div>` : ''}`;
 }
 function nodeWidget(n, s){
   if (n.widget === 'menu') return menuHtml(n, s);
@@ -428,7 +501,7 @@ function render(){
     const el = nodeEls[n.id], s = state[n.id], m = mark.nodes[n.id];
     if (!el) continue;
     el.hidden = !visible(n);
-    el.className = 'node' + (n.widget === 'chat' ? ' chat' : n.widget === 'menu' ? ' menu' : '') + (actN.has(n.id) ? ' active' : '')
+    el.className = 'node' + (n.widget === 'chat' ? ' chat' : n.widget === 'menu' ? ' menu' : '') + (n.color ? ' colored' : '') + (actN.has(n.id) ? ' active' : '')
       + (s.state ? ' ' + s.state : '') + (m ? ' ' + TAGS[m][0] : '');
     const wHtml = nodeWidget(n, s), lHtml = nodeLine(n, s), bHtml = esc(tx(s.badge)), badge = el.querySelector('.badge');
     if (wHtml != null && lastHTML[n.id + 'w'] !== wHtml) { el.querySelector('.w').innerHTML = wHtml; lastHTML[n.id + 'w'] = wHtml; }
@@ -449,10 +522,13 @@ function render(){
   const reached = steps.slice(0, Math.max(pos, activeIdx + 1));
   const done = new Set(), errDone = new Set();
   steps.slice(0, pos).forEach(s => (s.edges || []).forEach(id => { done.add(id); if (s.error) errDone.add(id); else errDone.delete(id); }));
+  // Arrows at demo elements show only in their own step. Kept on, an arrow from a click going up and an answer
+  // going down cross each other whatever lanes they take; the boxes' states keep what happened.
+  const clickArrows = new Set(cur ? cur.edges || [] : []);
   for (const e of spec.edges) {
     const p = edgeEls[e.id], l = labelEls[e.id];
     if (!p) continue;
-    const vis = edgeVisible(e);
+    const vis = edgeVisible(e) && (!ROUTES[e.id].demo || clickArrows.has(e.id));
     p.style.display = l.style.display = vis ? '' : 'none';
     if (!vis) continue;
     const isA = actE.has(e.id), isD = done.has(e.id) && !isA, err = isA ? !!cur.error : errDone.has(e.id);
@@ -460,6 +536,8 @@ function render(){
     for (const [k, v] of [['active', isA], ['done', isD], ['err', err], ['new', mc === 'new'], ['mod', mc === 'mod']]) { p.classList.toggle(k, v); l.classList.toggle(k, v); }
     const marker = err ? (isA ? 'err' : 'errdim') : mc ? (isA ? mc : mc + 'dim') : isA ? 'active' : isD ? 'done' : 'idle';
     p.setAttribute('marker-end', `url(#m-${marker})`);
+    // Over the mock an arrow only shows while it plays; otherwise its part outside the window stands for it
+    if (ROUTES[e.id].demo) { if (isA) p.removeAttribute('clip-path'); else p.setAttribute('clip-path', 'url(#clip-demo)'); }
     // Arrow label: the label set by the latest step stays, otherwise the default verb
     const over = reached.reduce((v, s) => (s.labels && e.id in s.labels ? s.labels[e.id] : v), null);
     const verb = tx(over || e.verb), r = ROUTES[e.id], lr = labelRect(r, verb);
@@ -473,11 +551,11 @@ function render(){
   });
 
   const card = $('card');
-  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${steps.length} steps</div><div class="big">${esc(tx(view.intro) || 'Press “Play”.')}</div>${view.introDetail ? `<div class="detail">${esc(tx(view.introDetail))}</div>` : ''}`; }
+  if (!cur) { card.className = 'card'; card.innerHTML = `<div class="no">${T.steps(steps.length)}</div><div class="big">${esc(tx(view.intro) || (waitsForClick() ? T.tryIt : T.press))}</div>${view.introDetail ? `<div class="detail">${esc(tx(view.introDetail))}</div>` : ''}`; }
   else {
-    const t = cur.tag && TAGS[cur.tag] ? `<span class="pill ${TAGS[cur.tag][0]}">${TAGS[cur.tag][1]}</span>` : '';
+    const t = cur.tag && TAGS[cur.tag] ? `<span class="pill ${TAGS[cur.tag][0]}">${T.tags[cur.tag]}</span>` : '';
     card.className = 'card' + (cur.error ? ' err' : '');
-    card.innerHTML = `<div class="no">Step ${activeIdx + 1} of ${steps.length} ${t}</div><div class="big">${esc(tx(cur.text))}</div>${cur.detail ? `<div class="detail">${esc(tx(cur.detail))}</div>` : ''}`;
+    card.innerHTML = `<div class="no">${T.step(activeIdx + 1, steps.length)} ${t}</div><div class="big">${esc(tx(cur.text))}</div>${cur.detail ? `<div class="detail">${esc(tx(cur.detail))}</div>` : ''}`;
   }
 
   const tl = $('timeline');
@@ -490,7 +568,8 @@ function render(){
     });
   }
   [...tl.querySelectorAll('.tl')].forEach((b, i) => { b.classList.toggle('done', i < pos); b.classList.toggle('cur', i === activeIdx); });
-  $('play').textContent = playing ? 'Pause' : (pos >= steps.length ? 'Replay' : 'Play');
+  $('play').textContent = playing ? T.pause : (pos >= steps.length ? T.replay : T.play);
+  renderDemo(cur);
 }
 
 // ---------- Animation ----------
@@ -541,19 +620,123 @@ async function runStep(i, id){
   return true;
 }
 function jump(n){
-  run++; playing = false; $('packets').innerHTML = '';
+  run++; playing = false; $('packets').innerHTML = ''; $('cursor').classList.remove('on');
   pos = Math.max(0, Math.min(steps.length, n)); activeIdx = pos - 1;
   state = stateAt(pos); render();
 }
-async function play(){
+// Plays up to step `end` (exclusive). The tour moves a cursor to every demo click on the way; a click made by
+// hand plays only its own part (playClick).
+async function play(end = steps.length, tour = true){
+  if (typeof end !== 'number') end = steps.length;
   if (pos >= steps.length) jump(0);
   const id = ++run; playing = true; render();
-  while (pos < steps.length) {
+  while (pos < end) {
+    if (tour && demo && steps[pos].on && !await cursorTo(steps[pos].on, id)) return;
     if (!await runStep(pos, id)) return;
     pos++; render();
-    if (pos < steps.length && !await wait(spec.pause ?? 1400, id)) return;
+    if (pos < end && !await wait(spec.pause ?? 1400, id)) return;
   }
-  playing = false; render();
+  playing = false; $('cursor').classList.remove('on'); render();
+}
+
+// ---------- Demo (docs/FORMAT.md, "demo") ----------
+// The mock lives in a shadow root so that its CSS and the viewer's never meet. Steps with `on` start where the user
+// clicks; `demo` on a step sets the mock's state (data-state on its root), which its own CSS shows.
+const DEMO_BASE = `:host{all:initial;display:block;height:100%;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#18181b}
+*{box-sizing:border-box}.ipai-root{position:relative;height:100%;overflow:hidden}
+.ipai-on{cursor:pointer}
+.ipai-hot{outline:2px solid #2563eb;outline-offset:2px;animation:ipai-pulse 1.2s ease-in-out infinite}
+.ipai-act{outline:2px solid #18181b;outline-offset:2px}
+@keyframes ipai-pulse{50%{outline-color:#93c5fd}}
+:host(.still) *{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion:reduce){.ipai-hot{animation:none}}
+`;
+const demoHost = $('demoHost'), demoRoot = demoHost.attachShadow ? demoHost.attachShadow({mode:'open'}) : null;
+let demo = null, demoEl = null, demoState = null, seenBoxes = {};
+const waitsForClick = () => !!demo && steps.some(s => s.on);
+const segEnd = i => { let j = i + 1; while (j < steps.length && !steps[j].on) j++; return j; };
+function buildDemo(){
+  demo = demoOf(spec, view);
+  demoEl = null; demoState = null; seenBoxes = {};
+  if (!demo || !demoRoot) return;
+  demoHost.classList.toggle('still', document.body.classList.contains('still'));
+  $('demoTitle').textContent = tx(demo.title);
+  demoRoot.innerHTML = `<style>${DEMO_BASE}${demo.css || ''}</style><div class="ipai-root">${demo.html || ''}</div>`;
+  demoEl = demoRoot.querySelector('.ipai-root');
+}
+const demoTargets = on => demoEl ? [...demoEl.querySelectorAll('[data-ipai]')].filter(el => el.dataset.ipai === on) : [];
+function renderDemo(cur){
+  if (!demoEl) return;
+  // The state after the last step reached; a step's change lands with its packet, a click's at once (the screen reacts
+  // before the server answers)
+  let st = demo.state || '';
+  const upto = Math.min(steps.length, pos + (activeIdx === pos && steps[pos] && steps[pos].on ? 1 : 0));
+  for (let j = 0; j < upto; j++) if (steps[j].demo != null) st = steps[j].demo || '';
+  demoEl.dataset.state = st;
+  if (st !== demoState) { demoState = st; relayoutDemo(); }
+  const hot = !playing && pos < steps.length ? steps[pos].on : null;
+  // The elements the playing step's arrows leave or reach light up with it
+  const touched = new Set(playing && cur ? (cur.edges || []).flatMap(id => EDGES[id] ? [EDGES[id].from, EDGES[id].to] : []) : []);
+  for (const el of demoEl.querySelectorAll('[data-ipai]')) {
+    const id = el.dataset.ipai;
+    el.classList.toggle('ipai-on', steps.some(s => s.on === id));
+    el.classList.toggle('ipai-hot', id === hot);
+    el.classList.toggle('ipai-act', !!cur && playing && (cur.on === id || touched.has('@' + id)));
+  }
+  $('demoHint').textContent = !waitsForClick() ? '' : playing ? T.running : pos >= steps.length ? T.again : pos ? T.clickNext : T.tryIt;
+}
+// The same button can come up again (send fails, then works): a click plays the next part it starts from here on,
+// and from the beginning once none is left
+function playClick(on){
+  const next = steps.findIndex((s, j) => j >= pos && s.on === on);
+  const i = next >= 0 ? next : steps.findIndex(s => s.on === on);
+  if (i < 0) return;
+  jump(i); play(segEnd(i), false);
+}
+if (demoRoot) demoRoot.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('[data-ipai]');
+  if (!el) return;
+  e.preventDefault();
+  playClick(el.dataset.ipai);
+});
+// Elements move when the mock changes (a sidebar folds): their arrows follow once the move is over
+if (demoRoot) demoRoot.addEventListener('transitionend', () => relayoutDemo());
+// Measures where the arrows' elements sit on the stage and routes their arrows there. An element that is not shown
+// right now is reached at the window's edge.
+function relayoutDemo(){
+  if (!demoEl || !DEMO_RECT) return;
+  const sr = $('stage').getBoundingClientRect(), s = sr.width / W || 1, boxes = {};
+  for (const e of spec.edges) for (const id of [e.from, e.to]) {
+    if (!isDemoEnd(id) || boxes[id]) continue;
+    const el = demoTargets(id.slice(1))[0], at = r => ({x:(r.left - sr.left) / s, y:(r.top - sr.top) / s, w:r.width / s, h:r.height / s});
+    const r = el && el.getBoundingClientRect();
+    // A hint that disappeared once its answer landed keeps its arrow where it was; one never seen (a step opened
+    // directly) is reached at its nearest visible container, e.g. the input bar of a hidden button
+    if (r && r.width) seenBoxes[id] = at(r);
+    let box = seenBoxes[id];
+    for (let a = el && el.parentElement; !box && a && a !== demoEl; a = a.parentElement) {
+      const ar = a.getBoundingClientRect();
+      if (ar.width) box = at(ar);
+    }
+    boxes[id] = box || {x:DEMO_RECT.x + DEMO_RECT.w - 24, y:DEMO_RECT.y + DEMO_RECT.h / 2 - 10, w:20, h:20};
+  }
+  const routes = computeLayout(spec, view.id, boxes).routes;
+  for (const e of spec.edges) if (routes[e.id] && routes[e.id].demo && edgeEls[e.id]) {
+    ROUTES[e.id] = routes[e.id]; edgeEls[e.id].setAttribute('d', routes[e.id].d);
+  }
+  render();
+}
+// Tour: the cursor glides to the element and taps it
+async function cursorTo(on, id){
+  const el = demoTargets(on)[0], c = $('cursor');
+  if (!el) return true;
+  el.scrollIntoView && el.scrollIntoView({block:'nearest', inline:'nearest'});
+  const win = $('win').getBoundingClientRect(), r = el.getBoundingClientRect();
+  c.classList.add('on');
+  c.style.left = r.left - win.left + r.width / 2 + 'px'; c.style.top = r.top - win.top + r.height / 2 + 'px';
+  if (!await wait(700, id)) return false;
+  c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap');
+  return wait(250, id);
 }
 const pause = () => jump(pos);
 async function next(){
@@ -565,15 +748,15 @@ async function next(){
 // ---------- Views and controls ----------
 function selectView(v){
   view = v; steps = v.steps || [];
-  buildStage(v.id);
-  mark = {nodes: (v.mark && v.mark.nodes) || {}, edges: (v.mark && v.mark.edges) || {}};
+  buildStage(v.id); buildDemo();
+  mark ={nodes: (v.mark && v.mark.nodes) || {}, edges: (v.mark && v.mark.edges) || {}};
   [...$('views').children].forEach(b => b.classList.toggle('on', b.dataset.v === v.id));
   renderTexts(); jump(0); fit();
 }
 spec.views.forEach(v => {
   const b = document.createElement('button');
   b.dataset.v = v.id; b.textContent = tx(v.label) || v.id; b.className = v.kind || '';
-  b.onclick = () => { if (v !== view) { selectView(v); setTimeout(play, 400); } };
+  b.onclick = () => { if (v !== view) { selectView(v); if (!waitsForClick()) setTimeout(play, 400); } };
   $('views').appendChild(b);
 });
 $('views').hidden = spec.views.length < 2;
@@ -601,6 +784,7 @@ const fit = () => {
   const left = Math.max(0, (outer.clientWidth - W * s) / 2);
   $('stage').style.transform = `translateX(${left}px) scale(${s})`;
   outer.style.height = H * s + 'px';
+  if (typeof relayoutDemo === 'function') relayoutDemo();
 };
 let lastW = 0;
 new ResizeObserver(() => { if ($('outer').clientWidth !== lastW) { lastW = $('outer').clientWidth; fit(); } }).observe($('outer'));
@@ -611,7 +795,7 @@ if (hash.has('still')) document.body.classList.add('still');
 if (hash.get('mode') === 'tech' && hasTech) $('mode').children[1].click();
 selectView(spec.views.find(v => v.id === hash.get('view')) || spec.views[0]);
 if (hash.has('step')) jump(+hash.get('step'));
-else if (spec.autoplay !== false) setTimeout(play, 700);
+else if (spec.autoplay !== false && !waitsForClick()) setTimeout(play, 700);
 })();
 </script>
 </body>

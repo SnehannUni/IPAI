@@ -1,0 +1,197 @@
+{
+  "title": "Sidebar einklappen, und sie bleibt eingeklappt",
+  "subtitle": "Klick in den Bildschirm: die Pfeile zeigen, was dein Klick im System auslöst und wo die Antwort landet",
+  "lang": "de",
+  "demo": {
+    "title": "Rechnungen – geplant",
+    "html": "<div class='app'><header class='top'><b>Rechnungen</b><span class='saving' data-ipai='saving'>Speichert …</span><button class='reload' data-ipai='reload'>↻ Neu laden</button></header><aside class='side' data-ipai='side'><button class='toggle' data-ipai='toggle' title='Einklappen'>«</button><a class='item'><i>▦</i><span>Übersicht</span></a><a class='item on'><i>€</i><span>Rechnungen</span></a><a class='item'><i>☺</i><span>Kunden</span></a><a class='item'><i>⚙</i><span>Einstellungen</span></a></aside><main class='content'><div class='row'><span>RE-2041 · Müller GmbH</span><em>1.240 €</em></div><div class='row'><span>RE-2040 · Kaya &amp; Co.</span><em>380 €</em></div><div class='row'><span>RE-2039 · Novak AG</span><em>2.915 €</em></div><div class='row'><span>RE-2038 · Brandt KG</span><em>760 €</em></div></main><div class='toast'>Neu geladen – die Sidebar bleibt eingeklappt</div></div>",
+    "css": ".app{display:grid;grid-template-columns:auto 1fr;grid-template-rows:44px 1fr;height:100%;background:#f8fafc}.top{grid-column:1/3;display:flex;align-items:center;gap:10px;padding:0 12px;background:#fff;border-bottom:1px solid #e2e8f0}.top b{font-size:15px}.reload{margin-left:auto;border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:4px 10px;font:inherit;font-size:12.5px}.saving{display:none;font-size:12px;color:#6366f1}.side{width:156px;background:#1e1b4b;color:#e0e7ff;padding:8px 6px;display:flex;flex-direction:column;gap:2px;transition:width .35s ease;overflow:hidden}.toggle{align-self:flex-end;border:0;background:#312e81;color:#e0e7ff;border-radius:6px;width:28px;height:24px;font:inherit;margin-bottom:6px;transition:transform .35s}.item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;font-size:13px;white-space:nowrap}.item i{font-style:normal;width:18px;text-align:center}.item.on{background:#4f46e5;color:#fff}.content{padding:12px;display:flex;flex-direction:column;gap:6px}.row{display:flex;justify-content:space-between;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:13px}.row em{font-style:normal;font-weight:600;color:#0f766e}.toast{position:absolute;left:50%;bottom:14px;transform:translate(-50%,20px);opacity:0;background:#0f172a;color:#fff;font-size:12.5px;padding:8px 12px;border-radius:8px;transition:all .3s;white-space:nowrap}[data-state~=collapsed] .side{width:46px}[data-state~=collapsed] .item span{opacity:0}[data-state~=collapsed] .toggle{transform:rotate(180deg);align-self:center}[data-state~=saving] .saving{display:inline}[data-state~=loading] .content{opacity:.35}[data-state~=reloaded] .toast{opacity:1;transform:translate(-50%,0)}"
+  },
+  "nodes": [
+    {
+      "id": "api",
+      "type": "step",
+      "zone": "backend",
+      "col": 0,
+      "row": 0,
+      "label": {
+        "simple": "Einstellungen",
+        "tech": "Settings-API"
+      },
+      "sub": {
+        "simple": "merkt sich Vorlieben",
+        "tech": "PUT/GET /settings"
+      }
+    },
+    {
+      "id": "db",
+      "type": "store",
+      "zone": "backend",
+      "col": 1,
+      "row": 0,
+      "label": {
+        "simple": "Ablage",
+        "tech": "PostgreSQL"
+      },
+      "sub": {
+        "simple": "pro Nutzer",
+        "tech": "user_settings"
+      },
+      "initial": {
+        "status": {
+          "simple": "Sidebar: offen",
+          "tech": "sidebar=open"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "save",
+      "from": "@toggle",
+      "to": "api",
+      "verb": "speichert"
+    },
+    {
+      "id": "ok",
+      "from": "api",
+      "to": "@saving",
+      "verb": "bestätigt"
+    },
+    {
+      "id": "load",
+      "from": "@reload",
+      "to": "api",
+      "verb": "lädt"
+    },
+    {
+      "id": "give",
+      "from": "api",
+      "to": "@side",
+      "verb": "liefert"
+    },
+    {
+      "id": "db",
+      "from": "api",
+      "to": "db",
+      "verb": "schreibt"
+    }
+  ],
+  "views": [
+    {
+      "id": "planned",
+      "label": "Geplant",
+      "kind": "normal",
+      "headline": "Plan: Die Sidebar lässt sich einklappen und bleibt es, auch nach dem Neuladen.",
+      "explain": [
+        "Wer viel in der Rechnungsliste arbeitet, braucht die Breite. Heute ist die Sidebar immer offen und nimmt ein Viertel des Bildschirms.",
+        "Geplant ist ein Knopf oben in der Sidebar. Die Wahl wird pro Nutzer gespeichert, damit sie nach dem Neuladen und auf anderen Geräten gilt."
+      ],
+      "steps": [
+        {
+          "on": "toggle",
+          "edges": [
+            "save"
+          ],
+          "packet": {
+            "simple": "zu",
+            "tech": "PUT"
+          },
+          "text": {
+            "simple": "Du klickst auf «. Die Sidebar wird sofort schmal, und die Seite schickt deine Wahl los.",
+            "tech": "Klick: collapsed lokal setzen, dann PUT /settings mit sidebar=collapsed."
+          },
+          "detail": {
+            "simple": "Die Seite wartet nicht auf den Server, darum fühlt sich der Klick schnell an.",
+            "tech": "Optimistisches Update im Store; der Request läuft danach."
+          },
+          "tag": "new",
+          "demo": "collapsed saving"
+        },
+        {
+          "edges": [
+            "db"
+          ],
+          "packet": {
+            "simple": "zu",
+            "tech": "UPDATE"
+          },
+          "text": {
+            "simple": "Die Einstellungen legen sie für dich ab.",
+            "tech": "Die Settings-API schreibt user_settings.sidebar."
+          },
+          "set": {
+            "db": {
+              "status": {
+                "simple": "Sidebar: zu",
+                "tech": "sidebar=collapsed"
+              },
+              "tone": "ok"
+            }
+          }
+        },
+        {
+          "edges": [
+            "ok"
+          ],
+          "packet": "OK",
+          "text": {
+            "simple": "Die Antwort landet beim Hinweis „Speichert …“, und der verschwindet.",
+            "tech": "204 No Content; der Speicher-Hinweis wird ausgeblendet."
+          },
+          "demo": "collapsed"
+        },
+        {
+          "on": "reload",
+          "edges": [
+            "load"
+          ],
+          "packet": {
+            "simple": "Vorlieben?",
+            "tech": "GET"
+          },
+          "text": {
+            "simple": "Du lädst neu. Die Seite fragt zuerst nach deinen Vorlieben.",
+            "tech": "Reload: vor dem ersten Render GET /settings."
+          },
+          "detail": {
+            "simple": "So springt die Sidebar nicht erst auf und dann wieder zu.",
+            "tech": "Die Einstellungen kommen vor dem ersten Paint, sonst flackert das Layout."
+          },
+          "tag": "new",
+          "demo": "collapsed loading"
+        },
+        {
+          "edges": [
+            "db"
+          ],
+          "labels": {
+            "db": "liest"
+          },
+          "packet": {
+            "simple": "zu",
+            "tech": "SELECT"
+          },
+          "text": {
+            "simple": "Die Einstellungen schauen in der Ablage nach.",
+            "tech": "Die API liest user_settings.sidebar."
+          }
+        },
+        {
+          "edges": [
+            "give"
+          ],
+          "packet": {
+            "simple": "zu",
+            "tech": "collapsed"
+          },
+          "text": {
+            "simple": "Die Antwort landet bei der Sidebar: sie bleibt eingeklappt.",
+            "tech": "Die App rendert mit collapsed: true."
+          },
+          "demo": "collapsed reloaded"
+        }
+      ]
+    }
+  ]
+}

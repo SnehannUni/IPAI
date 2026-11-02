@@ -23,30 +23,58 @@ export function nodeHeight(n) {
 // Estimated text width in px (system font); deliberately generous
 export const textWidth = (s, size = 12, bold = false) => [...String(s)].length * size * (bold ? .57 : .52);
 
+// The demo (a mock of the screen) is the leftmost zone of a view. Its elements are arrow ends written "@id".
+export const DEMO = {PAD: 32, BAR: 26, FRAME: 7, HINT: 50, W: 440, H: 330, PHONE_W: 300, PHONE_H: 560};
+export const isDemoEnd = id => typeof id === 'string' && id[0] === '@';
+export const demoOf = (spec, view) => view && view.demo === false ? null : (view && view.demo) || spec.demo || null;
+export function demoSize(d) {
+  const phone = d.device === 'phone';
+  const w = d.width || (phone ? DEMO.PHONE_W : DEMO.W), h = d.height || (phone ? DEMO.PHONE_H : DEMO.H);
+  return {w, h, outerW: w + (phone ? 2 * DEMO.FRAME : 2), outerH: h + (phone ? 2 * DEMO.FRAME : DEMO.BAR + 2)};
+}
+
 // Layout for one view: zones without a visible box are dropped. Inside the remaining zones all boxes count
 // (hidden ones too), so that e.g. "Today" and "Planned" have exactly the same positions.
-export function computeLayout(spec, viewId) {
+// elBoxes: where the demo's elements sit on the stage ({"@id": {x, y, w, h}}), measured by the viewer. Without it
+// (validator) an element is estimated in the middle of the demo.
+export function computeLayout(spec, viewId, elBoxes) {
   const {MIN_W, COL_MIN, TOP, GAP_V, MIN_ROW, GAP, MAX_W} = LAYOUT;
   const allZones = spec.zones && spec.zones.length ? spec.zones : DEFAULT_ZONES;
   const shown = n => viewId == null || !n.views || n.views.includes(viewId);
-  const zones = allZones.filter(z => spec.nodes.some(n => n.zone === z.id && shown(n)));
+  let zones = allZones.filter(z => spec.nodes.some(n => n.zone === z.id && shown(n)));
   const nodes = spec.nodes.filter(n => zones.some(z => z.id === n.zone));
   const edgesById = Object.fromEntries(spec.edges.map(e => [e.id, e]));
+  const demo = demoOf(spec, (spec.views || []).find(v => v.id === viewId));
+  const ds = demo ? demoSize(demo) : null;
+  // Right of the window the zone keeps room for one lane per arrow at an element and for the longest of their labels,
+  // so a narrow phone does not push the labels onto the first box
+  const demoEdgeCount = spec.edges.filter(e => isDemoEnd(e.from) || isDemoEnd(e.to)).length;
+  const textsOf = v => v == null ? [] : typeof v === 'string' ? [v] : [v.simple, v.tech].filter(t => typeof t === 'string');
+  const demoLabels = spec.edges.filter(e => isDemoEnd(e.from) || isDemoEnd(e.to)).flatMap(e =>
+    [e.verb, ...(spec.views || []).flatMap(v => (v.steps || []).map(s => s.labels && s.labels[e.id]))].flatMap(textsOf));
+  const labelRoom = Math.max(0, ...demoLabels.map(t => String(t).length * 6.3 + 10));
+  const DZ = ds ? Math.max(ds.outerW + 2 * DEMO.PAD, DEMO.PAD + ds.outerW + 16 + demoEdgeCount * 12 + labelRoom + 8) : 0;
 
   const zoneCols = zones.map(z => Math.max(1, ...nodes.filter(n => n.zone === z.id).map(n => (n.col || 0) + (n.cols || 1))));
-  const totalCols = zoneCols.reduce((a, b) => a + b, 0);
+  const totalCols = Math.max(1, zoneCols.reduce((a, b) => a + b, 0));
   // With many columns the stage gets wider instead of the boxes narrower; the viewer scales to the window width
-  const W = Math.max(MIN_W, totalCols * COL_MIN), colW = W / totalCols;
+  const rest = Math.max(MIN_W - DZ, totalCols * COL_MIN), colW = rest / totalCols, W = DZ + rest;
   const zx = {};
-  let x0 = 0;
+  let x0 = DZ;
   zones.forEach((z, i) => { zx[z.id] = {x: x0, w: zoneCols[i] * colW}; x0 += zoneCols[i] * colW; });
+  if (ds) { zones = [{id: '@demo', label: demo.label}, ...zones]; zx['@demo'] = {x: 0, w: DZ}; }
   // Row heights by content: compact, but never too tight for the tallest box
   const rows = Math.max(1, ...nodes.map(n => (n.row || 0) + (n.rows || 1)));
-  const rowH = Array.from({length: rows}, (_, r) =>
+  let rowH = Array.from({length: rows}, (_, r) =>
     Math.max(MIN_ROW, ...nodes.filter(n => (n.row || 0) === r && (n.rows || 1) === 1).map(n => nodeHeight(n) + GAP_V)));
+  // Beside a demo the rows share its height, so the system stands next to the screen and not above its top edge
+  const demoNeed = ds ? TOP + 8 + ds.outerH + DEMO.HINT : 0;
+  const rowsH = rowH.reduce((a, b) => a + b, TOP);
+  if (rowsH < demoNeed) rowH = rowH.map(h => h + (demoNeed - rowsH) / rows);
   const rowTop = [TOP];
   rowH.forEach((h, r) => rowTop.push(rowTop[r] + h));
   const H = rowTop[rows] + 4;
+  const demoRect = ds ? {x: DEMO.PAD, y: TOP + 8, w: ds.outerW, h: ds.outerH} : null;
 
   const boxes = {};
   for (const n of nodes) {
@@ -64,8 +92,47 @@ export function computeLayout(spec, viewId) {
   const pairs = {};
   spec.edges.forEach(e => { const k = [e.from, e.to].sort().join('|'); (pairs[k] = pairs[k] || []).push(e.id); });
   const KINK = 28;   // kinks hit the box above/below its centre, not on the horizontal pair lanes
+  const shorten = (p, q, by) => [p[0] + Math.sign(q[0] - p[0]) * by, p[1] + Math.sign(q[1] - p[1]) * by];
+
+  // Arrows between a demo element and a box: out of the element's right side along its row, down or up a lane just
+  // outside the demo, into the side of the box. Several arrows at one box meet it at offsets; each has its own lane.
+  const demoEdges = spec.edges.filter(e => isDemoEnd(e.from) || isDemoEnd(e.to));
+  const elBox = id => {
+    const b = elBoxes && elBoxes[id];
+    if (b) return b;
+    return demoRect && {x: demoRect.x + demoRect.w / 2 - 20, y: demoRect.y + demoRect.h / 2 - 10, w: 40, h: 20};
+  };
+  const nodeOf = e => isDemoEnd(e.from) ? e.to : e.from;
+  const rowOf = e => { const E = elBox(isDemoEnd(e.from) ? e.from : e.to); return E ? E.y + E.h / 2 : 0; };
+  // No crossings among them: the arrows at one box meet it in the order of their elements' rows, and of the arrows
+  // that go down (or up), the one that starts higher (lower) takes the lane nearer the box.
+  const port = {}, laneOf = {};
+  const atNode = {};
+  demoEdges.forEach(e => (atNode[nodeOf(e)] = atNode[nodeOf(e)] || []).push(e));
+  for (const group of Object.values(atNode)) {
+    group.sort((a, b) => rowOf(a) - rowOf(b));
+    group.forEach((e, i) => { port[e.id] = (i - (group.length - 1) / 2) * 16; });
+  }
+  const goesDown = e => rowOf(e) < (boxes[nodeOf(e)] ? boxes[nodeOf(e)].cy + port[e.id] : 0);
+  const down = demoEdges.filter(goesDown).sort((a, b) => rowOf(a) - rowOf(b));
+  const up = demoEdges.filter(e => !goesDown(e)).sort((a, b) => rowOf(b) - rowOf(a));
+  down.forEach((e, i) => { laneOf[e.id] = down.length - 1 - i; });
+  up.forEach((e, i) => { laneOf[e.id] = down.length + up.length - 1 - i; });
+  function demoRoute(e) {
+    const out = isDemoEnd(e.from), E = elBox(out ? e.from : e.to), B = boxes[out ? e.to : e.from];
+    if (!demoRect || !E || !B) return null;
+    const off = port[e.id];
+    const lane = demoRect.x + demoRect.w + 16 + laneOf[e.id] * 12;
+    const ey = E.y + E.h / 2, ty = B.cy + off;
+    const pts = Math.abs(ey - ty) < 3 ? [[E.x + E.w, ty], [B.x, ty]] : [[E.x + E.w, ey], [lane, ey], [lane, ty], [B.x, ty]];
+    if (!out) pts.reverse();
+    pts[0] = shorten(pts[0], pts[1], 2);
+    pts[pts.length - 1] = shorten(pts[pts.length - 1], pts[pts.length - 2], 4);
+    return {pts, lab: [(lane + B.x) / 2, ty + (off > 0 ? 17 : -8)], anchor: 'middle', demo: true};
+  }
 
   function route(e) {
+    if (isDemoEnd(e.from) || isDemoEnd(e.to)) return demoRoute(e);
     const S = boxes[e.from], T = boxes[e.to];
     if (!S || !T) return null;
     if (e.from === e.to) {
@@ -111,7 +178,6 @@ export function computeLayout(spec, viewId) {
     }
     if (e.from !== first.from) pts.reverse();
     // Shorten the ends: start 2 px, end 4 px away from the box (room for the arrow head)
-    const shorten = (p, q, by) => [p[0] + Math.sign(q[0] - p[0]) * by, p[1] + Math.sign(q[1] - p[1]) * by];
     pts[0] = shorten(pts[0], pts[1], 2);
     pts[pts.length - 1] = shorten(pts[pts.length - 1], pts[pts.length - 2], 4);
     return {pts, lab, anchor};
@@ -122,7 +188,7 @@ export function computeLayout(spec, viewId) {
     const r = route(e);
     if (r) routes[e.id] = {...r, d: 'M ' + r.pts.map(p => p.join(' ')).join(' L ')};
   }
-  return {W, H, TOP, zones, zx, boxes, routes};
+  return {W, H, TOP, zones, zx, boxes, routes, demo: demoRect, demoSize: ds};
 }
 
 // Rectangle of an arrow label (same estimate as in the viewer)
