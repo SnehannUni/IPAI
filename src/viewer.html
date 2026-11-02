@@ -323,7 +323,7 @@ const STRINGS = {
     waits:{simple:'waits for an answer', tech:'synchronous'}, along:{simple:'runs alongside', tech:'asynchronous'},
     tags:{new:'new', changed:'changed', test:'test', error:'error'},
     types:{trigger:'Trigger', step:'Step', store:'Storage', external:'External service', result:'Result', screen:'Screen'},
-    zones:{frontend:{simple:'YOU', tech:'FRONTEND'}, backend:{simple:'OUR SYSTEM', tech:'BACKEND'}, external:{simple:'OTHER COMPANIES', tech:'EXTERNAL'}},
+    zones:{screen:{simple:'YOUR SCREEN', tech:'UI'}, frontend:{simple:'YOU', tech:'FRONTEND'}, backend:{simple:'OUR SYSTEM', tech:'BACKEND'}, external:{simple:'OTHER COMPANIES', tech:'EXTERNAL'}},
     tryIt:'Click the highlighted spot on the screen, or Play for a tour.', again:'That was all. Click again or Replay.',
     clickNext:'Next: click the highlighted spot.', running:'Watch the diagram …', fatal:'Could not read the flow spec'},
   de: {play:'Abspielen', pause:'Pause', replay:'Nochmal', back:'Zurück', next:'Weiter', simple:'Einfach', tech:'Technisch',
@@ -333,7 +333,7 @@ const STRINGS = {
     waits:{simple:'wartet auf Antwort', tech:'synchron'}, along:{simple:'läuft nebenher', tech:'asynchron'},
     tags:{new:'neu', changed:'geändert', test:'Test', error:'Fehler'},
     types:{trigger:'Auslöser', step:'Schritt', store:'Speicher', external:'Fremder Dienst', result:'Ergebnis', screen:'Bildschirm'},
-    zones:{frontend:{simple:'DU', tech:'FRONTEND'}, backend:{simple:'UNSER SYSTEM', tech:'BACKEND'}, external:{simple:'ANDERE FIRMEN', tech:'EXTERN'}},
+    zones:{screen:{simple:'DEIN BILDSCHIRM', tech:'OBERFLÄCHE'}, frontend:{simple:'DU', tech:'FRONTEND'}, backend:{simple:'UNSER SYSTEM', tech:'BACKEND'}, external:{simple:'ANDERE FIRMEN', tech:'EXTERN'}},
     tryIt:'Klick im Bildschirm auf die markierte Stelle – oder Abspielen für einen Rundgang.', again:'Das war alles. Klick nochmal oder Nochmal.',
     clickNext:'Weiter: Klick auf die markierte Stelle.', running:'Schau aufs Diagramm …', fatal:'Die Flow-Spec ist nicht lesbar'},
 };
@@ -364,8 +364,12 @@ document.body.style.setProperty('--click', JSON.stringify(T.click));
 $('prev').textContent = T.back; $('prev').title = T.prevTitle;
 $('next').textContent = T.next; $('next').title = T.nextTitle;
 $('mode').children[0].textContent = T.simple; $('mode').children[1].textContent = T.tech;
-// Default zones speak the spec's language; zones of its own keep their labels
-const zoneLabel = z => z.id === '@demo' ? z.label || T.zones.frontend : spec.zones && spec.zones.length ? z.label : T.zones[z.id] || z.label;
+// Default zones speak the spec's language; zones of its own keep their labels. The demo is "you" unless the view
+// also shows the frontend zone (a browser cache, say): then the demo is "your screen", so no two zones are "you".
+const zoneLabel = z => {
+  if (z.id === '@demo') return z.label || (ZONES.some(o => o.id === 'frontend') ? T.zones.screen : T.zones.frontend);
+  return spec.zones && spec.zones.length ? z.label : T.zones[z.id] || z.label;
+};
 
 const NODES = Object.fromEntries(spec.nodes.map(n => [n.id, n]));
 const EDGES = Object.fromEntries(spec.edges.map(e => [e.id, e]));
